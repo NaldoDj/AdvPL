@@ -40,7 +40,7 @@ procedure u_ShwUsers()
 
     oArrayUtils:=U_DJLIB029()
     if (file(FILE_ARRAY))
-        aUsersArray:RestArray(FILE_ARRAY)
+        aUsersArray:=oArrayUtils:RestArray(FILE_ARRAY)
         fErase(FILE_ARRAY)
     else
         DEFAULT aUsersArray:=array(0)
@@ -306,4 +306,3 @@ static function PutInternal(cInternal as character) as logical
     PTInternal(1,cPTInternal)
 
     return(lInternal)
-    
