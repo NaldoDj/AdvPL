@@ -73,30 +73,30 @@ procedure u_ShwUsers()
 
 static procedure ShwUsers(aUsersArray as array,lRecursa as logical)
 
-    local aTmp          as array
-    local aPathKill     as array
-    local aUserInfo     as array
-    local aINISessions  as array
+    local aTmp           as array
+    local aPathKill      as array
+    local aUserInfo      as array
+    local aINISessions   as array
 
-    local cCRLF         as character
-    local cCHR10        as character
-    local cCHR13        as character
-    local cCHR59        as character
-    local cINIFile      as character
-    local cSession      as character
-    local cFileUsers    as character
-    local cUsersArray   as character
+    local cCRLF          as character
+    local cCHR10         as character
+    local cCHR13         as character
+    local cCHR59         as character
+    local cINIFile       as character
+    local cSession       as character
+    local cFileUsers     as character
+    local cUsersArray    as character
 
-    local nC            as numeric
-    local nS            as numeric
-    local nD            as numeric
-    local nJ            as numeric
+    local nC             as numeric
+    local nS             as numeric
+    local nD             as numeric
+    local nJ             as numeric
 
-    local nAT           as numeric
+    local nAT            as numeric
 
-    local nUsersArray   as numeric
+    local nUsersArray    as numeric
 
-    local oTFINI        as object
+    local oTFINI         as object
 
     aPathKill:=array(2)
     aPathKill[1]:=TEMP_PATH

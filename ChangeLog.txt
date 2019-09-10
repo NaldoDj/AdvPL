@@ -3,8 +3,6 @@
  */
 
 
-2019-09-01 20:48 UTC-0300 NaldoDj (marinaldo.jesus blacktdn.com.br)
-  * bin/3rdpatch.hb
-  * bin/check.hb
-  * bin/commit.hb
-  * monitor/u_shwusers.prw
+2019-09-10 17:55 UTC-0300 NaldoDj (marinaldo.jesus blacktdn.com.br)
+  + fwmsexcelex/sigapon/ubdexcel.prw
+  * monitor/u_shwusers.prw -> getuserinfoarray/monitor/u_shwusers.prw
