@@ -2,7 +2,5 @@
  * $Id$
  */
 
-
-2019-09-10 17:55 UTC-0300 NaldoDj (marinaldo.jesus blacktdn.com.br)
-  + fwmsexcelex/sigapon/ubdexcel.prw
-  * monitor/u_shwusers.prw -> getuserinfoarray/monitor/u_shwusers.prw
+2019-09-12 19:10 UTC-0300 NaldoDj (marinaldo.jesus blacktdn.com.br)
+  + schedule/sigapon/csdjjobpon.prw
