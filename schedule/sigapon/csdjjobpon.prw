@@ -192,13 +192,13 @@ static procedure chkMarkDupl()
     local cQuery    as character
     local cTable    as character
 
-    local nDupl      as numeric
+    local nDupl     as numeric
 
     aArea:=getArea()
 
     cAlias:=getNextAlias()
     beginSQL alias cAlias
-        SELECT SUM(t.DUPL) DUPL
+        SELECT SUM(t.DUPL) AS DUPL
           FROM (
             SELECT SP8.P8_FILIAL
                   ,SP8.P8_MAT
@@ -206,7 +206,7 @@ static procedure chkMarkDupl()
                   ,SP8.P8_HORA
                   ,COUNT(*) AS DUPL
              FROM %table:SP8% SP8
-            WHERE SP8.D_E_L_E_T_=' '
+            WHERE SP8.%notDel%
             GROUP BY SP8.P8_FILIAL
                     ,SP8.P8_MAT
                     ,SP8.P8_DATA
