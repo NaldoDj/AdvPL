@@ -1,0 +1,83 @@
+#include "totvs.ch"
+#include "parmtype.ch"
+
+class MsProcess
+    static method ProcRedefine(oProcess,oFont,nLeft,nWidth,nCTLFLeft,lODlgF,lODlgW) as logical
+end class
+
+static method ProcRedefine(oProcess,oFont,nLeft,nWidth,nCTLFLeft,lODlgF,lODlgW) class MsProcess
+    paramtype oProcess as object
+    DEFAULT oFont:=TFont():New("Lucida Console",nil,18,nil,.T.)
+    paramtype oFont as object optional
+    DEFAULT nLeft:=100
+    paramtype nLeft as numeric optional
+    DEFAULT nWidth:=200
+    paramtype nWidth as numeric optional
+    DEFAULT nCTLFLeft:=if(lODlgW,nWidth,nWidth/2)
+    paramtype nCTLFLeft as numeric optional
+    DEFAULT lODlgF:=.T.
+    paramtype lODlgF as logical optional
+    DEFAULT lODlgW:=.F.
+    paramtype lODlgW as logical optional
+    return(ProcRedefine(@oProcess,@oFont,@nLeft,@nWidth,@nCTLFLeft,@lODlgF,@lODlgW))
+static function ProcRedefine(oProcess as object,oFont as object,nLeft as numeric,nWidth as numeric,nCTLFLeft as numeric,lODlgF as logical,lODlgW as logical) as logical
+    local aSButton      as array
+    local aclassData    as array
+    local laMeter       as logical
+    local nObj          as numeric
+    local nMeter        as numeric
+    local nMeters       as numeric
+    local lProcRedefine as logical
+    lProcRedefine:=.F.
+    if (valType(oProcess)=="O")
+        aclassData:=classDataArr(oProcess,.T.)
+        laMeter:=(aScan(aclassData,{|e|e[1]=="AMETER"})>0)
+        if (laMeter)
+            DEFAULT oFont:=TFont():New("Lucida Console",nil,12,nil,.T.)
+            DEFAULT nLeft:=40
+            DEFAULT nWidth:=95
+            nMeters:=len(oProcess:aMeter)
+            for nMeter:=1 to nMeters
+                for nObj:=1 to 2
+                    oProcess:aMeter[nMeter][nObj]:oFont:=oFont
+                    oProcess:aMeter[nMeter][nObj]:nWidth+=nWidth
+                    oProcess:aMeter[nMeter][nObj]:nLeft-=nLeft
+                next nObj
+            next nMeter
+        else
+            if (lODlgF)
+                oProcess:oDlg:oFont:=oFont
+            endif
+            if (lODlgW)
+                oProcess:oDlg:nWidth+=nWidth
+                oProcess:oDlg:nLeft-=(nWidth/2)
+            endif
+            oProcess:oMsg1:oFont:=oFont
+            oProcess:oMsg2:oFont:=oFont
+            oProcess:oMsg1:nLeft-=nLeft
+            oProcess:oMsg1:nWidth+=nWidth
+            oProcess:oMsg2:nLeft-=nLeft
+            oProcess:oMsg2:nWidth+=nWidth
+            oProcess:oMeter1:nWidth+=nWidth
+            oProcess:oMeter1:nLeft-=nLeft
+            oProcess:oMeter2:nWidth+=nWidth
+            oProcess:oMeter2:nLeft-=nLeft
+            if (valType(oProcess:oDlg:oCTLFocus)=="O")
+                oProcess:oDlg:oCTLFocus:nLeft+=nCTLFLeft
+                oProcess:oDlg:oCTLFocus:Refresh(.T.)
+                oProcess:oDlg:oCTLFocus:SetFocus()
+                oProcess:oDlg:oCTLFocus:Refresh(.T.)
+            else
+                aSButton:=MsObjects():FindMsObjects("SBUTTON",oProcess:oDlg)
+                if (!empty(aSButton))
+                    aSButton[1]:nLeft+=nCTLFLeft
+                endif
+            endif
+            oProcess:oDlg:Refresh(.T.)
+            oProcess:oDlg:SetFocus()
+            oProcess:oDlg:Refresh(.T.)
+        endif
+        lProcRedefine:=.T.
+        MsAguarde({||Sleep(10)},"Aguarde","Atualizando")
+    endif
+    return(lProcRedefine)

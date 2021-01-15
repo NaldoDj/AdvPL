@@ -1,0 +1,48 @@
+#include "totvs.ch"
+#include "fileio.ch"
+
+class Picture
+    static method getPicture(cField,cType,nLen,nDec) as character
+end class
+
+static method getPicture(cField,cType,nLen,nDec) class Picture
+    return(getPicture(@cField,@cType,@nLen,@nDec))
+static function getPicture(cField as character,cType as character,nLen as numeric,nDec as numeric) as character
+
+    local cInt      as character
+    local cDec      as character
+    local cPicture  as character
+
+    local nD        as numeric
+    local nJ        as numeric
+
+    cPicture:=isNil():IsNil(getSX3Cache(cField,"X3_PICTURE"),"")
+    if empty(cPicture)
+        do case
+        case (cType=="D")
+            cPicture:="@D"
+        case (cType=="N")
+            if ((nLen<=3).and.(nDec==0))
+                cInt:=replicate("9",nLen)
+                cDec:=""
+            else
+                nJ:=nLen
+                cInt:=""
+                for nD:=nJ to 1 step -3
+                    cInt+=replicate("9",3)
+                    if (nD>3)
+                        cInt+=","
+                    endif
+                next nD
+                cDec:=replicate("9",nDec)
+            endif
+            cPicture:="@R"
+            cPicture+=" "
+            cPicture+=cInt
+            cPicture+="."
+            cPicture+=cDec
+        otherwise
+            cPicture:="@"
+        end case
+    endif
+    return(cPicture)

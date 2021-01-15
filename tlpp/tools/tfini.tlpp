@@ -1,0 +1,833 @@
+#include "totvs.ch"
+#include "tfini.ch"
+#include "parmtype.ch"
+#include "JSONarray.ch"
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        class:TFINI
+        Autor:Marinaldo de Jesus
+        Data:27/05/2011
+        Descricao:Manipulacao de Arquivos .INI
+        Sintaxe:TFINI():New(cINIfile,cIgnoreToken)->Objeto do Tipo TFINI
+    /*/
+//------------------------------------------------------------------------------------------------
+class TFINI FROM THASH
+
+    public data cINIfile as character
+
+    data cClassName as character
+
+    public method New(cINIfile,cIgnoreToken) as object /*/\constructor/\*/
+
+    public method ClassName() as character
+
+    public method GetATProperty(cSection,cPropertyKey) as numeric
+    public method GetKeyProperty(cSection,cPropertyKey) as character
+    public method SetKeyProperty(cSection,cPropertyKey,cNewPropertyKey) as character
+    public method GetNameProperty(cSection,cPropertyKey) as character
+    public method GetPropertyValue(cSection,cPropertyKey,cDefaultValue) as character
+    public method SetPropertyValue(cSection,cPropertyKey,cValue) as character
+    public method AddNewProperty(cSection,cPropertyKey,cValue) as logical
+    public method RemoveProperty(cSection,cPropertyKey) as logical
+    public method GetAllProperties(cSection) as array
+
+    public method AddNewSection(cSection) as logical
+    public method RemoveSection(cSection) as logical
+    public method GetSection(cSection) as array
+    public method CloneSection(cSection) as array
+    public method GetAllSections() as array
+    public method CopySection(cSection,cNewSection) as logical
+    public method ExistSection(cSection,nSection) as logical
+    public method ChangeSection(cSection,cNewSection) as logical
+
+    public method SaveAs(cFileName) as logical
+    public method SaveAsXML(cXMLFile,cVersion,cEncode) as logical
+    public method SaveAsJSON(cJSONFile,cEncode,lPrettify,nPrettify) as logical
+
+    public method ToXML(cVersion,cEncode) as character
+    public method ToJSON(cEncode,lPrettify,nPrettify) as character
+
+end class
+
+function u_TFINI(cINIfile,cIgnoreToken) as object
+    local oTFINI:=TFINI():New(cINIfile,cIgnoreToken)
+    return(oTFINI)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:New
+        Autor:Marinaldo de Jesus
+        Data:27/05/2011
+        Descricao:constructor
+        Sintaxe:TFINI():New(cINIfile,cIgnoreToken)->self
+    /*/
+//------------------------------------------------------------------------------------------------
+method New(cINIfile,cIgnoreToken) class TFINI
+
+    local aTFINI    as array
+
+    paramtype cINIfile as character
+    paramtype cIgnoreToken as character optional
+
+    _Super:New()
+    self:ClassName()
+
+    self:cINIfile:=cINIfile
+    aTFINI:=self:aTHASH
+
+    self:lHasError:=(!TINILoad(@aTFINI,@cINIfile,@cIgnoreToken))
+    if (self:lHasError)
+        self:SetErrorMsg("File not found :: ["+allTrim(cINIfile)+"]")
+    endif
+
+    return(self)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        function:TINILoad
+        Autor:Marinaldo de Jesus
+        Data:03/11/2011
+        Descricao:Carregar os Dados do arquivo INI
+        Sintaxe:TINILoad(oTIni,cIgnoreToken)
+    /*/
+//------------------------------------------------------------------------------------------------
+static function TINILoad(aTFINI as array,cINIfile as character,cIgnoreToken as character) as logical
+
+    local cLine         as character
+
+    local lExit         as logical
+
+    local nAT           as numeric
+    local nATLine       as numeric
+    local nSection      as numeric
+    local nProperty     as numeric
+    local nATIgnoreTkn  as numeric
+
+    local ofT           as object
+
+    local lLoad         as logical
+
+    lLoad:=.F.
+
+    begin sequence
+
+        if (Empty(cINIfile))
+            break
+        endif
+
+        if (!(File(cINIfile)))
+            break
+        endif
+
+        ofT:=fTDB():New()
+
+        if (ofT:ft_fUse(cINIfile)<=0)
+            ofT:ft_fUse()
+            break
+        endif
+
+        DEFAULT cIgnoreToken:=";"
+
+        while (!(ofT:ft_fEof()))
+            cLine:=ofT:ft_fReadLn()
+            begin sequence
+                if (Empty(cLine))
+                    break
+                endif
+                if (cIgnoreToken$cLine)
+                    cLine:=allTrim(cLine)
+                    nATIgnoreTkn:=AT(cIgnoreToken,cLine)
+                    if (nATIgnoreTkn==1)
+                        break
+                    endif
+                    cLine:=SubStr(cLine,1,nATIgnoreTkn-1)
+                endif
+                if (!("["$cLine))
+                    break
+                endif
+                lExit:=.F.
+                nATLine:=0
+                aAdd(aTFINI,{Lower(allTrim(StrTran(StrTran(cLine,"[",""),"]",""))),Array(0)})
+                nSection:=Len(aTFINI)
+                ofT:ft_fSkip()
+                while (!(ofT:ft_fEof()))
+                    cLine:=ofT:ft_fReadLn()
+                     begin sequence
+                         if (Empty(cLine))
+                             break
+                         endif
+                        if (cIgnoreToken$cLine)
+                            cLine:=allTrim(cLine)
+                            nATIgnoreTkn:=AT(cIgnoreToken,cLine)
+                            if (nATIgnoreTkn==1)
+                                if ("["$cLine)
+                                    nATLine:=0
+                                    lExit:=.T.
+                                endif
+                                break
+                            endif
+                            cLine:=SubStr(cLine,1,nATIgnoreTkn-1)
+                        endif
+                        if ("["$cLine)
+                            lExit:=.T.
+                            break
+                        endif
+                         aAdd(aTFINI[nSection][HASH_PROPERTY_POSITION],Array(HASH_PROPERTY_ELEMENTS))
+                         nProperty:=Len(aTFINI[nSection][HASH_PROPERTY_POSITION])
+                         nAT:=AT("=",cLine)
+                         aTFINI[nSection][HASH_PROPERTY_POSITION][nProperty][HASH_PROPERTY_KEY]:=Lower(allTrim(SubStr(cLine,1,nAT-1)))
+                         aTFINI[nSection][HASH_PROPERTY_POSITION][nProperty][HASH_PROPERTY_VALUE]:=SubStr(cLine,nAT+1)
+                         cLine:=""
+                    end sequence
+                    if (lExit)
+                        EXIT
+                    endif
+                    nATLine:=ofT:ft_fRecno()
+                    ofT:ft_fSkip()
+                end while
+                if (nATLine>0)
+                    ofT:ft_fGoto(nATLine)
+                endif
+            end sequence
+            ofT:ft_fSkip()
+        end while
+
+        ofT:ft_fUse()
+
+        lLoad:=.T.
+
+    end sequence
+
+    return(lLoad)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:ClassName
+        Autor:Marinaldo de Jesus
+        Data:27/05/2011
+        Descricao:Retornar o Nome da classe
+        Sintaxe:TFINI():className()->cClassName
+    /*/
+//------------------------------------------------------------------------------------------------
+method ClassName() class TFINI
+    self:cClassName:=(_Super:className()+"_"+GetclassName(self))
+    return(self:cClassName)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:GetATProperty
+        Autor:Marinaldo de Jesus
+        Data:27/05/2011
+        Descricao:Obter a Posicao da Propriedade Passada por parametro e de acordo com a Secao
+        Sintaxe:TFINI():GetATProperty(cSection,cPropertyKey)->nATProperty
+    /*/
+//------------------------------------------------------------------------------------------------
+method GetATProperty(cSection,cPropertyKey) class TFINI
+    local nATProperty as numeric
+    paramtype cSection as character
+    paramtype cPropertyKey as character
+    cSection:=Lower(allTrim(cSection))
+    cPropertyKey:=Lower(allTrim(cPropertyKey))
+    nATProperty:=_Super:GetATProperty(@cSection,@cPropertyKey)
+    return(nATProperty)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:GetKeyProperty
+        Autor:Marinaldo de Jesus
+        Data:27/05/2011
+        Descricao:Obter a Chave da Propriedade Passada por parametro e de acordo com a Secao
+        Sintaxe:TFINI():GetKeyProperty(cSection,cPropertyKey)->cNameProperty
+    /*/
+//------------------------------------------------------------------------------------------------
+method GetKeyProperty(cSection,cPropertyKey) class TFINI
+    local cKeyproperty  as character
+    paramtype cSection as character
+    paramtype cPropertyKey as character
+    cSection:=Lower(allTrim(cSection))
+    cPropertyKey:=Lower(allTrim(cPropertyKey))
+    cKeyproperty:=_Super:GetKeyProperty(@cSection,@cPropertyKey)
+    DEFAULT cKeyproperty:=""
+    return(cKeyproperty)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:SetKeyProperty
+        Autor:Marinaldo de Jesus
+        Data:27/05/2011
+        Descricao:Setar a Chave da Propriedade Passada por parametro e de acordo com a Secao
+        Sintaxe:TFINI():SetKeyProperty(cSection,cPropertyKey,cNewPropertyKey)->cNameProperty
+    /*/
+//------------------------------------------------------------------------------------------------
+method SetKeyProperty(cSection,cPropertyKey,cNewPropertyKey) class TFINI
+    local cNameProperty as character
+    paramtype cSection as character
+    paramtype cPropertyKey as character
+    paramtype cNewPropertyKey as character
+    cSection:=Lower(allTrim(cSection))
+    cPropertyKey:=Lower(allTrim(cPropertyKey))
+    cNewPropertyKey:=Lower(allTrim(cNewPropertyKey))
+    cNameProperty:=_Super:SetKeyProperty(cSection,cPropertyKey,cNewPropertyKey)
+    return(cNameProperty)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:GetNameProperty
+        Autor:Marinaldo de Jesus
+        Data:27/05/2011
+        Descricao:Obter o Nome da Propriedade Passada por parametro e de acordo com a Secao
+        Sintaxe:TFINI():GetNameProperty(cSection,cPropertyKey)->cNameProperty
+    /*/
+//------------------------------------------------------------------------------------------------
+method GetNameProperty(cSection,cPropertyKey) class TFINI
+    paramtype cSection as character
+    paramtype cPropertyKey as character
+    cSection:=Lower(allTrim(cSection))
+    cPropertyKey:=Lower(allTrim(cPropertyKey))
+    return(self:GetKeyProperty(@cSection,@cPropertyKey))
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:GetPropertyValue
+        Autor:Marinaldo de Jesus
+        Data:27/05/2011
+        Descricao:Obter o valor da Propriedade Passada por parametro e de acordo com a Secao
+        Sintaxe:TFINI():GetPropertyValue(cSection,cPropertyKey,cDefaultValue)->cValue
+    /*/
+//------------------------------------------------------------------------------------------------
+method GetPropertyValue(cSection,cPropertyKey,cDefaultValue) class TFINI
+    local cValue    as character
+    paramtype cSection as character
+    paramtype cPropertyKey as character
+    paramtype cDefaultValue as character optional
+    cSection:=Lower(allTrim(cSection))
+    cPropertyKey:=Lower(allTrim(cPropertyKey))
+    cValue:=_Super:GetPropertyValue(@cSection,@cPropertyKey,@cDefaultValue)
+    DEFAULT cValue:=""
+    return(cValue)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:SetPropertyValue
+        Autor:Marinaldo de Jesus
+        Data:27/05/2011
+        Descricao:Setar o Valor em uma determinada Propriedade
+        Sintaxe:TFINI():SetPropertyValue(cSection,cPropertyKey,cValue)->cPropertyLastValue
+    /*/
+//------------------------------------------------------------------------------------------------
+method SetPropertyValue(cSection,cPropertyKey,cValue) class TFINI
+    local cPropertyLastValue as character
+    paramtype cSection as character
+    paramtype cPropertyKey as character
+    paramtype cValue as character
+    cSection:=Lower(allTrim(cSection))
+    cPropertyKey:=Lower(allTrim(cPropertyKey))
+    cPropertyLastValue:=_Super:SetPropertyValue(@cSection,@cPropertyKey,@cValue)
+    return(cPropertyLastValue)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:AddNewProperty
+        Autor:Marinaldo de Jesus
+        Data:27/05/2011
+        Descricao:Adicionar uma nova propriedade
+        Sintaxe:TFINI():AddNewProperty(cSection,cPropertyKey,cValue)->lSuccess
+    /*/
+//------------------------------------------------------------------------------------------------
+method AddNewProperty(cSection,cPropertyKey,cValue) class TFINI
+    local lSuccess as logical
+    paramtype cSection as character
+    paramtype cPropertyKey as character
+    paramtype cValue as character
+    cSection:=Lower(allTrim(cSection))
+    cPropertyKey:=Lower(allTrim(cPropertyKey))
+    lSuccess:=_Super:AddNewProperty(@cSection,@cPropertyKey,@cValue)
+    return(lSuccess)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:RemoveProperty
+        Autor:Marinaldo de Jesus
+        Data:27/05/2011
+        Descricao:Remover Determinada Propriedade
+        Sintaxe:TFINI():RemoveProperty(cSection,cPropertyKey)->lSuccess
+    /*/
+//------------------------------------------------------------------------------------------------
+method RemoveProperty(cSection,cPropertyKey) class TFINI
+    local lSuccess as logical
+    paramtype cSection as character
+    paramtype cPropertyKey as character
+    cSection:=Lower(allTrim(cSection))
+    cPropertyKey:=Lower(allTrim(cPropertyKey))
+    lSuccess:=_Super:RemoveProperty(cSection,cPropertyKey)
+    return(lSuccess)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:GetAllProperties
+        Autor:Marinaldo de Jesus
+        Data:27/05/2011
+        Descricao:Retornar todas as propriedades
+        Sintaxe:TFINI():GetAllProperties(cSection)->aAllProperties
+    /*/
+//------------------------------------------------------------------------------------------------
+method GetAllProperties(cSection) class TFINI
+    local aAllProperties as array
+    paramtype cSection as character
+    cSection:=Lower(allTrim(cSection))
+    aAllProperties:=_Super:GetAllProperties(@cSection)
+    return(aAllProperties)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:AddNewSection
+        Autor:Marinaldo de Jesus
+        Data:27/05/2011
+        Descricao:Adicionar nova Secao
+        Sintaxe:TFINI():AddNewSection(cSection)->lSuccess
+    /*/
+//------------------------------------------------------------------------------------------------
+method AddNewSection(cSection) class TFINI
+    local lSuccess as logical
+    paramtype cSection as character
+    cSection:=Lower(allTrim(cSection))
+    lSuccess:=_Super:AddNewSection(@cSection)
+    return(lSuccess)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:RemoveSection
+        Autor:Marinaldo de Jesus
+        Data:27/05/2011
+        Descricao:Remover Determinada Secao
+        Sintaxe:TFINI():RemoveSection(cSection)->lSuccess
+    /*/
+//------------------------------------------------------------------------------------------------
+method RemoveSection(cSection) class TFINI
+    local lSuccess as logical
+    paramtype cSection as character
+    cSection:=Lower(allTrim(cSection))
+    lSuccess:=_Super:RemoveSection(@cSection)
+    return(lSuccess)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:GetSection
+        Autor:Marinaldo de Jesus
+        Data:27/05/2011
+        Descricao:Obter uma Secao
+        Sintaxe:TFINI():GetSection(uSection)->aSection
+    /*/
+//------------------------------------------------------------------------------------------------
+method GetSection(cSection) class TFINI
+    local aSection as array
+    paramtype cSection as character
+    cSection:=Lower(allTrim(cSection))
+    aSection:=_Super:GetSection(cSection)
+    return(aSection)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:CloneSection
+        Autor:Marinaldo de Jesus
+        Data:27/05/2011
+        Descricao:Clonar uma Secao
+        Sintaxe:TFINI():CloneSection(uSection)->aClone
+    /*/
+//------------------------------------------------------------------------------------------------
+method CloneSection(cSection) class TFINI
+    local aClone as array
+    paramtype cSection as character
+    cSection:=Lower(allTrim(cSection))
+    aClone:=self:GetSection(cSection)
+    return(aClone)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:GetAllSections
+        Autor:Marinaldo de Jesus
+        Data:27/05/2011
+        Descricao:Obter Todas as Secoes do INI
+        Sintaxe:TFINI():GetAllSections()->aAllSections
+    /*/
+//------------------------------------------------------------------------------------------------
+method GetAllSections() class TFINI
+    local aAllSections as array
+    aAllSections:=_Super:GetAllSections()
+    return(aAllSections)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:CopySection
+        Autor:Marinaldo de Jesus
+        Data:27/05/2011
+        Descricao:Copiar uma Secao
+        Sintaxe:TFINI():CopySection(cSection,cNewSection)->lSuccess
+    /*/
+//------------------------------------------------------------------------------------------------
+method CopySection(cSection,cNewSection) class TFINI
+    local lSuccess as logical
+    paramtype cSection as character
+    paramtype cNewSection as character
+    cSection:=Lower(allTrim(cSection))
+    cNewSection:=Lower(allTrim(cNewSection))
+    lSuccess:=_Super:CopySection(@cSection,@cNewSection)
+    return(lSuccess)
+
+method ExistSection(cSection,nSection) class TFINI
+    local lExistSection as logical
+    paramtype cSection as character
+    paramtype nSection as numeric optional
+    cSection:=Lower(allTrim(cSection))
+    lExistSection:=_Super:ExistSection(cSection,@nSection)
+    return(lExistSection)
+
+method ChangeSection(cSection,cNewSection) class TFINI
+    local lChangeSection as logical
+    paramtype cSection as character
+    paramtype cNewSection as character
+    cSection:=Lower(allTrim(cSection))
+    cNewSection:=Lower(allTrim(cNewSection))
+    lChangeSection:=_Super:ChangeSection(cSection,cNewSection)
+    return(lChangeSection)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:SaveAs
+        Autor:Marinaldo de Jesus
+        Data:27/05/2011
+        Descricao:Salvar Como
+        Sintaxe:TFINI():SaveAs(cFileName)->lSuccess
+    /*/
+//------------------------------------------------------------------------------------------------
+method SaveAs(cFileName) class TFINI
+    local lSuccess  as logical
+    local nfError   as numeric
+    paramtype cFileName as character
+    lSuccess:=SaveAs(self:aTHASH,cFileName)
+    self:lHasError:=(!lSuccess)
+    if (self:lHasError)
+        self:SetErrorMsg("Unable to save the file :: ["+allTrim(cFileName)+"]")
+        nfError:=fError()
+        if (!empty(nfError))
+            self:SetErrorMsg("fError :: ["+NToS(nfError)+"]")
+        endif
+    endif
+    return(lSuccess)
+
+static function SaveAs(aTFINI,cFileName) as logical
+
+    local cLine         as character
+    local cCRLF         as character
+
+    local nSection      as numeric
+    local nSections     as numeric
+    local nProperty     as numeric
+    local nProperties   as numeric
+
+    local nfHandle      as numeric
+
+    local lSuccess      as logical
+
+    lSuccess:=.F.
+
+    begin sequence
+
+        if (Empty(cFileName))
+            cFileName:=self:cINIfile
+            if (Empty(cFileName))
+                break
+            endif
+        endif
+
+        nfHandle:=fCreate(cFileName)
+        if (nfHandle<=0)
+            break
+        endif
+
+        cCRLF:=CRLF
+
+        nSections:=Len(aTFINI)
+        for nSection:=1 to nSections
+
+            cLine:="["
+            cLine+=aTFINI[nSection][HASH_SECTION_POSITION]
+            cLine+="]"
+            cLine+=cCRLF
+
+            fWrite(nfHandle,cLine)
+
+            nProperties:=Len(aTFINI[nSection][HASH_PROPERTY_POSITION])
+            for nProperty:=1 to nProperties
+
+                cLine:=aTFINI[nSection][HASH_PROPERTY_POSITION][nProperty][HASH_PROPERTY_KEY]
+                cLine+="="
+                cLine+=aTFINI[nSection][HASH_PROPERTY_POSITION][nProperty][HASH_PROPERTY_VALUE]
+                cLine+=cCRLF
+
+                fWrite(nfHandle,cLine)
+
+            next nProperty
+
+            cLine:=cCRLF
+
+            fWrite(nfHandle,cLine)
+
+        next nSection
+
+        fClose(nfHandle)
+
+        lSuccess:=File(cFileName)
+
+    end sequence
+
+    return(lSuccess)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:SaveAsXML
+        Autor:Marinaldo de Jesus
+        Data:27/05/2011
+        Descricao:Salvar como XML
+        Sintaxe:TFINI():SaveAsXML(cXMLFile)->lSuccess
+    /*/
+//------------------------------------------------------------------------------------------------
+method SaveAsXML(cXMLFile,cVersion,cEncode) class TFINI
+    local cXML          as character
+    local cSPPath       as character
+    local cSPDriver     as character
+    local cSPFileName   as character
+    local lSaveAsXML    as logical
+    local nfError       as numeric
+    paramtype cXMLFile as character optional
+    paramtype cVersion as character optional
+    paramtype cEncode  as character optional
+    cXML:=self:ToXML(cVersion,cEncode)
+    if (empty(cXMLFile))
+        cXMLFile:=self:cINIfile
+        SplitPath(cXMLFile,@cSPDriver,@cSPPath,@cSPFileName)
+        cXMLFile:=cSPDriver
+        cXMLFile+=cSPPath
+        cXMLFile+=cSPFileName
+        cXMLFile+=".xml"
+    endif
+    lSaveAsXML:=SaveAsXml(@cXML,@cXMLFile)
+    self:lHasError:=(!lSaveAsXML)
+    if (self:lHasError)
+        self:SetErrorMsg("Unable to save the file :: ["+allTrim(cXMLFile)+"]")
+        nfError:=fError()
+        if (!empty(nfError))
+            self:SetErrorMsg("fError :: ["+NToS(nfError)+"]")
+        endif
+    endif
+    return(lSaveAsXML)
+
+static function SaveAsXml(cXML as character,cXMLFile as character) as logical
+
+    local lSuccess  as logical
+
+    lSuccess:=.F.
+
+    begin sequence
+
+        if (empty(cXMLFile))
+            break
+        endif
+
+        lSuccess:=MemoWrite(cXMLFile,cXML)
+
+        lSuccess:=(lSuccess.and.file(cXMLFile))
+
+    end sequence
+
+    return(lSuccess)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:SaveAsJSON
+        Autor:Marinaldo de Jesus
+        Data:27/05/2011
+        Descricao:Salvar como JSON
+        Sintaxe:TFINI():SaveAsJSON(cJSONFile)->lSuccess
+    /*/
+//------------------------------------------------------------------------------------------------
+method SaveAsJSON(cJSONFile,cEncode,lPrettify,nPrettify) class TFINI    
+    local cJSON         as character
+    local cSPPath       as character
+    local cSPDriver     as character
+    local cSPFileName   as character
+    local lSaveAsJSON   as logical
+    paramtype cJSONFile as character optional
+    paramtype cEncode   as character optional
+    paramtype lPrettify as logical optional
+    paramtype nPrettify as numeric optional
+    cJSON:=self:ToJSON(cEncode,lPrettify,nPrettify)
+    if (empty(cJSONFile))
+        cJSONFile:=self:cINIfile
+        SplitPath(cJSONFile,@cSPDriver,@cSPPath,@cSPFileName)
+        cJSONFile:=cSPDriver
+        cJSONFile+=cSPPath
+        cJSONFile+=cSPFileName
+        cJSONFile+=".json"
+    endif
+    lSaveAsJSON:=SaveAsJSON(@cJSON,@cJSONFile)
+    self:lHasError:=(!lSaveAsJSON)
+    if (self:lHasError)
+        self:SetErrorMsg("Unable to save the file :: ["+allTrim(cJSONFile)+"]")
+        self:SetErrorMsg("fError :: ["+NToS(fError())+"]")
+    endif
+    return(lSaveAsJSON)
+
+static function SaveAsJSON(cJSON as character,cJSONFile as character) as logical
+
+    local lSuccess  as logical
+
+    lSuccess:=.F.
+
+    begin sequence
+
+        if (empty(cJSONFile))
+            break
+        endif
+
+        lSuccess:=MemoWrite(cJSONFile,cJSON)
+
+        lSuccess:=(lSuccess.and.file(cJSONFile))
+
+    end sequence
+
+    return(lSuccess)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:ToXML
+        Autor:Marinaldo de Jesus
+        Data:27/05/2011
+        Descricao:Converter para XML
+        Sintaxe:TFINI():ToXML()->cXML
+    /*/
+//------------------------------------------------------------------------------------------------
+method ToXML(cVersion,cEncode) class TFINI
+    
+    local cXML          as character
+    local cXMLNew       as character
+    local cVersion      as character
+    local cLClassName   as character
+
+    local oTXMLManager  as object
+
+	DEFAULT cVersion:='"1.0"'
+    paramtype cVersion as character optional
+    DEFAULT cEncode:="UTF-8"
+    paramtype cEncode as character optional
+
+    cLClassName:=Lower(self:cClassName)
+	
+    cXML:=""
+    cXML+="<?xml version="+cVersion+" "+cEncode+"?>"
+    cXML+="<"+cLClassName+">"
+    cXML+=ToXML(self:aTHASH)
+    cXML+="</"+cLClassName+">"
+
+    if ("UTF-8"$upper(cEncode))
+        cXML:=EncodeUTF8(cXML)
+    endif
+
+	oTXMLManager:=TXMLManager():New()
+	if (oTXMLManager:Parse(cXML))
+		cXMLNew:=oTXMLManager:Save2String()
+		if (!Empty(cXMLNew))
+			cXML:=cXMLNew
+		endif
+	endif
+
+    return(cXML)
+
+static function ToXML(aTFINI as array) as character
+
+    local cXML          as character
+    local cCRLF         as character
+    local cSpace4       as character
+    local cSpace8       as character
+
+    local nSection      as numeric
+    local nSections     as numeric
+    local nProperty     as numeric
+    local nProperties   as numeric
+
+    cXML:=""
+    cCRLF:=CRLF
+    cSpace4:=Space(4)
+    cSpace8:=Space(8)
+    nSections:=Len(aTFINI)
+    for nSection:=1 to nSections
+        cXML+=cSpace4
+        cXML+="<"+aTFINI[nSection][HASH_SECTION_POSITION]+">"
+        cXML+=cCRLF
+        nProperties:=Len(aTFINI[nSection][HASH_PROPERTY_POSITION])
+        for nProperty:=1 to nProperties
+            cXML+=cSpace8
+            cXML+="<"+aTFINI[nSection][HASH_PROPERTY_POSITION][nProperty][HASH_PROPERTY_KEY]+">"
+            cXML+=aTFINI[nSection][HASH_PROPERTY_POSITION][nProperty][HASH_PROPERTY_VALUE]
+            cXML+="</"+aTFINI[nSection][HASH_PROPERTY_POSITION][nProperty][HASH_PROPERTY_KEY]+">"
+            cXML+=cCRLF
+        next nProperty
+        cXML+=cSpace4
+        cXML+="</"+aTFINI[nSection][HASH_SECTION_POSITION]+">"
+        cXML+=cCRLF
+    next nSection
+
+    return(cXML)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:ToJSON
+        Autor:Marinaldo de Jesus
+        Data:27/05/2011
+        Descricao:Converter para JSON
+        Sintaxe:TFINI():ToJSON()->cJSON
+    /*/
+//------------------------------------------------------------------------------------------------
+method ToJSON(cEncode,lPrettify,nPrettify) class TFINI
+    
+    local aHashMapList  as array
+    
+    local cJSON         as character
+
+    local lSection      as logical
+    
+    local oJSONArray    as object
+
+    DEFAULT cEncode:="UTF-8"
+    paramtype cEncode as character optional
+    paramtype lPrettify as logical optional
+    paramtype nPrettify as numeric optional
+
+    aHashMapList:=self:GetHashMapList()
+
+    lSection:=self:HasSectionEnabled()
+
+    oJSONArray:=Array(#)
+    oJSONArray:lSection(lSection)
+    oJSONArray:lPrettify:=lPrettify
+    oJSONArray:nPrettify:=nPrettify
+    oJSONArray:SetFromHashMapList(aHashMapList,.F.,lSection)
+    
+    self:lHasError:=oJSONArray:lHasError
+    if (self:lHasError)
+        self:SetErrorMsg(oJSONArray:GetErrorMsg(.T.))
+        cJSON:="{"
+        cJSON+=oJSONArray:ToJSON("error")
+        cJSON+=":"
+        cJSON+=oJSONArray:ToJSON(self:GetErrorMsg())
+        cJSON+="}"
+    else
+        cJSON:=oJSONArray:ToJSON()
+    endif
+
+    if ("UTF-8"$upper(cEncode))
+        cJSON:=EncodeUTF8(cJSON)
+    endif
+
+    return(cJSON)

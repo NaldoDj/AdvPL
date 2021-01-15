@@ -1,0 +1,98 @@
+#include "totvs.ch"
+#include "parmtype.ch"
+/*/{Protheus.doc} RPCTools
+@author Marinaldo de Jesus (Facile)
+@since 07/01/2021
+@version 1.0
+@Projet A-35
+@description RPCTools.
+@type function
+/*/
+class dirtools
+
+    static method MakeDir(cDirMake) as logical
+    static method MakeFileDir(cDirMake) as logical
+
+end class
+
+static method MakeDir(cDirMake) class dirtools
+    local lIsDir as logical
+    paramtype cDirMake as character
+    if ("/"$cDirMake)
+        cDirMake:=strTran(cDirMake,"/","\")
+    endif
+    lIsDir:=lIsDir(cDirMake)
+    if (!lIsDir)
+        lIsDir:=dirtools():MakeFileDir(cDirMake)
+    endif
+    return(lIsDir)
+
+static method MakeFileDir(cDirMake) class dirtools
+    
+    local cExt      as character
+    local cFile     as character
+    local cPath     as character
+    local cDrive    as character
+    local cFullPath as character
+
+    local lIsDir    as logical
+
+    paramtype cDirMake as character
+
+    cExt:=""
+    cFile:=""
+    cPath:=""
+    cDrive:=""
+    
+    splitPath(cDirMake,@cDrive,@cPath,@cFile,@cExt)
+
+    cFullPath:=cDrive
+    cFullPath+=cPath
+
+    lIsDir:=DirMake(cFullPath,@cDrive,@cPath,@cFile,@cExt)
+
+    return(lIsDir)
+
+static function DirMake(cDirMake as character,cDrive as character,cPath as character,cFile as character,cExt as character) as logical
+
+    local aDirectory    as array
+
+    local cDirectory    as character
+    local cTDirectory   as character
+
+    local lIsDir        as logical
+
+    local nD            as numeric
+    local nJ            as numeric
+    
+    lIsDir:=lIsDir(cDirMake)
+
+    if (!lIsDir)
+
+        aDirectory:=StrToKArr2(cDirMake,"\")
+
+        cTDirectory:=""
+
+        nJ:=len(aDirectory)
+        for nD:=1 to nJ
+            cDirectory:=aDirectory[nD]
+            if (empty(cDirectory))
+                loop
+            endif
+            cTDirectory+=if(cDrive$cDirectory,"","\")
+            cTDirectory+=cDirectory
+            cTDirectory+="\"
+            cTDirectory:=strTran(cTDirectory,"\\","\")
+            if (lIsDir(cTDirectory))
+                loop
+            endif
+            if (!makeDir(cTDirectory))
+                exit
+            endif
+        next nD
+
+        lIsDir:=lIsDir(cDirMake)
+
+    endif
+
+    return(lIsDir)

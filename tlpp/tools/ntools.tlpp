@@ -1,0 +1,163 @@
+#include "totvs.ch"
+#include "parmtype.ch"
+
+class ntools
+	static method NumberIN(nNumber,n0,n1,n2,n3,n4,n5,n6,n7,n8,n9,n10,n11,n12,n13,n14,n15,n16,n17,n18,n19,n20) as numeric
+	static method ContainN(nNumber,nContainN,n0,n1,n2,n3,n4,n5,n6,n7,n8,n9,n10,n11,n12,n13,n14,n15,n16,n17,n18,n19,n20) as numeric
+	static method NMod2Bin(nNumber,nBinSize) as character
+end class
+
+static method NumberIN(nNumber,n0,n1,n2,n3,n4,n5,n6,n7,n8,n9,n10,n11,n12,n13,n14,n15,n16,n17,n18,n19,n20) class ntools
+	paramtype nNumber	as numeric optional
+	paramtype n0		as numeric optional
+	paramtype n1		as numeric optional
+	paramtype n2		as numeric optional
+	paramtype n3		as numeric optional
+	paramtype n4		as numeric optional
+	paramtype n5		as numeric optional
+	paramtype n6		as numeric optional
+	paramtype n7		as numeric optional
+	paramtype n8		as numeric optional
+	paramtype n9		as numeric optional
+	paramtype n10		as numeric optional
+	paramtype n11		as numeric optional
+	paramtype n12		as numeric optional
+	paramtype n13		as numeric optional
+	paramtype n14		as numeric optional
+	paramtype n15		as numeric optional
+	paramtype n16		as numeric optional
+	paramtype n17		as numeric optional
+	paramtype n18		as numeric optional
+	paramtype n19		as numeric optional
+	paramtype n20		as numeric optional
+	return(NumberIN(@nNumber,@n0,@n1,@n2,@n3,@n4,@n5,@n6,@n7,@n8,@n9,@n10,@n11,@n12,@n13,@n14,@n15,@n16,@n17,@n18,@n19,@n20))
+
+static method ContainN(nNumber,nContainN,n0,n1,n2,n3,n4,n5,n6,n7,n8,n9,n10,n11,n12,n13,n14,n15,n16,n17,n18,n19,n20) class ntools
+	paramtype nNumber	as numeric optional
+	paramtype nContainN	as numeric optional
+	paramtype n0		as numeric optional
+	paramtype n1		as numeric optional
+	paramtype n2		as numeric optional
+	paramtype n3		as numeric optional
+	paramtype n4		as numeric optional
+	paramtype n5		as numeric optional
+	paramtype n6		as numeric optional
+	paramtype n7		as numeric optional
+	paramtype n8		as numeric optional
+	paramtype n9		as numeric optional
+	paramtype n10		as numeric optional
+	paramtype n11		as numeric optional
+	paramtype n12		as numeric optional
+	paramtype n13		as numeric optional
+	paramtype n14		as numeric optional
+	paramtype n15		as numeric optional
+	paramtype n16		as numeric optional
+	paramtype n17		as numeric optional
+	paramtype n18		as numeric optional
+	paramtype n19		as numeric optional
+	paramtype n20		as numeric optional
+	return(ContainN(@nNumber,@nContainN,@n0,@n1,@n2,@n3,@n4,@n5,@n6,@n7,@n8,@n9,@n10,@n11,@n12,@n13,@n14,@n15,@n16,@n17,@n18,@n19,@n20))
+
+static method NMod2Bin(nNumber,nBinSize) class ntools
+	paramtype nNumber  as numeric
+	paramtype nBinSize as numeric optional
+	return(NMod2Bin(nNumber,nBinSize))
+
+static function NumberIN(nNumber as numeric,vNumbers as variadic) as numeric
+
+    local lNumberIN as logical
+
+    local nPNumber	as numeric
+    local nNumberIN as numeric
+
+    begin sequence
+
+        if (vNumbers==nil)
+            break
+        endif
+
+        for nPNumber:=1 to vNumbers:vCount
+            if (valType(vNumbers:vArgs[nPNumber])=="N")
+                lNumberIN:=(nNumber==vNumbers:vArgs[nPNumber])
+                if (lNumberIN)
+                    nNumberIN:=nNumber
+                    exit
+                endif
+            endif
+        next nPNumber
+
+    end sequence
+
+    DEFAULT nNumberIN:=(nNumber*(-1))
+
+    return(nNumberIN)
+
+static function ContainN(nNumber as numeric,nContainN as numeric,vNumbers as variadic) as numeric
+
+    local lNumberIN as logical
+
+    local nPNumber	as numeric
+    local nNumberIN as numeric
+
+    begin sequence
+
+        if (vNumbers==nil)
+            break
+        endif
+
+        nNumberIN:=0
+
+        for nPNumber:=1 to vNumbers:vCount
+            if (valType(vNumbers:vArgs[nPNumber])=="N")
+                nNumberIN+=vNumbers:vArgs[nPNumber]
+            endif
+        next nPNumber
+
+        for nPNumber:=1 to vNumbers:vCount
+            if (valType(vNumbers:vArgs[nPNumber])=="N")
+                lNumberIN:=(nNumber==vNumbers:vArgs[nPNumber])
+                if (!lNumberIN)
+                    nNumberIN-=vNumbers:vArgs[nPNumber]
+                endif
+            endif
+        next nPNumber
+
+        lNumberIN:=(nNumberIN==nNumber)
+
+    end sequence
+
+    DEFAULT nNumberIN:=(nNumber*(-1))
+
+    return(nNumberIN)
+
+static function NMod2Bin(nNumber as numeric,nBinSize as numeric) as character
+
+    local cBin      as character
+
+    local nMax      as numeric
+    local nMod      as numeric
+    local nByte     as numeric
+    local nRest     as numeric
+
+    DEFAULT nBinSize:=(len(LTrim(str(nNumber)))*2)
+    nMax:=nBinSize
+
+    cBin:=Replicate("0",nMax)
+
+    nRest:=nNumber
+    nByte:=nMax
+
+    while (nRest>=2)
+        nMod:=mod(nRest,2)
+        if (nMod==1)
+            cBin:=stuff(cBin,nByte,1,"1")
+        endif
+        nRest:=Int(nRest/2)
+        nByte--
+    end while
+
+    if (nRest==1)
+        cBin:=stuff(cBin,nByte,1,"1")
+    endif
+
+    return(cBin)

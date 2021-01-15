@@ -1,0 +1,388 @@
+#include "totvs.ch"
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        CLASS:tNDJProgress
+        Autor:Marinaldo de Jesus [BlackTDN:(http://www.blacktdn.com.br/)]
+        Data:23/12/2013
+        Descricao:Progresso em ASCII
+        Sintaxe:tNDJProgress():New()->Objeto do Tipo Progress
+    /*/
+//------------------------------------------------------------------------------------------------
+Class tNDJProgress From LongClassName
+
+    data cClassName  AS CHARACTER
+
+    private data aMethods   AS ARRAY
+    private data aProgress  AS ARRAY
+
+    private data lRandom    AS LOGICAL
+
+    private data nMax       AS NUMERIC
+    private data nMethod    AS NUMERIC
+    private data nMethods   AS NUMERIC
+    private data nProgress  AS NUMERIC
+
+    private data lShuttle   AS LOGICAL
+
+    public method New(cProgress,cToken)  CONSTRUCTOR
+
+    public method ClassName()
+
+    public method SetProgress(cProgress,cToken)
+
+    public method Eval(cMethod,cAlign)
+    public method Progress()
+    public method Increment(cAlign)
+    public method Decrement(cAlign)
+    public method Shuttle(cAlign)
+    public method Junction(cAlign)
+    public method Dispersion(cAlign)
+    public method Disjunction(cAlign)
+    public method Union(cAlign)
+    public method Occult(cAlign)
+    public method Random(cAlign)
+
+    public method GetnMax()
+    public method GetnProgress()
+
+    public method SetRandom(lSet)
+
+endclass
+
+function u_tNDJProgress(cProgress,cToken)
+    return(tNDJProgress():New(@cProgress,@cToken))
+
+method New(cProgress,cToken) Class tNDJProgress
+    self:ClassName()
+    self:aMethods:=Array(0)
+    self:aProgress:= Array(0)
+    self:lRandom:=.F.
+    self:nMax:=0
+    self:nMethod:=0
+    self:nMethods:=0
+    self:nProgress:=0
+    self:lShuttle:=.F.
+    self:SetProgress(@cProgress,@cToken)
+    return(self)
+
+method ClassName() Class tNDJProgress
+    self:cClassName:="TNDJPROGRESS"
+    return(self:cClassName)
+
+method SetProgress(cProgress,cToken) Class tNDJProgress
+    local lMacro    as logical
+    DEFAULT cProgress:="-;\;|;/"
+    DEFAULT cToken:=";"
+    lMacro:=(SubStr(cProgress,1,1)=="&")
+    if (lMacro)
+        cProgress:=SubStr(cProgress,2)
+        cProgress:=&(cProgress)
+    endif
+    if (Empty(self:aMethods))
+        self:aMethods:=array(0)
+        aAdd(self:aMethods,"PROGRESS")
+        aAdd(self:aMethods,"INCREMENT")
+        aAdd(self:aMethods,"DECREMENT")
+        aAdd(self:aMethods,"SHUTTLE")
+        aAdd(self:aMethods,"JUNCTION")
+        aAdd(self:aMethods,"DISPERSION")
+        aAdd(self:aMethods,"DISJUNCTION")
+        aAdd(self:aMethods,"UNION")
+        aAdd(self:aMethods,"OCCULT")
+        aAdd(self:aMethods,"RANDOM")
+        self:nMethods:=Len(self:aMethods)
+    endif
+    self:aProgress:=_StrTokArr(@cProgress,@cToken)
+    self:lRandom:=.F.
+    self:lRandom:=.F.
+    self:lShuttle:=.NOT.(self:lShuttle)
+    self:nMethod:=0
+    self:nMax:=Len(self:aProgress)
+    self:nProgress:=0
+    return(self)
+
+method Eval(cMethod,cAlign) Class tNDJProgress
+    local cEval     as character
+    local nMethod   as numeric
+    DEFAULT cMethod:="PROGRESS"
+    cMethod:=Upper(AllTrim(cMethod))
+    nMethod:=Max(aScan(self:aMethods,{|m|m==cMethod}),1)
+    cMethod:=self:aMethods[nMethod]
+    do case
+    case (cMethod=="PROGRESS")
+        cEval:=self:Progress()
+    case (cMethod=="INCREMENT")
+        cEval:=self:Increment(@cAlign)
+    case (cMethod=="DECREMENT")
+        cEval:=self:Decrement(@cAlign)
+    case (cMethod=="SHUTTLE")
+        cEval:=self:Shuttle(@cAlign)
+    case (cMethod=="JUNCTION")
+        cEval:=self:Junction(@cAlign)
+    case (cMethod=="DISPERSION")
+        cEval:=self:Dispersion(@cAlign)
+    case (cMethod=="DISJUNCTION")
+        cEval:=self:Disjunction(@cAlign)
+    case (cMethod=="UNION")
+        cEval:=self:Union(@cAlign)
+    case (cMethod=="OCCULT")
+        cEval:=self:Occult(@cAlign)
+    case (cMethod=="RANDOM")
+        cEval:=self:Random(@cAlign)
+    otherwise
+        cEval:=self:Progress()
+    endcase
+    return(cEval)
+
+method Progress() Class tNDJProgress
+    return(self:aProgress[IF(++self:nProgress>self:nMax,self:nProgress:=1,self:nProgress)])
+
+method Increment(cAlign) Class tNDJProgress
+    
+    local cPADFunc      as character
+    local cProgress     as character
+    local nProgress     as numeric
+    local nsProgress    as numeric
+
+    cPADFunc:="PAD"
+    cProgress:=""
+
+    DEFAULT cAlign:="R" //L,C,R
+    if (Empty(cAlign))
+        cAlign:="R"
+    endif
+    
+    if (++self:nProgress>self:nMax)
+        self:nProgress:=1
+    endif
+    
+    nsProgress:=self:nProgress
+    
+    if (cAlign=="C")
+        ++nsProgress
+        if (nsProgress>self:nMax)
+            nsProgress:=1
+        endif
+    endif
+    
+    for nProgress:=1 to nsProgress
+        if (self:lRandom.and.((__Random(nProgress,self:nMax)%__Random(1,5))==0))
+            cProgress+=Space(Len(self:aProgress[nProgress]))
+        else
+            cProgress+=self:aProgress[nProgress]
+        endif
+    next nProgress
+    
+    cPADFunc+=cAlign
+
+    return(&cPADFunc.(cProgress,self:nMax))
+
+method Decrement(cAlign) Class tNDJProgress
+    DEFAULT cAlign:="L"
+    return(self:Increment(cAlign))
+
+method Shuttle(cAlign) Class tNDJProgress
+    local cEval as character
+    if (.NOT.(self:lShuttle).and.(self:nProgress>=self:nMax))
+        self:lShuttle:=.T.
+    elseif (self:lShuttle.and.(self:nProgress>=self:nMax))
+        self:lShuttle:=.F.
+    endif
+    if (self:lShuttle)
+        cEval:="DECREMENT"
+        cAlign:="L"
+    else
+        cEval:="INCREMENT"
+        cAlign:="R"
+    endif
+    return(self:Eval(cEval,@cAlign))
+
+method Junction(cAlign) Class tNDJProgress
+
+    local cLToR         as character
+    local cRToL         as character
+    local cProgress     as character
+    local cPADFunc      as character
+    local nProgress     as numeric
+
+    cLToR:=""
+    cRToL:=""
+    cProgress:=""
+    cPADFunc:="PAD"
+
+    DEFAULT cAlign:="R" //L,C,R
+    
+    if (Empty(cAlign))
+        cAlign:="R"
+    endif
+    
+    if (++self:nProgress>self:nMax)
+        self:nProgress:=1
+    endif
+
+    for nProgress:=1 to self:nProgress
+        IF self:lRandom.and.((__Random(nProgress,self:nMax)%__Random(1,5))==0)
+            cLToR+=Space(Len(self:aProgress[nProgress]))
+        else
+            cLToR+=self:aProgress[nProgress]
+        endif
+    next nProgress
+
+    for nProgress:=self:nMax To Min(((self:nMax-self:nProgress)+1),self:nMax) STEP (-1)
+        IF self:lRandom.and.((__Random(nProgress,self:nMax)%__Random(1,5))==0)
+            cRToL+=Space(Len(self:aProgress[nProgress]))
+        else
+            cRToL+=self:aProgress[nProgress]
+        endif
+    next nProgress
+
+    self:nProgress+=Len(cRToL)
+    self:nProgress:=Min(self:nProgress,self:nMax)
+    cProgress+=cLToR
+    cProgress+=Space(self:nMax-self:nProgress)
+    cProgress+=cRToL
+    cPADFunc+=cAlign
+
+    return(&cPADFunc.(cProgress,self:nMax))
+
+method Dispersion(cAlign) Class tNDJProgress
+    local cEval as character
+    DEFAULT cAlign:="R" //L,C,R
+    if (Empty(cAlign))
+        cAlign:="R"
+    endif
+    if (cAlign=="R")
+        cEval:="INCREMENT"
+    else
+        cEval:="DECREMENT"
+    endif
+    return(self:Eval(cEval,"C"))
+
+method Disjunction(cAlign) Class tNDJProgress
+    local cPADFunc  as character
+    local cProgress as character
+    local nAT       as numeric
+    cPADFunc:="PAD"
+    cProgress:=""
+    DEFAULT cAlign:="C" //L,C,R
+    if (Empty(cAlign))
+        cAlign:="C"
+    endif
+    if (++self:nProgress>self:nMax)
+        self:nProgress:=1
+    endif
+    aEval(self:aProgress,{|p,n|cProgress+=IF(self:lRandom.and.((__Random(n,self:nMax)%__Random(1,5))==0),Space(Len(p)),p)})
+    if (self:nProgress>1)
+        nAT:=Int(self:nMax/self:nProgress)
+        cProgress:=SubStr(cProgress,1,nAT)
+        cProgress+=Space(self:nProgress-1)+cProgress
+    endif
+    cPADFunc+=cAlign
+    return(&cPADFunc.(cProgress,self:nMax))
+
+method Union(cAlign) Class tNDJProgress
+    local cPADFunc  as character
+    local cProgress as character
+    local nAT       as numeric
+    local nQT       as numeric    
+    cPADFunc:="PAD"
+    cProgress:=""
+    DEFAULT cAlign:="C" //L,C,R
+    IF (Empty(cAlign))
+        cAlign:="C"
+    endif
+    if (++self:nProgress>self:nMax)
+        self:nProgress:=1
+    endif
+    aEval(self:aProgress,{|p,n|cProgress+=IF(self:lRandom.and.((__Random(n,self:nMax)%__Random(1,5))==0),Space(Len(p)),p)})
+    if (self:nProgress>1)
+        nAT:=Round(self:nMax/self:nProgress,0)
+        if (Mod(self:nMax,2)==0)
+            nQT:=((self:nProgress-1)*2)
+        else
+            nQT:=((self:nProgress-1)*3)
+        endif
+        cProgress:=Stuff(cProgress,nAT,nQT,"")
+    endif
+    cPADFunc+=cAlign
+    return(&cPADFunc.(cProgress,self:nMax))
+
+method Occult(cAlign) Class tNDJProgress
+    local cPADFunc      as character
+    local cProgress     as character
+    local nProgress     as numeric
+    local nsProgress    as numeric
+    cPADFunc:="PAD"
+    cProgress:=""
+    DEFAULT cAlign:="L" //L,C,R
+    IF Empty(cAlign)
+        cAlign:="L"
+    endif
+    if (++self:nProgress>self:nMax)
+        self:nProgress:=1
+    endif
+    nsProgress:=self:nProgress
+    if (cAlign=="C")
+        ++nsProgress
+        if (nsProgress>self:nMax)
+            nsProgress:=1
+        endif
+    endif
+    for nProgress:=self:nMax to nsProgress STEP (-1)
+        IF self:lRandom.and.((__Random(nProgress,self:nMax)%__Random(1,5))==0)
+            cProgress+=Space(Len(self:aProgress[(self:nMax-nProgress)+1]))
+        else
+            cProgress+=self:aProgress[(self:nMax-nProgress)+1]
+        endif
+    next nProgress
+    cPADFunc+=cAlign
+    return(&cPADFunc.(cProgress,self:nMax))
+
+method Random(cAlign) Class tNDJProgress
+    if ((self:nMethod==0).or.(self:nProgress>=self:nMax))
+        self:nMethod:=Min(__Random(1,self:nMethods+1),self:nMethods)
+        while (("RANDOM"$self:aMethods[self:nMethod]).or.("PROGRESS"$self:aMethods[self:nMethod]))
+            self:nMethod:=Min(__Random(1,self:nMethods+1),self:nMethods)
+        end while
+    endif
+    return(self:Eval(self:aMethods[self:nMethod],@cAlign))
+
+method SetRandom(lSet) Class tNDJProgress
+    local lRandom   as logical
+    lRandom:=self:lRandom
+    DEFAULT lSet:=.T.
+    self:lRandom:=lSet
+    return(lRandom)
+
+method GetnMax() Class tNDJProgress
+    return(self:nMax)
+
+method GetnProgress() Class tNDJProgress
+    return(self:nProgress)
+
+static Function _StrTokArr(cStr,cToken)
+    local cDToken
+    DEFAULT cStr:=""
+    DEFAULT cToken:=";"
+    cDToken:=(cToken+cToken)
+    while (cDToken$cStr)
+        cStr:=StrTran(cStr,cDToken,cToken+" "+cToken)
+    end while
+    return(StrTokArr2(cStr,cToken))
+
+static function __Random(nB,nE)
+
+    local nR    as numeric
+
+    if (nB==0)
+        nB:=1
+    endif
+
+    if (nB==nE)
+        ++nE
+    endif
+
+    nR:=Randomize(nB,nE)
+
+    return(nR)

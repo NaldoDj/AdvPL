@@ -1,0 +1,768 @@
+#include "totvs.ch"
+#include "fileio.ch"
+#include "parmtype.ch"
+#include "dbstruct.ch"
+
+static oAUtils   as object
+
+// --------------------------------------------------------------------------------------------------------
+// Obtem o Caractere de PONTO E VIRGULA
+#ifndef PONTO_E_VIRGULA
+    #define PONTO_E_VIRGULA CHR(59)
+#endif
+
+class __ArrayUtils from ArrayUtils
+    static method Compare(uCompare1,uCompare2) as logical
+    static method SaveArray(uArray,cFileName,lCompress) as logical
+    static method RestArray(cFileName,lCompress) as array
+    static method Load4Str(cFileName) as character
+    static method SetZipMod(nZipMod,cZipPwd) as numeric
+    static method SetZipPdw(cZipPwd) as character
+    static method RegToArray(cAlias,nRecNo,aCFields) as array
+end class
+
+static method Compare(uCompare1,uCompare2) class __ArrayUtils
+    u_ArrayUtils()
+    return(oAUtils:Compare(@uCompare1,@uCompare2))
+
+static method SaveArray(uArray,cFileName,lCompress) class __ArrayUtils
+    u_ArrayUtils()
+    return(oAUtils:SaveArray(@uArray,@cFileName,@lCompress))
+
+static method RestArray(cFileName,lCompress) class __ArrayUtils
+    u_ArrayUtils()
+    return(oAUtils:RestArray(@cFileName,@lCompress))
+
+static method Load4Str(cFileName) class __ArrayUtils
+    u_ArrayUtils()
+    return(oAUtils:Load4Str(@cFileName))
+
+static method SetZipMod(nZipMod,cZipPwd) class __ArrayUtils
+    u_ArrayUtils()
+    return(oAUtils:SetZipMod(@nZipMod,@cZipPwd))
+
+static method SetZipPdw(cZipPwd) class __ArrayUtils
+    u_ArrayUtils()
+    return(oAUtils:SetZipPdw(@cZipPwd))
+
+static method RegToArray(cAlias,nRecNo,aCFields) class __ArrayUtils
+    u_ArrayUtils()
+    return(oAUtils:RegToArray(@cAlias,@nRecNo,@aCFields))
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        class:ArrayUtils
+        Autor:Marinaldo de Jesus
+        Data:09/04/2015
+    /*/
+//------------------------------------------------------------------------------------------------
+class ArrayUtils
+
+    public data aFullDiff   as array
+    public data lFullDiff   as logical
+
+    data cClassName  as character
+
+    public data nError      as numeric
+
+    public data nZipMod     as numeric
+    public data cZipPwd     as character
+
+    public method New() as object /*/\constructor/\*/
+    public method FreeObj()       /*\/destructor\/*/
+
+    public method ClassName() as character
+
+    public method Compare(uCompare1,uCompare2) as logical
+
+    public method SaveArray(uArray,cFileName,lCompress) as logical
+
+    public method RestArray(cFileName,lCompress) as array
+
+    public method Load4Str(cFileName) as character
+
+    public method SetZipMod(nZipMod,cZipPwd) as numeric
+
+    public method SetZipPdw(cZipPwd) as character
+
+    public method RegToArray(cAlias,nRecNo,aCFields) as array
+
+endclass
+
+function u_ArrayUtils()
+    DEFAULT oAUtils:=ArrayUtils():New()
+    return(oAUtils)
+
+method New() class ArrayUtils
+    self:ClassName()
+    self:aFullDiff:=array(0)
+    self:lFullDiff:=.F.
+    self:nError:=0
+    self:nZipMod:=(-1)
+    self:cZipPwd:=""
+    return(self)
+
+method FreeObj() class ArrayUtils
+    local oFreeObj as object
+    oFreeObj:=self
+    oFreeObj:=FreeObj(oFreeObj)
+    return(oFreeObj)
+
+method ClassName() class ArrayUtils
+    self:cClassName:="ARRAYUTILS"
+    return(self:cClassName)
+
+method Compare(uCompare1,uCompare2) class ArrayUtils
+    local lCompare  as logical
+    local nLevel    as numeric
+    DEFAULT self:aFullDiff:=array(0)
+    aSize(self:aFullDiff,0)
+    nLevel:=1
+    lCompare:=Compare(@uCompare1,@uCompare2,@nLevel,@self:aFullDiff,@self:lFullDiff)
+    return(lCompare)
+
+method SaveArray(uArray,cFileName,lCompress) class ArrayUtils
+    local aFZip         as array
+    local cfZip         as character
+    local cbZip         as character
+    local cfExt         as character
+    local cfPath        as character
+    local cfName        as character
+    local cfDrive       as character
+    local cbUnZip       as character
+    local lSaveArray    as logical
+    local nbZip         as numeric
+    local nbUnZip       as numeric
+    paramtype cFileName as character
+    DEFAULT lCompress:=.F.
+    paramtype lCompress as logical optional
+    self:nError:=0
+    lSaveArray:=SaveArray(@uArray,@cFileName,@self:nError,@lCompress)
+    if ((lSaveArray).and.(self:nZipMod>=0))
+        SplitPath(cFileName,@cfDrive,@cfPath,@cfName,@cfExt)
+        cfZip:=StrTran(cFileName,cfExt,if((self:nZipMod==0),".cmp",if((self:nZipMod==2),".zip",".mzp")))
+        cfPath:=(cfDrive+cfPath)
+        if (self:nZipMod==2)
+            aFZip:={cFileName}
+            if !(empty(self:cZipPwd))
+                self:nError:=FZip(@cfZip,@aFZip,@cfPath,@self:cZipPwd)
+            else
+                self:nError:=FZip(@cfZip,@aFZip,@cfPath)
+            endif
+            lSaveArray:=(self:nError==0)
+        elseif (self:nZipMod==1)
+            if !(empty(self:cZipPwd))
+                lSaveArray:=(cfZip$MsCompress(@cFileName,@cfZip,@self:cZipPwd))
+            else
+                lSaveArray:=(cfZip$MsCompress(@cFileName,@cfZip))
+            endif
+            if !(lSaveArray)
+                self:nError:=-1
+            endif
+        else
+            cbUnZip:=self:Load4Str(cFileName)
+            nbUnZip:=Len(cbUnZip)
+            cbZip:=""
+            nbZip:=0
+            lSaveArray:=Compress(@cbZip,@nbZip,cbUnZip,nbUnZip)
+            if (lSaveArray)
+                if !(MemoWrite(cfZip,cbZip))
+                    self:nError:=fError()
+                endif
+            else
+                self:nError:=-1
+            endif
+        endif
+        if (lSaveArray)
+            cFileName:=cfZip
+        endif
+    endif
+    return(lSaveArray)
+
+method RestArray(cFileName,lCompress) class ArrayUtils
+    local aRestArray    as array
+    local cfZip         as character
+    local cbZip         as character
+    local cfExt         as character
+    local cfPath        as character
+    local cfName        as character
+    local cfDrive       as character
+    local nbZip         as numeric
+    paramtype cFileName as character
+    DEFAULT lCompress:=.F.
+    paramtype lCompress as logical optional
+    self:nError:=0
+    if (self:nZipMod>=0)
+        SplitPath(cFileName,@cfDrive,@cfPath,@cfName,@cfExt)
+        if (empty(cfPath))
+            cfPath:=if(IsSrvUnix(),"/","\")
+        endif
+        cfPath:=(cfDrive+cfPath)
+        if (self:nZipMod==2)
+            if (!(empty(self:cZipPwd)))
+                self:nError:=FUnZip(@cFileName,@cfPath,@self:cZipPwd)
+            else
+                self:nError:=FUnZip(@cFileName,@cfPath)
+            endif
+        elseif (self:nZipMod==1)
+            if (!(empty(self:cZipPwd)))
+                if !(MsDecomp(@cFileName,@cfPath,@self:cZipPwd))
+                    self:nError:=-1
+                endif
+            else
+                if !(MsDecomp(@cFileName,@cfPath))
+                    self:nError:=-1
+                endif
+            endif
+        else
+            cbZip:=self:Load4Str(cFileName)
+            nbZip:=Len(cbZip)
+            cbUZip:=""
+            nbUZip:=0
+            if (!(UnCompress(@cbUZip,@nbUZip,cbZip,nbZip)))
+                self:nError:=-1
+            endif
+            cbZip:=NIL
+        endif
+        if (self:nError==0)
+            cfZip:=cFileName
+            cFileName:=StrTran(cFileName,cfExt,".arr")
+            if (self:nZipMod==0)
+                if (!(MemoWrite(cFileName,cbUZip)))
+                    self:nError:=fError()
+                endif
+                cbUZip:=NIL
+            endif
+            aRestArray:=RestArray(@cFileName,@self:nError,lCompress)
+            fErase(cfZip)
+        else
+            aRestArray:=Array(0)
+        endif
+    else
+        aRestArray:=RestArray(@cFileName,@self:nError,lCompress)
+    endif
+    return(aRestArray)
+
+method RegToArray(cAlias,nRecNo,aCFields) class ArrayUtils
+    local aValues   as array
+    DEFAULT cAlias:=Alias()
+    paramtype cAlias as character optional
+    DEFAULT nRecNo:=(cAlias)->(RecNo())
+    paramtype nRecNo as numeric optional
+    DEFAULT aCFields:=array(0)
+    paramtype aCFields as array optional
+    aValues:=RegToArray(@cAlias,@nRecNo,@aCFields)
+    return(aValues)
+
+method Load4Str(cFileName) class ArrayUtils
+    paramtype cFileName as character
+    return(ReadMemo(cFileName))
+
+method SetZipMod(nZipMod,cZipPwd) class ArrayUtils
+    DEFAULT nZipMod:=self:nZipMod
+    paramtype nZipMod as numeric optional
+    paramtype cZipPwd as character optional
+    if (nZipMod>2)
+        nZipMod:=2
+    endif
+    if ((nZipMod>1).and.(!(GetBuild()>"7.00.131227")))
+        nZipMod:=1
+    endif
+    self:nZipMod:=nZipMod
+    if (self:nZipMod>0)
+        self:SetZipPdw(@cZipPwd)
+    endif
+    return(self:nZipMod)
+
+method SetZipPdw(cZipPwd) class ArrayUtils
+    DEFAULT cZipPwd:=self:cZipPwd
+    paramtype cZipPwd as character optional
+    self:cZipPwd:=cZipPwd
+    return(self:cZipPwd)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        Funcao:aCompare
+        Autor:Marinaldo de Jesus
+        Data:04/08/2004
+        Descricao:Efetua a Comparacao de Arrays
+        Retorno:lCompare<=>False se Houver Diferca,True se Nao Houver
+    /*/
+//------------------------------------------------------------------------------------------------
+static function aCompare(aArray1,aArray2,nLevel as numeric,aFullDiff as array,lFullDiff as logical) as logical
+
+    local cType1    as character
+    local cType2    as character
+
+    local lCompare  as logical
+
+    local nArray    as numeric
+
+    local nATDiff   as numeric
+    local nLevel1   as numeric
+
+    local nSizeA1   as numeric
+    local nSizeA2   as numeric
+
+    local nHToBeg   as numeric
+    local nHToEnd   as numeric
+
+    DEFAULT aFullDiff:=array(0)
+
+    begin sequence
+
+        cType1:=valType(aArray1)
+        cType2:=valType(aArray2)
+
+        nLevel1:=(nLevel+1)
+
+        if (!(lCompare:=(cType1==cType2)))
+            aAdd(aFullDiff,{nLevel,0,cType1,cType2})
+            break
+        endif
+
+        if (cType1=="O")
+            lCompare:=Compare(aArray1,aArray2,nLevel1,@aFullDiff,lFullDiff)
+            break
+        endif
+
+        if (!(lCompare:=(cType1=="A")))
+            aAdd(aFullDiff,{nLevel,0,cType1,cType2})
+            break
+        endif
+
+        if (!(lCompare:=((nSizeA1:=Len(aArray1))==(nSizeA2:=Len(aArray2)))))
+            aAdd(aFullDiff,{nLevel,0,nSizeA1,nSizeA2})
+            break
+        endif
+
+        nHToBeg:=(if(((nSizeA1%2)>0),((nSizeA1+1)),nSizeA1)/2)
+        nHToEnd:=Min(nSizeA1,(nHToBeg+1))
+        for nArray:=1 to nSizeA1
+            if (nArray<=nHToBeg)
+                nATDiff:=nArray
+                lCompare:=Compare(aArray1[nATDiff],aArray2[nATDiff],nLevel1,@aFullDiff,lFullDiff)
+                if (!(lCompare))
+                    aAdd(aFullDiff,{nLevel,nATDiff,aArray1[nATDiff],aArray2[nATDiff]})
+                    if (!lFullDiff)
+                        break
+                    endif
+                endif
+            else
+                break
+            endif
+            if (nHToBeg>nArray)
+                nATDiff:=nHToBeg
+                lCompare:=Compare(aArray1[nATDiff],aArray2[nATDiff],nLevel1,@aFullDiff,lFullDiff)
+                if (!(lCompare))
+                    aAdd(aFullDiff,{nLevel,nATDiff,aArray1[nATDiff],aArray2[nATDiff]})
+                    if (!lFullDiff)
+                        break
+                    endif
+                endif
+                --nHToBeg
+            endif
+            if (nHToEnd<nSizeA1)
+                nATDiff:=nHToEnd
+                lCompare:=Compare(aArray1[nATDiff],aArray2[nATDiff],nLevel1,@aFullDiff,lFullDiff)
+                if (!(lCompare))
+                    aAdd(aFullDiff,{nLevel,nATDiff,aArray1[nATDiff],aArray2[nATDiff]})
+                    if (!lFullDiff)
+                        break
+                    endif
+                endif
+                ++nHToEnd
+            endif
+            if (nSizeA1>=nHToEnd)
+                nATDiff:=nSizeA1
+                lCompare:=Compare(aArray1[nATDiff],aArray2[nATDiff],nLevel1,@aFullDiff,lFullDiff)
+                if (!(lCompare))
+                    aAdd(aFullDiff,{nLevel,nATDiff,aArray1[nATDiff],aArray2[nATDiff]})
+                    if (!lFullDiff)
+                        break
+                    endif
+                endif
+                --nSizeA1
+            endif
+        next nArray
+
+    end sequence
+
+    if (lCompare)
+        lCompare:=(len(aFullDiff)==0)
+    endif
+
+    return(lCompare)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        Funcao:Compare
+        Autor:Marinaldo de Jesus
+        Data:08/10/2002
+        Descricao:Compara o Conteudo de 2 Variaveis
+        Retorno:lCompare<=>False se Houver Diferenca,True se Nao Houver
+    /*/
+//------------------------------------------------------------------------------------------------
+static function Compare(uCompare1,uCompare2,nLevel as numeric,aFullDiff as array,lFullDiff as logical) as logical
+
+    local aCls1     as array
+    local aCls2     as array
+
+    local cBlk1     as character
+    local cBlk2     as character
+
+    local cType1    as character
+    local cType2    as character
+
+    local lCompare  as logical
+
+    local nLevel1   as numeric
+
+    DEFAULT aFullDiff:=array(0)
+
+    cType1:=valType(uCompare1)
+    cType2:=valType(uCompare2)
+
+    nLevel1:=(nLevel+1)
+
+    if (lCompare:=(cType1==cType2))
+        if (cType1=="A")
+            lCompare:=aCompare(uCompare1,uCompare2,nLevel1,@aFullDiff,lFullDiff)
+        elseif (cType1=="O")
+            if (GetClassName(uCompare1)=="THASHMAP")
+                HMList(uCompare1,@aCls1)
+                aSort(aCls1,nil,nil,{|x,y|(x[1]<y[1])})
+            else
+                aCls1:=Array(0)
+                aCls1:=ClassDataArr(uCompare1,.T.)
+            endif
+            if (GetClassName(uCompare2)=="THASHMAP")
+                HMList(uCompare2,@aCls2)
+                aSort(aCls2,nil,nil,{|x,y|(x[1]<y[1])})
+            else
+                aCls2:=ClassDataArr(uCompare2,.T.)
+            endif
+            lCompare:=aCompare(aCls1,aCls2,nLevel1,@aFullDiff,lFullDiff)
+            aSize(aCls1,0)
+            aSize(aCls2,0)
+        elseif (cType1=="B")
+            cBlk1:=GetCBSource(uCompare1)
+            cBlk2:=GetCBSource(uCompare2)
+            lCompare:=(cBlk1==cBlk2)
+            if !(lCompare)
+                aAdd(aFullDiff,{nLevel,0,cBlk1,cBlk2})
+            endif
+        else
+            lCompare:=(uCompare1==uCompare2)
+            if !(lCompare)
+                aAdd(aFullDiff,{nLevel,0,uCompare1,uCompare1})
+            endif
+        endif
+    else
+        aAdd(aFullDiff,{nLevel,0,cType1,cType2})
+    endif
+
+    if (lCompare)
+        lCompare:=(len(aFullDiff)==0)
+    endif
+
+    return(lCompare)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        Funcao:SaveArray
+        Autor:Marinaldo de Jesus
+        Data:18/02/2005
+        Descricao:Salva Array em Disco
+    /*/
+//------------------------------------------------------------------------------------------------
+static function SaveArray(uArray,cFileName as character,nErr as numeric,lCompress as logical) as logical
+
+    local cType         as character
+
+    local lSaveArray    as logical
+
+    local aArray        as array
+    local nfHandle      as numeric
+
+    cType:=valType(uArray)
+    lSaveArray:=.F.
+
+    begin sequence
+
+        if (!(cType$"A/O"))
+            break
+        endif
+
+        if (cType=="O")
+            if (GetClassName(uArray)=="THASHMAP")
+                aArray:=Array(0)
+                HMList(uArray,@aArray)
+                aSort(aArray,nil,nil,{|x,y|(x[1]<y[1])})
+            else
+                aArray:=ClassDataArr(uArray,.T.)
+            endif
+        else
+            aArray:=uArray
+        endif
+
+        nfHandle:=fCreate(cFileName,FC_NORMAL)
+        lSaveArray:=(nfHandle>=0)
+        if (!(lSaveArray))
+            nErr:=fError()
+            break
+        endif
+
+        fClose(nfHandle)
+        nfHandle:=fOpen(cFileName,FO_READWRITE)
+        lSaveArray:=(nfHandle>=0)
+        if (!(lSaveArray))
+            nErr:=fError()
+            break
+        endif
+
+        private c__pBuffer  as character
+        c__pBuffer:=""
+
+        SaveArr(nfHandle,aArray,lCompress)
+
+        if (!empty(c__pBuffer))
+            fWrite(nfHandle,c__pBuffer)
+            c__pBuffer:=""
+        endif
+
+        fClose(nfHandle)
+
+    end sequence
+
+    return(lSaveArray)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        Funcao:SaveArr
+        Autor:Marinaldo de Jesus
+        Data:18/02/2005
+        Descricao:Salva Array em Disco
+        Uso:SaveArray
+    /*/
+//------------------------------------------------------------------------------------------------
+static procedure SaveArr(nfHandle as numeric,aArray as array,lCompress as logical)
+
+    local aClsArr   as array
+    
+    local cbZip     as character
+    local cbUnZip   as character
+    local cElemType as character
+
+    local nLoop     as numeric
+    local nbZip     as numeric
+    local nLoops    as numeric
+    local nbUnZip   as numeric
+
+    nLoops:=Len(aArray)
+    cbUnZip:=("A"+strZero(nLoops,10))
+    c__pBuffer+=cbUnZip
+    for nLoop:=1 to nLoops
+        cElemType:=valType(aArray[nLoop])
+        if (cElemType$"A/O")
+            if (cElemType=="A")
+                SaveArr(nfHandle,aArray[nLoop],lCompress)
+            else
+                if (GetClassName(aArray[nLoop])=="THASHMAP")
+                    aClsArr:=Array(0)
+                    HMList(aArray[nLoop],@aClsArr)
+                    aSort(aClsArr,nil,nil,{|x,y|(x[1]<y[1])})
+                else
+                    aClsArr:=ClassDataArr(aArray[nLoop],.T.)
+                endif
+                SaveArr(nfHandle,aClsArr,lCompress)
+            endif
+        else
+            if (cElemType=="B")
+                cbUnZip:=GetCBSource(aArray[nLoop])
+            elseif (cElemType=="C")
+                cbUnZip:=aArray[nLoop]
+            elseif (cElemType=="D")
+                cbUnZip:=DToS(aArray[nLoop])
+            elseif (cElemType=="L")
+                cbUnZip:=if(aArray[nLoop],".T.",".F.")
+            elseif (cElemType=="N")
+                cbUnZip:=Transform(aArray[nLoop],RetPictVal(aArray[nLoop]))
+            endif
+            nbUnZip:=Len(cbUnZip)
+            cbZip:=""
+            nbZip:=0
+            if (lCompress)
+                if (!Compress(@cbZip,@nbZip,cbUnZip,nbUnZip))
+                    cbZip:=cbUnZip
+                    nbZip:=nbUnZip
+                endif
+            else
+                cbZip:=cbUnZip
+                nbZip:=nbUnZip
+            endif
+            cbUnZip:=""
+            nbUnZip:=0
+            cbZip:=(cElemType+strZero(nbZip,10)+cbZip)
+            c__pBuffer+=cbZip
+            if (len(c__pBuffer)>=1024)
+                fWrite(nfHandle,c__pBuffer)
+                c__pBuffer:=""
+            endif
+        endif
+    next nLoop
+
+    return
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        Funcao:RestArray
+        Autor:Marinaldo de Jesus
+        Data:18/02/2005
+        Descricao:Restaura Array do Disco
+        Retorno:aArray
+    /*/
+//------------------------------------------------------------------------------------------------
+static function RestArray(cFileName as character,nErr as numeric,lCompress as logical) as array
+
+    local aRestArray    as array
+
+    local nfHandle      as numeric
+
+    aRestArray:=Array(0)
+
+    begin sequence
+
+        if (!(file(cFileName)))
+            break
+        endif
+
+        nfHandle:=fOpen(cFileName,FO_READ)
+
+        if (nfHandle<=0)
+            nErr:=fError()
+            break
+        endif
+
+        fReadStr(nfHandle,1)
+        aRestArray:=RestArr(@nfHandle,lCompress)
+        fClose(nfHandle)
+
+    end sequence
+
+    return(aRestArray)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        Funcao:RestArr
+        Autor:Marinaldo de Jesus
+        Data:18/02/2005
+        Descricao:Restaura Array do Disco
+        Uso:RestArray
+    /*/
+//------------------------------------------------------------------------------------------------
+static Function RestArr(nfHandle as numeric,lCompress as logical) as array
+
+    local aArray    as array
+
+    local cbZip     as character
+    local cbUZip    as character
+    local cElemType as character
+    local cElemSize as character
+
+    local nLoop     as numeric
+    local nbZip     as numeric
+
+    local nLoops    as numeric
+    local nbUZip    as numeric    
+
+    nLoop:=0
+    nLoops:=Val(fReadStr(nfHandle,10))
+    aArray:=Array(nLoops)
+
+    while ((++nLoop)<=nLoops)
+
+        cElemType:=fReadStr(nfHandle,1)
+        if (cElemType$"A/O")
+            aArray[nLoop]:=RestArr(nfHandle,lCompress)
+        else
+            cElemSize:=fReadStr(nfHandle,10)
+            nbZip:=Val(cElemSize)
+            cbZip:=fReadStr(nfHandle,nbZip)
+            cbUZip:=""
+            nbUZip:=0
+            if (lCompress)
+                if (!(UnCompress(@cbUZip,@nbUZip,cbZip,nbZip)))
+                    cbUZip:=cbZip
+                endif
+            else
+                cbUZip:=cbZip
+            endif
+            cbZip:=""
+            nbZip:=0
+            if (cElemType$"B/L")
+                aArray[nLoop]:=&(cbUZip)
+            elseif (cElemType=="C")
+                aArray[nLoop]:=cbUZip
+            elseif (cElemType=="D")
+                aArray[nLoop]:=StoD(allTrim(cbUZip))
+            elseif (cElemType=="N")
+                aArray[nLoop]:=Val(allTrim(cbUZip))
+            endif
+        endif
+
+    end while
+
+    return(aArray)
+
+static function RegToArray(cAlias as character,nRecNo as numeric,aCFields as array) as array
+
+    local aValues   as array
+    local aFieldPos as array
+    local adbStruct as array
+
+    local lCFields  as logical
+
+    local nAT       as numeric
+    local nField    as numeric
+    local nFields   as numeric
+
+    DEFAULT cAlias:=Alias()
+    DEFAULT nRecNo:=(cAlias)->(RecNo())
+    DEFAULT aCFields:=array(0)
+
+    aValues:=array(0)
+
+    adbStruct:=(cAlias)->(dbStruct())
+    aFieldPos:=array(0)
+
+    lCFields:=(len(aCFields)>0)
+
+    nFields:=len(adbStruct)
+    for nField:=1 to nFields
+        if (lCFields)
+            nAT:=aScan(aCFields,{|cField|(upper(allTrim(cField))==upper(allTrim(adbStruct[nField][DBS_NAME])))})
+            if (nAT==0)
+                loop
+            endif
+        endif
+        aAdd(aFieldPos,nField)
+    next nField
+
+    aValues:=Array(Len(aFieldPos))
+
+    (cAlias)->(MsGoto(nRecNo))
+
+    aEval(aFieldPos,{|nField,nAT|aValues[nAT]:=(cAlias)->(FieldGet(nField))})
+
+    return(aValues)
+
+static function RetPictVal(nVal as numeric,lDecZero as logical,nInt as numeric,nDec as numeric,lPictSepMil as logical) as character
+    local cPictVal  as character
+    cPictVal:=cTools():RetPictVal(@nVal,@lDecZero,@nInt,@nDec,@lPictSepMil)
+    return(cPictVal)
+
+static function ReadMemo(cFile as character) as character
+	local cMemoRead as character
+	cMemoRead:=cTools():ReadMemo(cFile)
+	return(cMemoRead)

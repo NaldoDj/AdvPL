@@ -1,0 +1,39 @@
+#include "totvs.ch"
+/*/{Protheus.doc} RPCTools
+@author Marinaldo de Jesus (Facile)
+@since 07/01/2021
+@version 1.0
+@Projet A-35
+@description RPCTools.
+@type function
+/*/
+class RPCTools
+    static method RpcSetEnv(cRpcEmp,cRpcFil,cEnvUser,cEnvPass,cEnvMod,cFunName,aTables,lShowFinal,lAbend,lOpenSX,lConnect) as logical
+end class
+
+static method RpcSetEnv(cRpcEmp,cRpcFil,cEnvUser,cEnvPass,cEnvMod,cFunName,aTables,lShowFinal,lAbend,lOpenSX,lConnect) class RPCTools
+	local lRet		as logical
+	local lIsBlind	as logical
+	lIsBlind:=IsBlind()
+	if (!type("cEmpAnt")=="C")
+        private cEmpAnt:="__cEmpAnt__"
+    endif
+	if (!type("cFilAnt")=="C")
+        private cFilAnt:="__cFilAnt__"
+    endif
+    if ((!&("cEmpAnt")==cRpcEmp).or.(!&("cFilAnt")==cRpcFil))
+		DEFAULT cRpcEmp:=&("cEmpAnt")
+		DEFAULT cRpcFil:=&("cFilAnt")
+		DEFAULT cEnvMod:=if((type("cModulo")=="C"),&("cModulo"),cEnvMod)
+		DEFAULT cFunName:=FunName()
+        lRet:=RpcSetEnv(@cRpcEmp,@cRpcFil,@cEnvUser,@cEnvPass,@cEnvMod,@cFunName,@aTables,@lShowFinal,@lAbend,@lOpenSX,@lConnect)
+		if (!lIsBlind)
+			SetsDefault()
+			if (type("__cInternet")=="C")
+				&("__cInternet"):=nil
+			endif
+		endif
+		__SetCentury("ON")
+	endif
+    DEFAULT lRet:=.T.
+	return(lRet)

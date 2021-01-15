@@ -1,0 +1,1026 @@
+#include "totvs.ch"
+#include "shell.ch"
+#include "dbstruct.ch"
+#include "parmtype.ch"
+#include "jsonarray.ch"
+#include "set_default.ch"
+
+class dbTools
+
+    data cFile              as character
+    data cQuery             as character
+    data cDelim             as character
+    data cFileTmp           as character
+    data cJSONMain          as character
+    data cDelimRepl         as character
+    data cExtension         as character
+
+    data lPicture           as logical
+    data lX3Titulo          as logical
+
+    public data cError     as character
+    public data oError     as object
+    public data lHasError  as logical
+
+    public method New(cQuery,cFile) as object /*\/constructor\/*/
+
+    public method cFile(cFile) as character
+    public method cQuery(cQuery) as character
+    public method cDelim(cDelim) as character
+    public method cDelimRepl(cDelim) as character
+    public method lPicture(lPicture) as logical
+    public method lX3Titulo(lX3Titulo) as logical
+    public method cJSONMain(cJSONTag) as character
+    public method cExtension(cExtension) as character
+
+    public method cError() as character
+    public method lHasError() as logical
+
+    public method ToSDF(cQuery,cFile) as logical
+    public method ToXML(cQuery,cFile,lPicture,lX3Titulo) as logical
+    public method ToJSON(cQuery,cFile,cJSONMain,lX3Titulo,lIEmptyFields,lHeader,lRowNumber) as logical
+    public method ToDelim(cQuery,cFile,cDelim,cDelimRep,lPicture,lX3Titulo) as logical  
+
+    public method OpenWithExcel() as logical  
+    public method ShellExecute() as numeric
+
+end class
+
+method New(cQuery,cFile) class dbTools
+
+    local cExtension as character
+
+    DEFAULT cQuery:=""
+    paramtype cQuery as character optional
+    self:cQuery(cQuery)
+
+    if (!empty(cFile))
+        cExtension:=""
+        SplitPath(cFile,"","","",@cExtension)
+        if (empty(cExtension))
+            cExtension:=".txt"
+            cFile+=cExtension
+        endif
+    else
+        cExtension:=".txt"
+    endif
+
+    self:cExtension(cExtension)
+
+    DEFAULT cFile:=(getFileTmp("")+self:cExtension)
+    paramtype cFile as character optional
+    self:cFile(cFile)
+
+    self:cDelim(";")
+    self:cDelimRepl(" ")
+    self:lPicture(.T.)
+    self:lX3Titulo(.F.)
+    self:cJSONMain("JSONMain")
+
+    return(self)
+
+method cFile(cFile) class dbTools
+    local cSetFile as character
+    DEFAULT cFile:=""
+    paramtype cFile as character optional
+    cSetFile:=self:cFile
+    self:cFile:=cFile
+    if (!empty(self:cFile))
+        self:cFileTmp:=getFileTmp(self:cFile)
+    endif
+    return(cSetFile)
+
+method cQuery(cQuery) class dbTools
+    local cSetQuery as character
+    DEFAULT cQuery:=""
+    paramtype cQuery as character optional
+    cSetQuery:=self:cQuery
+    self:cQuery:=cQuery
+    return(cSetQuery)
+
+method cDelim(cDelim) class dbTools
+    local cSetDelim as character
+    DEFAULT cDelim:=";"
+    paramtype cDelim as character optional
+    cSetDelim:=self:cDelim
+    self:cDelim:=cDelim
+    return(cSetDelim)
+
+method cDelimRepl(cDelim) class dbTools
+    local cSetDelim as character
+    DEFAULT cDelim:=" "
+    paramtype cDelim as character optional
+    cSetDelim:=self:cDelimRepl
+    self:cDelimRepl:=cDelim
+    return(cSetDelim)
+
+method lPicture(lPicture) class dbTools
+    local lSetPicture as logical
+    paramtype lPicture as logical optional
+    lSetPicture:=self:lPicture
+    self:lPicture:=lPicture
+    return(lSetPicture)
+
+method lX3Titulo(lX3Titulo) class dbTools
+    local lSetX3Titulo as logical
+    paramtype lX3Titulo as logical optional
+    lX3Titulo:=self:lX3Titulo
+    self:lX3Titulo:=lX3Titulo
+    return(lSetX3Titulo)
+
+method cJSONMain(cJSONTag) class dbTools
+    local cSetJSONMain as character
+    DEFAULT cJSONTag:=""
+    paramtype cJSONTag as character optional
+    cSetJSONMain:=self:cJSONMain
+    self:cJSONMain:=cJSONTag
+    return(cSetJSONMain)
+
+method cExtension(cExtension) class dbTools
+    local cSetExtension as character
+    DEFAULT cExtension:=""
+    paramtype cExtension as character optional
+    cSetExtension:=self:cExtension
+    if (!empty(cExtension))
+        self:cExtension:=cExtension
+    endif
+    return(cSetExtension)
+
+method cError(cError) class dbTools
+    DEFAULT self:cError:=""
+    return(self:cError)
+
+method lHasError() class dbTools
+    DEFAULT self:lHasError:=.F.
+    return(self:lHasError)
+
+method ToDelim(cQuery,cFile,cDelim,cDelimRepl,lPicture,lX3Titulo) class dbTools
+
+    local bError        as block
+    local bErrorBlock   as block
+
+    local lRet          as logical
+
+    DEFAULT cQuery:=""
+    paramtype cQuery    as character optional
+
+    DEFAULT self:cExtension:=".csv"
+
+    DEFAULT cFile:=(getFileTmp("")+self:cExtension(".csv"))
+    paramtype cFile     as character optional
+    self:cFile(cFile)
+
+    DEFAULT cDelim:=";"
+    paramtype cDelim    as character optional
+
+    DEFAULT cDelimRepl:=" "
+    paramtype cDelimRepl as character optional
+
+    DEFAULT lPicture:=.T.
+    paramtype lPicture  as logical   optional
+
+    DEFAULT lX3Titulo:=.F.
+    paramtype lX3Titulo as logical   optional
+
+    bError:={|e|self:oError:=e,break(e)}
+    bErrorBlock:=ErrorBlock(bError)
+    begin sequence
+        lRet:=ToDelim(@cQuery,@cFile,@cDelim,@cDelimRepl,@lPicture,@lX3Titulo)
+    recover
+        lRet:=.F.
+        if (ValType(self:oError)=="O")
+            self:lHasError:=.T.
+            self:cError:=self:oError:Description
+            self:cError+=self:oError:ErrorStack
+            self:cError+=self:oError:ErrorEnv
+        endif
+    end sequence
+    ErrorBlock(bErrorBlock)
+
+    self:cQuery(cQuery)
+    self:cFile(cFile)
+    self:cDelim(cDelim)
+    self:cDelimRepl(cDelimRepl)
+    self:lPicture(lPicture)
+    self:lX3Titulo(lX3Titulo)
+
+    return(lRet)
+
+method ToSDF(cQuery,cFile) class dbTools
+
+    local bError        as block
+    local bErrorBlock   as block
+
+    local lRet          as logical
+
+    DEFAULT cQuery:=""
+    paramtype cQuery    as character optional
+
+    DEFAULT self:cExtension:=".txt"
+
+    DEFAULT cFile:=(getFileTmp("")+self:cExtension(".txt"))
+    paramtype cFile     as character optional
+    self:cFile(cFile)
+
+    bError:={|e|self:oError:=e,break(e)}
+    bErrorBlock:=ErrorBlock(bError)
+    begin sequence
+        lRet:=ToSDF(@cQuery,@cFile)
+    recover
+        lRet:=.F.
+        if (ValType(self:oError)=="O")
+            self:lHasError:=.T.
+            self:cError:=self:oError:Description
+            self:cError+=self:oError:ErrorStack
+            self:cError+=self:oError:ErrorEnv
+        endif
+    end sequence
+    ErrorBlock(bErrorBlock)
+
+    self:cQuery(cQuery)
+    self:cFile(cFile)
+
+    return(lRet)
+
+method ToXML(cQuery,cFile,lPicture,lX3Titulo) class dbTools
+
+    local bError        as block
+    local bErrorBlock   as block
+
+    local lRet          as logical
+
+    DEFAULT cQuery:=""
+    paramtype cQuery    as character optional
+
+    DEFAULT self:cExtension:=".xml"
+
+    DEFAULT cFile:=(getFileTmp("")+self:cExtension(".xml"))
+    paramtype cFile     as character optional
+    self:cFile(cFile)
+
+    DEFAULT lPicture:=.T.
+    paramtype lPicture  as logical   optional
+
+    DEFAULT lX3Titulo:=.F.
+    paramtype lX3Titulo as logical   optional
+
+    bError:={|e|self:oError:=e,break(e)}
+    bErrorBlock:=ErrorBlock(bError)
+    begin sequence
+        lRet:=ToXML(@cQuery,@cFile,@lPicture,@lX3Titulo)
+    recover
+        lRet:=.F.
+        if (ValType(self:oError)=="O")
+            self:lHasError:=.T.
+            self:cError:=self:oError:Description
+            self:cError+=self:oError:ErrorStack
+            self:cError+=self:oError:ErrorEnv
+        endif
+    end sequence
+    ErrorBlock(bErrorBlock)
+
+    self:cQuery(cQuery)
+    self:cFile(cFile)
+    self:lPicture(lPicture)
+    self:lX3Titulo(lX3Titulo)
+
+    return(lRet)
+
+method ToJSON(cQuery,cFile,cJSONMain,lX3Titulo,lIEmptyFields,lHeader,lRowNumber) class dbTools
+
+    local bError        as block
+    local bErrorBlock   as block
+
+    local lRet          as logical
+
+    DEFAULT cQuery:=""
+    paramtype cQuery    as character optional
+
+    DEFAULT cJSONMain:="JSONMain"
+    paramtype cJSONMain as character optional
+
+    DEFAULT self:cExtension:=".json"
+
+    DEFAULT cFile:=(getFileTmp("")+self:cExtension(".json"))
+    paramtype cFile     as character optional
+    self:cFile(cFile)
+
+    DEFAULT lX3Titulo:=.F.
+    paramtype lX3Titulo as logical   optional
+
+    DEFAULT lIEmptyFields:=.T.
+    paramtype lIEmptyFields as logical optional
+
+    DEFAULT lHeader:=.F.
+    paramtype lHeader as logical
+
+    DEFAULT lRowNumber:=.F.
+    paramtype lRowNumber as logical
+
+    if (lHeader)
+        if (lIEmptyFields)
+            lIEmptyFields:=(!lHeader)
+        endif
+    endif
+
+    bError:={|e|self:oError:=e,break(e)}
+    bErrorBlock:=ErrorBlock(bError)
+    begin sequence
+        lRet:=ToJSON(@cQuery,@cFile,@cJSONMain,@lX3Titulo,@lIEmptyFields,@lHeader,@lRowNumber)
+    recover
+        lRet:=.F.
+        if (ValType(self:oError)=="O")
+            self:lHasError:=.T.
+            self:cError:=self:oError:Description
+            self:cError+=self:oError:ErrorStack
+            self:cError+=self:oError:ErrorEnv
+        endif
+    end sequence
+    ErrorBlock(bErrorBlock)
+
+    self:cQuery(cQuery)
+    self:cFile(cFile)
+    self:cJSONMain(cJSONMain)
+    self:lX3Titulo(lX3Titulo)
+
+    return(lRet)
+
+method OpenWithExcel() class dbTools
+
+    local cFile     as character
+    local cFileTmp  as character
+
+    local lMsExcel  as logical
+
+    local oMsExcel  as object
+
+    cFile:=self:cFile
+
+    lMsExcel:=ApOleClient("MsExcel")
+
+    if (lMsExcel)
+        oMsExcel:=MsExcel():New()
+        cFileTmp:=self:cFileTmp
+        if (!empty(cFileTmp))
+            if (!(cFile==cFileTmp))
+                __CopyFile(cFile,cFileTmp)
+            endif
+        else
+            cFileTmp:=cFile
+        endif
+        oMsExcel:WorkBooks:Open(cFileTmp)
+        oMsExcel:SetVisible(.T.)
+        oMsExcel:=oMsExcel:Destroy()
+    else
+        self:ShellExecute()
+    endif
+
+    return(lMsExcel)
+
+method ShellExecute() class dbTools
+    local cFile     as character
+    local cFileTmp  as character
+    cFile:=self:cFile
+    cFileTmp:=self:cFileTmp
+    if (!empty(cFileTmp))
+        if (!(cFile==cFileTmp))
+            __CopyFile(cFile,cFileTmp)
+        endif
+    else
+        cFileTmp:=cFile
+    endif
+    return(ShellExecute("open",cFileTmp,"","",SW_SHOWMAXIMIZED))
+
+static function ToDelim(cQuery as character,cFile as character,cDelim as character,cDelimRepl as character,lPicture as logical,lX3Titulo as logical) as logical
+
+    local aArea         as array
+    local aFields       as array
+
+    local cAlias        as character
+
+    local lRet          as logical
+    local lMsOpenDB     as logical
+
+    aArea:=getArea()
+
+    DEFAULT cFile:=(getFileTmp("")+".csv")
+    DEFAULT cDelim:=";"
+    DEFAULT lPicture:=.T.
+    DEFAULT lX3Titulo:=.F.
+
+    cAlias:=getNextAlias()
+
+    begin sequence
+
+        if (empty(cQuery))
+            break
+        endif
+
+        if (file(cQuery))
+            cQuery:=ReadMemo(cQuery)
+            if (empty(cQuery))
+                break
+            endif
+        endif
+
+        if (select(cQuery)==0)
+            MsAguarde({||lMsOpenDB:=MsOpenDBF(.T.,"TOPCONN",TCGenQry(nil,nil,cQuery),cAlias,.T.,.T.,.F.,.F.)},"Selecionando dados no SGBD")
+        else
+            cAlias:=cQuery
+            lMsOpenDB:=.T.
+        endif
+
+        if (!lMsOpenDB)
+            break
+        endif
+
+        aFields:=(cAlias)->(dbStruct())
+
+        MsAguarde({||dbToDelim(@cAlias,@cFile,@cDelim,@cDelimRepl,@lPicture,@lX3Titulo)},"Gerando arquivo")
+
+        lRet:=file(cFile)
+
+    end sequence
+
+    if (!(cAlias==cQuery))
+        if (select(cAlias)>0)
+            (cAlias)->(dbCloseArea())
+        endif
+    endif
+
+    restArea(aArea)
+
+    DEFAULT lRet:=.F.
+
+    return(lRet)
+
+static function dbToDelim(cAlias as character,cFile as character,cDelim as character,cDelimRepl as character,lPicture as logical,lX3Titulo as logical) as character
+
+    local aHeader       as array
+
+    local cCRLF         as character
+    local cType         as character
+    local cField        as character
+    local cBuffer       as character
+    local cColumn       as character
+    local cPicture      as character
+    local cFileTmp      as character
+
+    local nField        as numeric
+    local nFields       as numeric
+    local nFileTmp      as numeric
+
+    local uCell
+
+    cCRLF:=CRLF
+    aHeader:=(cAlias)->(dbStruct())
+
+    cFileTmp:=if(dirtools():makeDir("\tmp\"),"\tmp\","")
+    cFileTmp+=criaTrab(nil,.F.)
+
+    begin sequence
+
+        while (file(cFileTmp))
+            cFileTmp:=if(dirtools():makeDir("\tmp\"),"\tmp\","")
+            cFileTmp+=criaTrab(nil,.F.)
+        end while
+
+        nFileTmp:=fCreate(cFileTmp)
+
+        if (nFileTmp<0)
+            break
+        endif
+
+        nFields:=Len(aHeader)
+
+        cBuffer:=""
+        for nField := 1 to nFields
+            cField:=aHeader[nField][DBS_NAME]
+            if (lX3Titulo)
+                cColumn:=getSX3Cache(cField,"X3_TITULO")
+                if (cColumn==nil)
+                    cColumn:=cField
+                else
+                    cColumn:=OemToAnsi(cColumn)
+                    while (cDelim$cColumn)
+                        cColumn:=strTran(cColumn,cDelim,cDelimRepl)
+                    end while
+                endif
+            else
+                cColumn:=cField
+            endif
+            cBuffer+=cColumn
+            cBuffer+=cDelim
+        next nField
+
+        if (Right(cBuffer,1)==cDelim)
+            cBuffer:=subStr(cBuffer,1,(len(cBuffer)-1))
+        endif
+
+        cBuffer+=cCRLF
+        fWrite(nFileTmp,cBuffer)
+
+        cBuffer:=""
+
+        while (cAlias)->(!(eof()))
+
+            for nField := 1 to nFields
+                uCell:=(cAlias)->(FieldGet(nField))
+                cType:=getSX3Cache(aHeader[nField][DBS_NAME],"X3_TIPO")
+                if (cType=="D")
+                    if (cType!=aHeader[nField][DBS_TYPE])
+                        uCell:=SToD(uCell)
+                    endif
+                endif
+                if (lPicture)
+                    cPicture:=getSX3Cache(aHeader[nField][DBS_NAME],"X3_PICTURE")
+                    if (!(Empty(cPicture)))
+                        uCell:=Transform(uCell,cPicture)
+                    else
+                        uCell:=cValToChar(uCell)
+                    endif
+                else
+                    uCell:=cValToChar(uCell)
+                endif
+                while (cDelim$uCell)
+                    uCell:=strTran(uCell,cDelim,cDelimRepl)
+                end while
+                cBuffer+=uCell
+                cBuffer+=cDelim
+            next nField
+
+            if (Right(cBuffer,1)==cDelim)
+                cBuffer:=subStr(cBuffer,1,(len(cBuffer)-1))
+            endif
+
+            cBuffer+=cCRLF
+            if (len(cBuffer)>=1024)
+                fWrite(nFileTmp,cBuffer)
+                cBuffer:=""
+            endif
+
+            (cAlias)->(dbSkip())
+
+        end while
+
+        if (!empty(cBuffer))
+            fWrite(nFileTmp,cBuffer)
+            cBuffer:=""
+        endif
+
+        fClose(nFileTmp)
+
+        __CopyFile(cFileTmp,cFile)
+
+    end sequence
+
+    if (!empty(nFileTmp))
+        if (nFileTmp>=0)
+            fClose(nFileTmp)
+        endif
+    endif
+
+    if (file(cFileTmp))
+        fErase(cFileTmp)
+    endif
+
+    return(cFile)
+
+static function ToSDF(cQuery as character,cFile as character) as logical
+
+    local aArea         as array
+    local aFields       as array
+
+    local cAlias        as character
+
+    local bFor          as block
+    local bWhile        as block
+
+    local nNext         as numeric
+    local nRecord       as numeric
+
+    local lRet          as logical
+    local lRest         as logical
+    local lMsOpenDB     as logical
+
+    aArea:=getArea()
+
+    cAlias:=getNextAlias()
+
+    DEFAULT cFile:=(getFileTmp("")+".csv")
+
+    begin sequence
+
+        if (empty(cQuery))
+            break
+        endif
+
+        if (file(cQuery))
+            cQuery:=ReadMemo(cQuery)
+            if (empty(cQuery))
+                break
+            endif
+        endif
+
+        if (select(cQuery)==0)
+            MsAguarde({||lMsOpenDB:=MsOpenDBF(.T.,"TOPCONN",TCGenQry(nil,nil,cQuery),cAlias,.T.,.T.,.F.,.F.)},"Selecionando dados no SGBD")
+        else
+            cAlias:=cQuery
+            lMsOpenDB:=.T.
+        endif
+
+        if (!lMsOpenDB)
+            break
+        endif
+
+        aFields:=(cAlias)->(dbStruct())
+
+        MsAguarde({||__dbSDF(.T.,cFile,aFields,bFor,bWhile,nNext,nRecord,lRest)},"Gerando Arquivo")
+
+        lRet:=file(cFile)
+
+    end sequence
+
+    if (!(cAlias==cQuery))
+        if (select(cAlias)>0)
+            (cAlias)->(dbCloseArea())
+        endif
+    endif
+
+    restArea(aArea)
+
+    DEFAULT lRet:=.F.
+
+    return(lRet)
+
+static function ToXML(cQuery as character,cFile as character,lPicture as logical,lX3Titulo as logical) as logical
+
+    local aArea     as array
+
+    local cAlias    as character
+
+    local lRet      as logical
+    local lMsOpenDB as logical
+
+    aArea:=getArea()
+
+    cAlias:=getNextAlias()
+
+    DEFAULT cFile:=(getFileTmp("")+".xml")
+
+    begin sequence
+
+        if (empty(cQuery))
+            break
+        endif
+
+        if (file(cQuery))
+            cQuery:=ReadMemo(cQuery)
+            if (empty(cQuery))
+                break
+            endif
+        endif
+
+        if (select(cQuery)==0)
+            MsAguarde({||lMsOpenDB:=MsOpenDBF(.T.,"TOPCONN",TCGenQry(nil,nil,cQuery),cAlias,.T.,.T.,.F.,.F.)},"Selecionando dados no SGBD")
+        else
+            cAlias:=cQuery
+            lMsOpenDB:=.T.
+        endif
+
+        if (!lMsOpenDB)
+            break
+        endif
+
+        MsAguarde({||cFile:=dbToXML(@cAlias,@cFile,@lPicture,@lX3Titulo)},"Gerando arquivo")
+
+        lRet:=file(cFile)
+
+    end sequence
+
+    if (!(cAlias==cQuery))
+        if (select(cAlias)>0)
+            (cAlias)->(dbCloseArea())
+        endif
+    endif
+
+    restArea(aArea)
+
+    DEFAULT lRet:=.F.
+
+    return(lRet)
+
+static function dbToXML(cAlias as character,cFile as character,lPicture as logical,lX3Titulo as logical) as character
+
+    local aCells        as array
+    local aHeader       as array
+
+    local cType         as character
+    local cField        as character
+    local cWBreak       as character
+    local cTBreak       as character
+    local cColumn       as character
+    local cPicture      as character
+    local cWorkSheet    as character
+
+    local nAlign        as numeric
+    local nField        as numeric
+    local nFields       as numeric
+    local nFormat       as numeric
+
+    local lTotal        as logical
+
+    local oFWMSExcel    as object
+
+    local uCell
+
+    aHeader:=(cAlias)->(dbStruct())
+
+    oFWMSExcel:=FWMsExcelEx():New()
+
+    aCells:=Array(0)
+
+    cWorkSheet:="QueryToXML"
+    cWBreak:=cWorkSheet
+    cTBreak:=cWBreak
+
+    nFields:=Len(aHeader)
+
+    oFWMSExcel:AddworkSheet(cWBreak)
+    oFWMSExcel:AddTable(cWBreak,cTBreak)
+
+    for nField := 1 to nFields
+        cField:=aHeader[nField][DBS_NAME]
+        cType:=getSX3Cache(cField,"X3_TIPO")
+        if (cType==nil)
+            cType:=aHeader[nField][DBS_TYPE]
+        endif
+        nAlign:=if(cType=="C",1,if(cType=="N",3,2))
+        nFormat:=if(cType=="D",4,if(cType=="N",2,1))
+        if (lX3Titulo)
+            cColumn:=getSX3Cache(cField,"X3_TITULO")
+            if (cColumn==nil)
+                cColumn:=cField
+            endif
+        else
+            cColumn:=cField
+        endif
+        cColumn:=OemToAnsi(cColumn)
+        oFWMSExcel:AddColumn(@cWBreak,@cTBreak,@cColumn,@nAlign,@nFormat,@lTotal)
+    next nField
+
+    while (cAlias)->(!(eof()))
+
+        aSize(aCells,0)
+
+        for nField := 1 to nFields
+            uCell:=(cAlias)->(FieldGet(nField))
+            cField:=aHeader[nField][DBS_NAME]
+            cType:=getSX3Cache(cField,"X3_TIPO")
+            if (cType=="D")
+                if (cType!=aHeader[nField][DBS_TYPE])
+                    uCell:=SToD(uCell)
+                endif
+            endif
+            if (lPicture)
+                cPicture:=getSX3Cache(cField,"X3_PICTURE")
+                if (!(Empty(cPicture)))
+                    uCell:=Transform(uCell,cPicture)
+                else
+                    if (cType=="D")
+                        uCell:=DToC(uCell)
+                    endif
+                endif
+            else
+                if (cType=="D")
+                    uCell:=DToC(uCell)
+                endif
+            endif
+            aAdd(aCells,uCell)
+        next nField
+
+        oFWMSExcel:AddRow(@cWBreak,@cTBreak,aClone(aCells))
+
+        (cAlias)->(dbSkip())
+
+    end while
+
+    oFWMSExcel:Activate()
+    oFWMSExcel:GetXMLFile(cFile)
+    oFWMSExcel:DeActivate()
+    oFWMSExcel:=FreeObj(oFWMSExcel)
+
+    return(cFile)
+
+static function ToJSON(cQuery as character,cFile as character,cJSONMain as character,lX3Titulo as logical,lIEmptyFields as logical,lHeader as logical,lRowNumber as logical) as logical
+
+    local aArea     as array
+
+    local cAlias    as character
+
+    local lRet      as logical
+    local lMsOpenDB as logical
+
+    aArea:=getArea()
+
+    cAlias:=getNextAlias()
+
+    DEFAULT cFile:=(getFileTmp("")+".json")
+
+    begin sequence
+
+        if (empty(cQuery))
+            break
+        endif
+
+        if (file(cQuery))
+            cQuery:=ReadMemo(cQuery)
+            if (empty(cQuery))
+                break
+            endif
+        endif
+
+        if (select(cQuery)==0)
+            MsAguarde({||lMsOpenDB:=MsOpenDBF(.T.,"TOPCONN",TCGenQry(nil,nil,cQuery),cAlias,.T.,.T.,.F.,.F.)},"Selecionando dados no SGBD")
+        else
+            cAlias:=cQuery
+            lMsOpenDB:=.T.
+        endif
+
+        if (!lMsOpenDB)
+            break
+        endif
+
+        MsAguarde({||cFile:=dbToJSON(@cAlias,@cFile,@cJSONMain,@lX3Titulo,@lIEmptyFields,@lHeader,@lRowNumber)},"Gerando arquivo")
+
+        lRet:=file(cFile)
+
+    end sequence
+
+    if (!(cAlias==cQuery))
+        if (select(cAlias)>0)
+            (cAlias)->(dbCloseArea())
+        endif
+    endif
+
+    restArea(aArea)
+
+    DEFAULT lRet:=.F.
+
+    return(lRet)
+
+static function dbToJSON(cAlias as character,cFile as character,cJSONMain as character,lX3Titulo as logical,lIEmptyFields as logical,lHeader as logical,lRowNumber as logical) as logical
+
+    local aHeader       as array
+    local aJSONRow      as array
+
+    local cType         as character
+    local cField        as character
+
+    local nRow          as numeric
+    local nTitle        as numeric
+    local nField        as numeric
+    local nFields       as numeric
+
+    local oJSONRow      as object
+    local oJSONArray    as object
+
+    local uValue
+
+    aHeader:=(cAlias)->(dbStruct())
+
+    oJSONArray:=Array(#)
+
+    nRow:=0
+
+    nFields:=Len(aHeader)
+
+    if (lX3Titulo)
+        for nField := 1 to nFields
+            cField:=getSX3Cache(cField,"X3_TITULO")
+            DEFAULT cField:=aHeader[nField][DBS_NAME]
+            cField:=allTrim(cField)
+            aAdd(aHeader[nField],cField)
+        next nField
+        nTitle:=(DBS_ALEN+1)
+    endif
+
+    oJSONArray[#"table"]:=cJSONMain
+    if (lHeader)
+        oJSONArray[#"Header"]:=aHeader
+    endif
+    
+    oJSONArray[#"items"]:=Array(0)
+
+    while (cAlias)->(!eof())
+
+        nRow:=oJSONArray:AddItem("items",Array(#))
+
+        if (lRowNumber)
+            oJSONArray:SetItemValue("items",nRow,"Row",nRow)
+        endif
+
+        if (lHeader)
+            aJSONRow:=Array(0)
+        else
+            oJSONRow:=Array(#)
+        endif
+
+        for nField := 1 to nFields
+            uValue:=(cAlias)->(fieldGet(nField))
+            if (lIEmptyFields)
+                if (isEmpty(uValue))
+                    loop
+                endif
+            endif
+            if (lX3Titulo)
+                cField:=aHeader[nField][nTitle]
+            else
+                cField:=aHeader[nField][DBS_NAME]
+            endif
+            cType:=valType(uValue)
+            if (cType=="C")
+                uValue:=RTrim(uValue)
+            endif
+            if (lHeader)
+                aAdd(aJSONRow,uValue)
+            else
+                oJSONRow[#cField]:=uValue
+            endif
+        next nField
+
+        if (lHeader)
+            oJSONArray:SetItemValue("items",nRow,"item",aJSONRow)
+        else
+            oJSONArray:SetItemValue("items",nRow,"item",oJSONRow)
+        endif
+
+        (cAlias)->(dbSkip())
+
+    end while
+
+    oJSONArray:ToJSONFile(oJSONArray,cFile)
+    oJSONArray:=oJSONArray:FreeObj()
+
+    return(cFile)
+
+static function isEmpty(uValue) as logical
+    local cType     as character
+    local lIsEmpty  as logical
+    cType:=valType(uValue)
+    do case 
+    case (cType)=="L"
+        lIsEmpty:=.F.
+    otherwise
+        lIsEmpty:=empty(uValue)
+    endcase
+    return(lIsEmpty)
+
+static function ReadMemo(cFile) as character
+	local cMemoRead as character
+	cMemoRead:=cTools():ReadMemo(cFile)
+	return(cMemoRead)
+
+static function getFileTmp(cFile as character) as character
+
+    local cTrb      as character
+    local cSPExt    as character
+    local cSPFile   as character
+    local cSPPath   as character
+    local cSPDrive  as character
+    local cFileTmp  as character
+    local cTempPath as character
+
+    cSPExt:=""
+    cSPFile:=""
+    cSPPath:=""
+    cSPDrive:=""
+    
+    splitPath(cFile,@cSPDrive,@cSPPath,@cSPFile,@cSPExt)
+
+    cTrb:=CriaTrab(nil,.F.)
+    cTempPath:=getTempPath()
+
+    if (cTempPath$cFile)
+    
+        cFileTmp:=cFile
+
+    else
+        
+        cFileTmp:=cTempPath
+        cFileTmp+=cSPFile
+        cFileTmp+="_"
+        cFileTmp+=cTrb
+        cFileTmp+=cSPExt
+
+        while (file(cFileTmp))
+            cTrb:=__Soma1(cTrb)
+            cFileTmp:=cTempPath
+            cFileTmp+=cSPFile
+            cFileTmp+="_"
+            cFileTmp+=cTrb
+            cFileTmp+=cSPExt
+        end while
+    endif
+
+    return(cFileTmp)

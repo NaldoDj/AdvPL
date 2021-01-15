@@ -1,0 +1,79 @@
+#include "totvs.ch"
+#include "parmtype.ch"
+
+class stacktools
+    
+    static method StackCount(cStack,nMaxCount) as numeric
+    static method GetCallStack(nStart) as array
+    static method IsInCallStack(cStack) as logical
+
+end class
+
+static method StackCount(cStack,nMaxCount) class stacktools
+	
+    local cPName        as character
+	
+    local lStack		as logical
+	local lCount		as logical
+	
+    local nStack		as numeric
+	local nStackCount	as numeric
+    
+    paramtype cStack as character
+    paramtype nMaxCount as numeric optional
+
+	cStack:=upper(allTrim(cStack))
+	aStack:=array(0)
+	nStack:=-1
+	lStack:=.T.
+	lCount:=(!empty(nMaxCount))
+	nStackCount:=0
+	while (lStack)
+		cPName:=ProcName(++nStack)
+		lStack:=(!empty(cPName))
+		if (!lStack)
+			exit
+		endif
+		if (cStack==cPName)
+			nStackCount++
+			if (lCount)
+				if (nStackCount>=nMaxCount)
+					lStack:=.F.
+					exit
+				endif
+			endif
+		endif
+	end while
+	
+    return(nStackCount)
+
+static method IsInCallStack(cStack) class stacktools
+    local lIsInCallStack as logical
+    paramtype cStack as character
+    lIsInCallStack:=IsInCallStack(cStack)
+    return(lIsInCallStack)    
+
+static method GetCallStack(nStart) class stacktools
+    local aCallStack as array
+    paramtype nStart as numeric optional
+    aCallStack:=GetCallStack(@nStart)
+    return(aCallStack)
+
+static function GetCallStack(nStart as numeric) as array
+
+    local aCallStack    as array
+
+    local cCallStack    as character
+
+    local nCallStack    as numeric
+
+    aCallStack:=array(0)
+
+    DEFAULT nStart:=0
+
+    nCallStack:=nStart
+    while (cCallStack:=ProcName(++nCallStack),(!(empty(cCallStack))))
+        aAdd(aCallStack,cCallStack)
+    end while
+
+    return(aCallStack)

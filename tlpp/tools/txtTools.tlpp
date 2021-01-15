@@ -1,0 +1,517 @@
+#include "totvs.ch"
+#include "shell.ch"
+#include "fileio.ch"
+#include "parmtype.ch"
+#include "set_default.ch"
+
+/*namespace dna.txtTools*/
+
+class txtTools
+
+    data cFile as character
+    data cTitle as character
+    data cMemoEdit as character
+
+    public method New(cFile,cMemoEdit,cTitle) as object /*\/constructor\/*/
+
+    public method cFile(cFile) as character
+    public method cTitle(cTitle) as character
+    public method cMemoEdit(cMemoEdit) as character
+
+    public method txtFileEdit(cFile,cMemoEdit,cTitle) as logical
+    public method txtNotePad(cFile,cMemoEdit) as numeric
+
+end class
+
+method New(cFile,cMemoEdit,cTitle) class txtTools
+
+    DEFAULT cFile:=(getTempPath()+criaTrab(nil,.F.)+".txt")
+    paramtype cFile as character optional
+    self:cFile(cFile)
+
+    DEFAULT cMemoEdit:=""
+    paramtype cMemoEdit as character optional
+    self:cMemoEdit(cMemoEdit)
+
+    DEFAULT cMemoEdit:=""
+    paramtype cMemoEdit as character optional
+    self:cMemoEdit(cMemoEdit)
+
+    DEFAULT cTitle:=""
+    paramtype cTitle as character optional
+    self:cTitle(cTitle)
+
+    return(self)
+
+method cFile(cFile) class txtTools
+    local cSetFile  as character
+    DEFAULT cFile:=""
+    paramtype cFile as character optional
+    DEFAULT self:cFile:=""
+    cSetFile:=self:cFile
+    self:cFile:=cFile
+    return(cSetFile)
+
+method cTitle(cTitle) class txtTools
+    local cSetTitle  as character
+    DEFAULT cTitle:=""
+    paramtype cTitle as character optional
+    DEFAULT self:cTitle:=""
+    cSetTitle:=self:cTitle
+    self:cTitle:=cTitle
+    return(cSetTitle)
+
+method cMemoEdit(cMemoEdit) class txtTools
+    local cSetMemoEdit  as character
+    DEFAULT cMemoEdit:=""
+    paramtype cMemoEdit as character optional
+    DEFAULT self:cMemoEdit:=""
+    cSetMemoEdit:=self:cMemoEdit
+    self:cMemoEdit:=cMemoEdit
+    return(cSetMemoEdit)
+
+method txtFileEdit(cFile,cMemoEdit,cTitle) class txtTools
+
+    local lRet  as logical
+
+    local nFile as numeric
+
+    DEFAULT cFile:=self:cFile()
+    paramtype cFile as character optional
+    self:cFile(cFile)
+
+    DEFAULT cMemoEdit:=self:cMemoEdit()
+    paramtype cMemoEdit as character optional
+    self:cMemoEdit(cMemoEdit)
+
+    DEFAULT cTitle:=self:cTitle()
+    paramtype cTitle as character optional
+    self:cTitle(cTitle)
+
+    if (empty(cFile))
+        if (empty(self:cFile))
+            self:cFile()
+        endif
+        cFile:=self:cFile
+        self:cFile(cFile)
+    endif
+
+    if (!file(cFile))
+        nFile:=fCreate(cFile)
+        if (nFile>0)
+            fWrite(nFile,cMemoEdit)
+            fClose(nFile)
+        endif
+    else
+        cMemoEdit:=ReadMemo(cFile)
+        self:cMemoEdit(cMemoEdit)
+    endif
+
+    lRet:=txtFileEdit(@cFile,@cMemoEdit,@cTitle)
+
+    self:cFile(cFile)
+    self:cMemoEdit(cMemoEdit)
+    self:cTitle(cTitle)
+
+    return(lRet)
+
+method txtNotePad(cFile,cMemoEdit) class txtTools
+
+    local nRet as numeric
+
+    DEFAULT cFile:=self:cFile()
+    paramtype cFile as character optional
+    self:cFile(cFile)
+
+    DEFAULT cMemoEdit:=self:cMemoEdit()
+    paramtype cMemoEdit as character optional
+    self:cMemoEdit(cMemoEdit)
+
+    if (empty(cFile))
+        if (empty(self:cFile))
+            self:cFile()
+        endif
+        cFile:=self:cFile
+        self:cFile(cFile)
+    endif
+
+    if (!file(cFile))
+        nFile:=fCreate(cFile)
+        if (nFile>0)
+            fWrite(nFile,cMemoEdit)
+            fClose(nFile)
+        endif
+    else
+        cMemoEdit:=ReadMemo(cFile)
+        self:cMemoEdit(cMemoEdit)
+    endif
+
+    nRet:=txtNotePad(@cFile)
+
+    self:cFile(cFile)
+    self:cMemoEdit(cMemoEdit)
+
+    return(nRet)
+
+static function txtFileEdit(cFile as character,cMemoEdit as character,cTitle as character) as logical
+
+    local aButtons      as array
+    local aAdvSize      as array
+    local aObjSize      as array
+    local aObjCoords    as array
+    local aInfoAdvSize  as array
+
+    local bSet15        as block
+    local bSet24        as block
+    local bExcel        as block
+    local bShell        as block
+    local bRestore      as block
+    local bNotepad      as block
+
+    local cSVMemoEdit   as character
+
+    local lOk           as logical
+
+    local nDlgWidth     as numeric
+
+    local oDlg          as object
+    local oFont         as object
+    local oPanel        as object
+    local oMemoEdit     as object
+
+    DEFAULT cMemoEdit:=""
+
+    cSVMemoEdit:=cMemoEdit
+
+    begin sequence
+
+        aAdvSize:=MsAdvSize()
+        aInfoAdvSize:={aAdvSize[1],aAdvSize[2],aAdvSize[3],aAdvSize[4],0,0}
+        aObjCoords:=array(0)
+        aAdd(aObjCoords,{0,0,.T.,.T.})
+        aObjSize:=MsObjSize(aInfoAdvSize,aObjCoords)
+
+        DEFAULT cTitle:="txtTools"
+        if (!(cFile$cTitle))
+            cTitle+=" :: "
+            cTitle+=cFile
+        endif
+
+        DEFINE FONT oFont NAME "Courier New" SIZE 0,-11 BOLD
+        DEFINE MSDIALOG oDlg TITLE cTitle FROM aAdvSize[7],0 TO aAdvSize[6],aAdvSize[5] OF GetWndDefault() STYLE DS_MODALFRAME STATUS PIXEL
+
+            nDlgWidth:=__DlgWidth(oDlg)
+
+            oPanel:=tPanel():New(0,0,"",oDlg,nil,nil,nil,nil,nil,nDlgWidth,nDlgWidth)
+
+            @(aObjSize[1][1]+5),(aObjSize[1][2]+5) GET oMemoEdit VAR cMemoEdit MEMO SIZE ((aObjSize[1][4]/100)*99),((aObjSize[1][3]/100)*88) FONT oFont CENTERED DESIGN OF oPanel PIXEL WHEN (.T.)
+
+            oMemoEdit:lReadOnly:=.F.
+            oMemoEdit:EnableVScroll(.T.)
+            oMemoEdit:EnableHScroll(.T.)
+
+            oDlg:lEscClose:=.F.
+
+            bSet15:={||lOk:=txtChgFile(@cFile,@cMemoEdit,@cSVMemoEdit),if(lOk,oDlg:End(),lOK)}
+            bSet24:={||lOK:=.F.,oDlg:End()}
+
+            aButtons:=array(0)
+
+            bExcel:={||MsAguarde({||txtExcel(cFile)},"Abrindo no Excel","Aguarde...")}
+            aAdd(aButtons,{"EXCEL",bExcel,OemToAnsi("Abrir no Excel"),OemtoAnsi("Abrir no Excel")})
+
+            bShell:={||MsAguarde({||ShellExecute("open",cFile,"","",SW_SHOWMAXIMIZED)},"Abrindo com Aplicativo Padrao","Aguarde...")}
+            aAdd(aButtons,{"SHELL",bShell,OemToAnsi("Abir com Aplicativo Padrao"),OemtoAnsi("Abir com Aplicativo Padrao")})
+
+            bNotepad:={||MsAguarde({||txtNotePad(cFile)},"Abrindo no Notepad","Aguarde...")}
+            aAdd(aButtons,{"NOTEPAD",bNotepad,OemToAnsi("Abir no Notepad"),OemtoAnsi("Abir no Notepad")})
+
+            bRestore:={||MsAguarde({||txtRestore(cFile,@cMemoEdit,@oMemoEdit,@cSVMemoEdit)},"Restaurando Versao Anterior","Aguarde...")}
+            aAdd(aButtons,{"RESTORE",bRestore,OemToAnsi("Restaurar Versao Anterior"),OemtoAnsi("Restaurar Versao Anterior")})
+
+        ACTIVATE MSDIALOG oDlg CENTERED ON INIT EnchoiceBar(oDlg,bSet15,bSet24,nil,@aButtons)
+
+    end sequence
+
+    return(lOk)
+
+static function txtChgFile(cFile as character,cMemoEdit as character,cSVMemoEdit as character) as logical
+
+    local cMsg          as character
+    local cTitle        as character
+
+    local cSPPath       as character
+    local ctxtFBKP      as character
+    local cSPDriver     as character
+    local cSPFileName   as character
+    local cSPFileExt    as character
+
+    local lFilial       as logical
+    local lEmpresa      as logical
+    local ltxtChgFile   as logical
+
+    local nAttemps      as numeric
+
+    lFilial:=(type("cFilAnt")=="C")
+    lEmpresa:=(type("cEmpAnt")=="C")
+
+    begin sequence
+
+        ltxtChgFile:=(cMemoEdit==cSVMemoEdit)
+        if (ltxtChgFile)
+            break
+        endif
+
+        cSPDriver:=""
+        cSPPath:=""
+        cSPFileName:=""
+        cSPFileExt:=""
+
+        SplitPath(cFile,@cSPDriver,@cSPPath,@cSPFileName,@cSPFileExt)
+
+        cMsg:="Deseja Gravar as Alteracoes?"
+
+        cTitle:="txtTools :: "
+        cTitle+=cSPFileName
+
+        ltxtChgFile:=ApMsgYesNo(cMsg,cTitle)
+        if (!ltxtChgFile)
+            break
+        endif
+
+        ctxtFBKP:=cSPDriver
+        ctxtFBKP+=cSPPath
+        ctxtFBKP+=cSPFileName
+        ctxtFBKP+=cSPFileExt
+        ctxtFBKP+="-"
+        ctxtFBKP+=DToS(Date())
+        ctxtFBKP+="-"
+        ctxtFBKP+=strTran(Time(),":","-")
+        ctxtFBKP+="-"
+        ctxtFBKP+=strZero(ranDomize(1,999),3)
+
+        nAttemps:=0
+
+        cMsg:="O arquivo "
+        cMsg+=cFile
+        cMsg+=" encontra-se em uso deseja tentar novamente?"
+
+        while (!LockByName(cSPFileName,lEmpresa,lFilial,.T.))
+            if (nAttemps++>10)
+                nAttemps:=0
+                if (!MsgYesNo(cMsg,cTitle))
+                    ltxtChgFile:=.F.
+                    cMsg:="O arquivo "
+                    cMsg+=cFile
+                    cMsg+=" encontra-se em uso e nao podera ser salvo."
+                    ApMsgAlert(cMsg,cTitle)
+                    break
+                endif
+            endif
+            sleep(300)
+        end while
+
+        nAttemps:=0
+
+        while (file(cFile))
+            if (fRename(cFile,ctxtFBKP))
+                exit
+            endif
+            if (nAttemps++>10)
+                nAttemps:=0
+                if (!MsgYesNo(cMsg,cTitle))
+                    UnlockByName(cSPFileName,lEmpresa,lFilial,.T.)
+                    ltxtChgFile:=.F.
+                    cMsg:="Problema na gravacao do arquivo : "
+                    cMsg+=cFile
+                    ApMsgAlert(cMsg,cTitle)
+                    break
+                endif
+            endif
+            sleep(300)
+        end while
+
+        nAttemps:=0
+
+        cMsg:="Problema na gravacao do arquivo : "
+        cMsg+=cFile
+        cMsg+=" Deseja tentar novamente?"
+
+        while (!(ltxtChgFile:=MemoWrite(cFile,cMemoEdit)))
+            if (nAttemps++>10)
+                nAttemps:=0
+                if (!MsgYesNo(cMsg,cTitle))
+                    exit
+                endif
+            endif
+            sleep(300)
+        end while
+
+        UnlockByName(cSPFileName,lEmpresa,lFilial,.T.)
+
+        if (!ltxtChgFile)
+            cMsg:="Problema na gravacao do arquivo : "
+            cMsg+=cFile
+            ApMsgAlert(cMsg,cTitle)
+            break
+        endif
+
+        cMsg:="Arquivo "
+        cMsg+=cFile
+        cMsg+=" salvo com sucesso."
+        ApMsgInfo(cMsg,cTitle)
+
+    end sequence
+
+    return(ltxtChgFile)
+
+static procedure txtExcel(cFile as character)
+
+    local cSPDriver     as character
+    local cSPPath       as character
+    local cSPFileName   as character
+    local cSPFileExt    as character
+
+    local cTempPath     as character
+    local cTempFile     as character
+
+    local lMsExcel      as logical
+
+    local oMsExcel      as object
+
+    cSPDriver:=""
+    cSPPath:=""
+    cSPFileName:=""
+    cSPFileExt:=""
+
+    SplitPath(cFile,@cSPDriver,@cSPPath,@cSPFileName,@cSPFileExt)
+
+    cTempPath:=getTempPath()
+    if (!(right(cTempPath,1)=="\"))
+        cTempPath+="\"
+    endif
+
+    cTempFile:=cTempPath
+    cTempFile+=cSPFileName
+    cTempFile+=cSPFileExt
+
+    if (__CopyFile(cFile,cTempFile))
+        lMsExcel:=ApOleClient("MsExcel")
+        if (lMsExcel)
+            oMsExcel:=MsExcel():New()
+            oMsExcel:WorkBooks:Open(cFile)
+            oMsExcel:SetVisible(.T.)
+            oMsExcel:=oMsExcel:Destroy()
+        elseif (file(cTempFile))
+            ShellExecute("open",cTempFile,"","",SW_SHOWMAXIMIZED)
+        endif
+    endif
+
+    return
+
+static function txtNotePad(cFile as character) as numeric
+
+    local cSPDriver     as character
+    local cSPPath       as character
+    local cSPFileName   as character
+    local cSPFileExt    as character
+
+    local cTempPath     as character
+    local cTempFile     as character
+
+    local nRet          as numeric
+
+    cSPDriver:=""
+    cSPPath:=""
+    cSPFileName:=""
+    cSPFileExt:=""
+
+    SplitPath(cFile,@cSPDriver,@cSPPath,@cSPFileName,@cSPFileExt)
+
+    cTempPath:=getTempPath()
+    if (!(right(cTempPath,1)=="\"))
+        cTempPath+="\"
+    endif
+
+    cTempFile:=cTempPath
+    cTempFile+=cSPFileName
+    cTempFile+=cSPFileExt
+
+    if (__CopyFile(cFile,cTempFile))
+        nRet:=ShellExecute("open",cTempFile,"","",SW_SHOWMAXIMIZED)
+    endif
+
+    DEFAULT nRet:=(-1)
+
+    return(nRet)
+
+static function txtRestore(cFile as character,cMemoEdit as character,oMemoEdit as object,cSVMemoEdit as character) as logical
+
+    local cMask         as character
+    local cTitle        as character
+    local cFileRead     as character
+    local cDirectory    as character
+
+    local cSPDriver     as character
+    local cSPPath       as character
+    local cSPFileName   as character
+    local cSPFileExt    as character
+
+    local ltxtRestore   as logical
+
+    local nOptions      as numeric
+
+    begin sequence
+
+        cSPDriver:=""
+        cSPPath:=""
+        cSPFileName:=""
+        cSPFileExt:=""
+
+        SplitPath(cFile,@cSPDriver,@cSPPath,@cSPFileName,@cSPFileExt)
+
+        cMask:="Arquivo(s) | "+cSPFileName+"*"
+
+        cTitle:="Restaurar arquivo"
+
+        cDirectory:=cSPDriver
+        cDirectory+=cSPPath
+        cDirectory:=StrTran(cSPPath,"/","\")
+
+        nOptions:=(GETF_LOCALHARD+GETF_NETWORKDRIVE)
+
+        cFileRead:=cGetFile(cMask,cTitle,1,cDirectory,.F.,nOptions,/*[lArvore]*/,/*[lKeepCase]*/)
+
+        if (empty(cFileRead))
+            break
+        endif
+
+        cFileRead:=(cDirectory+cFileRead)
+        cFileRead:=StrTran(cFileRead,"\\","\")
+
+        if (!file(cFileRead))
+            break
+        endif
+
+        cSvMemoEdit:=cMemoEdit
+        cMemoEdit:=ReadMemo(cFileRead)
+
+        ltxtRestore:=txtChgFile(@cFile,@cMemoEdit,@cSVMemoEdit)
+
+        if (!ltxtRestore)
+            cMemoEdit:=cSvMemoEdit
+            break
+        endif
+
+        cSvMemoEdit:=cMemoEdit
+
+        oMemoEdit:Refresh()
+
+    end sequence
+
+    return(ltxtRestore)
+
+static function ReadMemo(cFile) as character
+	local cMemoRead as character
+	cMemoRead:=cTools():ReadMemo(cFile)
+	return(cMemoRead)

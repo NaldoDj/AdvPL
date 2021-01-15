@@ -1,0 +1,596 @@
+#include "totvs.ch"
+#include "fileio.ch"
+#include "dbstruct.ch"
+#include "parmtype.ch"
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        class:fTdb
+        Autor:Marinaldo de Jesus [http://www.blacktdn.com.br]
+        Data:01/05/2011
+        Descricao:Alternativa aas funcoes tipo FT_F* devido as limitacoes apontadas em (http://tdn.totvs.com.br/kbm#9734)
+        Sintaxe:ftdb():New():Objeto do Tipo ufT
+    /*/
+//------------------------------------------------------------------------------------------------
+class fTdb FROM ufT
+
+    data cDbFile    as character
+    data cDbAlias   as character
+    data cRDDName   as character
+
+    data cClassName as character
+
+    data oFWTTable  as object
+
+    public method New() as object /*/\constructor/\*/
+    public method ClassName() as character
+
+    public method ft_fUse(cFile) as numeric
+    public method ft_fOpen(cFile) as numeric
+    public method ft_fClose()
+
+    public method ft_fAlias() as character
+
+    public method ft_fExists(cFile) as logical
+
+    public method ft_fRecNo() as numeric
+    public method ft_fSkip(nSkipper) as numeric
+    public method ft_fGoTo(nGoTo) as numeric
+    public method ft_fGoTop() as numeric
+    public method ft_fGoBottom() as numeric
+    public method ft_fLastRec() as numeric
+    public method ft_fRecCount() as numeric
+
+    public method ft_fEof() as logical
+    public method ft_fBof() as logical
+
+    public method ft_fReadLn()  as numeric
+    public method ft_fReadLine() as numeric
+
+    public method ft_fError(cError) as numeric
+
+    public method ft_fSetCRLF(cCRLF) as character
+    public method ft_fSetBufferSize(nBufferSize) as numeric
+
+    public method ft_fAppend(cValue) as logical
+    public method ft_fUpdate(cValue) as logical
+    
+    public method ft_fDelete() as logical
+    public method ft_fRecall() as logical
+    public method ft_fDeleted() as logical
+
+endclass
+
+function u_ftdb()
+    return(ftdb():New())
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:New
+        Autor:Marinaldo de Jesus [http://www.blacktdn.com.br]
+        Data:01/05/2011
+        Descricao:constructor
+        Sintaxe:ftdb():New():Object do Tipo fT
+    /*/
+//------------------------------------------------------------------------------------------------
+method New() class fTdb
+
+    local adbStruct as array
+
+    _Super:New()
+    self:ClassName()
+
+    adbStruct:={{"LINE","M",80,0}}
+    self:cDbAlias:=GetNextAlias()
+
+    self:oFWTTable:=FWTemporaryTable():New(self:cDbAlias,adbStruct)
+    self:oFWTTable:Create()
+
+    self:cDbAlias:=self:oFWTTable:GetAlias()
+    self:cDbFile:=self:oFWTTable:getRealName()
+
+    self:cRDDName:=(self:cDbAlias)->(RDDName())
+
+    return(self)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:ClassName
+        Autor:Marinaldo de Jesus [http://www.blacktdn.com.br]
+        Data:01/05/2011
+        Descricao:Retornar o Nome da classe
+        Sintaxe:ftdb():className():Retorna o Nome da classe
+    /*/
+//------------------------------------------------------------------------------------------------
+method ClassName() class fTdb
+    self:cClassName:=(_Super:ClassName()+"_"+GetClassName(self))
+return(self:cClassName)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:ft_fUse
+        Autor:Marinaldo de Jesus [http://www.blacktdn.com.br]
+        Data:01/05/2011
+        Descricao:Abrir o Arquivo Passado como Parametro
+        Sintaxe:ftdb():ft_fUse(cFile):nfHandle (nfHandle>0 True,False)
+    /*/
+//------------------------------------------------------------------------------------------------
+method ft_fUse(cFile) class fTdb
+
+    DEFAULT cFile:=""
+    paramtype cFile as character optional
+
+    DEFAULT self:cDbAlias:=""
+    if (!empty(self:cDbAlias).and.(select(self:cDbAlias)>0))
+        if (self:ft_fRecCount())
+            self:ft_fClose()
+            self:New()
+        endif
+    endif
+
+    if (self:ft_fExists(cFile))
+        self:ft_fOpen(cFile)
+    else
+        self:ft_fClose()
+    endif
+
+    return(self:nfHandle)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:ft_fOpen
+        Autor:Marinaldo de Jesus [http://www.blacktdn.com.br]
+        Data:01/05/2011
+        Descricao:Abrir o Arquivo Passado como Parametro
+        Sintaxe:ftdb():ft_fOpen(cFile):nfHandle (nfHandle>0 True,False)
+    /*/
+//------------------------------------------------------------------------------------------------
+method ft_fOpen(cFile) class fTdb
+
+    paramtype cFile as character
+
+    self:ft_fClose()
+
+    TRYEXCEPTION
+
+        if (!(self:ft_fExists(cFile)))
+            break
+        endif
+
+        self:cFile:=cFile
+        self:nfHandle:=fOpen(self:cFile,FO_READ)
+
+        if (self:nfHandle<=0)
+            break
+        endif
+
+        self:nFileSize:=fSeek(self:nfHandle,0,FS_END)
+
+        fSeek(self:nfHandle,0,FS_SET)
+
+        self:nFileSize:=ReadFile(self)
+
+        self:ft_fGoTop()
+
+    CATCHEXCEPTION
+
+        self:ft_fClose()
+
+    ENDEXCEPTION
+
+    return(self:nfHandle)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        Funcao:ReadFile
+        Autor:Marinaldo de Jesus [http://www.blacktdn.com.br]
+        Data:01/05/2011
+        Descricao:Percorre o Arquivo a ser lido e alimento o Array aLines
+        Sintaxe:ReadFile(self):nLines Read
+    /*/
+//------------------------------------------------------------------------------------------------
+static function ReadFile(self as object) as numeric
+
+    local cLine         as character
+    local cBuffer       as character
+
+    local lCRLF         as numeric
+
+    local nLines        as numeric
+    local nATCRLF       as numeric
+    local nATPlus       as numeric
+    local nBytesRead    as numeric
+
+    nLines:=0
+    nATPlus:=(len(self:cCRLF)-1)
+    nBytesRead:=0
+
+    fSeek(self:nfHandle,0)
+
+    cBuffer:=""
+    while (nBytesRead<=self:nFileSize)
+        cBuffer+=fReadStr(@self:nfHandle,@self:nBufferSize)
+        nBytesRead+=self:nBufferSize
+        lCRLF:=(self:cCRLF$cBuffer)
+        if (lCRLF)
+            while (lCRLF)
+                nLines++
+                nATCRLF:=AT(self:cCRLF,cBuffer)
+                cLine:=subStr(cBuffer,1,(nATCRLF+nATPlus))
+                cBuffer:=subStr(cBuffer,len(cLine)+1)
+                cLine:=strTran(cLine,self:cCRLF,"")
+                self:ft_fAppend(cLine)
+                cLine:=""
+                lCRLF:=(self:cCRLF$cBuffer)
+            end while
+        else
+            nLines++
+            self:ft_fAppend(cBuffer)
+            cBuffer:=""
+        endif
+    end while
+
+    if (!(empty(cBuffer)))
+        nLines++
+        self:ft_fAppend(cBuffer)
+        cBuffer:=""
+    endif
+
+    return(nLines)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:ft_fClose
+        Autor:Marinaldo de Jesus [http://www.blacktdn.com.br]
+        Data:01/05/2011
+        Descricao:Fechar o Arquivo aberto pela ft_fOpen ou ft_fUse
+        Sintaxe:ftdb():ft_fClose():nil
+    /*/
+//------------------------------------------------------------------------------------------------
+method ft_fClose() class fTdb
+
+    _Super:ft_fClose()
+
+    if (valType(self:oFWTTable)=="O")
+        self:oFWTTable:Delete()
+    elseif (!empty(self:cDbAlias).and.select(self:cDbAlias)>0)
+        (self:cDbAlias)->(dbCloseArea())
+    endif
+
+    self:cDbFile:=""
+    self:cDbAlias:=""
+    self:cRDDName:=""
+
+    return(nil)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:ft_fAlias
+        Autor:Marinaldo de Jesus [http://www.blacktdn.com.br]
+        Data:01/05/2011
+        Descricao:Retornar o Nome do Arquivo Atualmente Aberto
+        Sintaxe:ftdb():ft_fAlias():cFile
+    /*/
+//------------------------------------------------------------------------------------------------
+method ft_fAlias() class fTdb
+    return(self:cDbAlias)
+
+/*/
+    METHOD:ft_fExists
+    Autor:Marinaldo de Jesus [http://www.blacktdn.com.br]
+    Data:01/05/2011
+    Descricao:Verifica se o Arquivo Existe
+    Sintaxe:ftdb():ft_fExists(cFile):lExists
+/*/
+method ft_fExists(cFile) class fTdb
+    DEFAULT cFile:=""
+    paramtype cFile as character optional
+    return(_Super:ft_fExists(cFile))
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:ft_fRecNo
+        Autor:Marinaldo de Jesus [http://www.blacktdn.com.br]
+        Data:01/05/2011
+        Descricao:Retorna o RecNo Atual
+        Sintaxe:ftdb():ft_fRecNo():nRecNo
+    /*/
+//------------------------------------------------------------------------------------------------
+method ft_fRecNo() class fTdb
+    self:nRecNo:=(self:cDbAlias)->(RecNo())
+    return(self:nRecNo)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:ft_fSkip
+        Autor:Marinaldo de Jesus [http://www.blacktdn.com.br]
+        Data:01/05/2011
+        Descricao:Salta n Posicoes
+        Sintaxe:ftdb():ft_fSkip(nSkipper):nRecNo
+    /*/
+//------------------------------------------------------------------------------------------------
+method ft_fSkip(nSkipper) class fTdb
+    DEFAULT nSkipper:=1
+    paramtype nSkipper as numeric optional
+    (self:cDbAlias)->(dbSkip(nSkipper))
+    self:nRecNo:=self:ft_fRecNo()
+    return(self:nRecNo)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:ft_fGoTo
+        Autor:Marinaldo de Jesus [http://www.blacktdn.com.br]
+        Data:01/05/2011
+        Descricao:Salta para o Registro informando em nGoto
+        Sintaxe:ftdb():ft_fGoTo(nGoTo):nRecNo
+    /*/
+//------------------------------------------------------------------------------------------------
+method ft_fGoTo(nGoTo) class fTdb
+    paramtype nGoTo as numeric
+    (self:cDbAlias)->(dbGoto(nGoTo))
+    self:nRecNo:=self:ft_fRecNo()
+    return(self:nRecNo)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:ft_fGoTop
+        Autor:Marinaldo de Jesus [http://www.blacktdn.com.br]
+        Data:01/05/2011
+        Descricao:Salta para o Inicio do Arquivo
+        Sintaxe:ftdb():ft_fGoTo(nGoTo):nRecNo
+    /*/
+//------------------------------------------------------------------------------------------------
+method ft_fGoTop() class fTdb
+    (self:cDbAlias)->(dbGoTop())
+    self:nRecNo:=self:ft_fRecNo()
+    return(self:nRecNo)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:ft_fGoBottom
+        Autor:Marinaldo de Jesus [http://www.blacktdn.com.br]
+        Data:01/05/2011
+        Descricao:Salta para o Final do Arquivo
+        Sintaxe:ftdb():ft_fGoBottom():nRecNo
+    /*/
+//------------------------------------------------------------------------------------------------
+method ft_fGoBottom() class fTdb
+    (self:cDbAlias)->(dbGoBottom())
+    self:nRecNo:=self:ft_fRecNo()
+    return(self:nRecNo)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:ft_fLastRec
+        Autor:Marinaldo de Jesus [http://www.blacktdn.com.br]
+        Data:01/05/2011
+        Descricao:Retorna o Numero de Registro do Arquivo
+        Sintaxe:ftdb():ft_fLastRec():nRecCount
+    /*/
+//------------------------------------------------------------------------------------------------
+method ft_fLastRec() class fTdb
+    return((self:cDbAlias)->(LastRec()))
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:ft_fRecCount
+        Autor:Marinaldo de Jesus [http://www.blacktdn.com.br]
+        Data:01/05/2011
+        Descricao:Retorna o Numero de Registro do Arquivo
+        Sintaxe:ftdb():ft_fRecCount():nRecCount
+    /*/
+//------------------------------------------------------------------------------------------------
+method ft_fRecCount() class fTdb
+    return((self:cDbAlias)->(RecCount()))
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:ft_fEof
+        Autor:Marinaldo de Jesus [http://www.blacktdn.com.br]
+        Data:01/05/2011
+        Descricao:Verifica se Atingiu o Final do Arquivo
+        Sintaxe:ftdb():ft_fEof():lEof
+    /*/
+//------------------------------------------------------------------------------------------------
+method ft_fEof() class fTdb
+    return((self:cDbAlias)->(Eof()))
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:ft_fBof
+        Autor:Marinaldo de Jesus [http://www.blacktdn.com.br]
+        Data:01/05/2011
+        Descricao:Verifica se Atingiu o Inicio do Arquivo
+        Sintaxe:ftdb():ft_fBof():lBof
+    /*/
+//------------------------------------------------------------------------------------------------
+method ft_fBof() class fTdb
+    return((self:cDbAlias)->(Bof()))
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:ft_fReadLine
+        Autor:Marinaldo de Jesus [http://www.blacktdn.com.br]
+        Data:01/05/2011
+        Descricao:Le a Linha do Registro Atualmente Posicionado
+        Sintaxe:ftdb():ft_fReadLine():cLine
+    /*/
+//------------------------------------------------------------------------------------------------
+method ft_fReadLine() class fTdb
+
+    TRYEXCEPTION
+
+        self:nLastRecNo:=self:nRecNo
+        self:cLine:=(self:cDbAlias)->(FieldGet(1))
+
+    CATCHEXCEPTION
+
+        self:cLine:=""
+
+    ENDEXCEPTION
+
+    return(self:cLine)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:ft_fReadLn
+        Autor:Marinaldo de Jesus [http://www.blacktdn.com.br]
+        Data:01/05/2011
+        Descricao:Le a Linha do Registro Atualmente Posicionado
+        Sintaxe:ftdb():ft_fReadLn():cLine
+    /*/
+//------------------------------------------------------------------------------------------------
+method ft_fReadLn() class fTdb
+    return(self:ft_fReadLine())
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:ft_fError
+        Autor:Marinaldo de Jesus [http://www.blacktdn.com.br]
+        Data:01/05/2011
+        Descricao:Retorna o Ultimo erro ocorrido
+        Sintaxe:ftdb():ft_fError(@cError):nDosError
+    /*/
+//------------------------------------------------------------------------------------------------
+method ft_fError(cError) class fTdb
+    DEFAULT cError:=""
+    paramtype cError as character optional
+    cError:=CaptureError()
+    return(fError())
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:ft_fSetBufferSize
+        Autor:Marinaldo de Jesus [http://www.blacktdn.com.br]
+        Data:01/05/2011
+        Descricao:Redefine nBufferSize
+        Sintaxe:ftdb():ft_fSetBufferSize(nBufferSize):nLastBufferSize
+    /*/
+//------------------------------------------------------------------------------------------------
+method ft_fSetBufferSize(nBufferSize) class fTdb
+    DEFAULT nBufferSize:=1024
+    paramtype nBufferSize as numeric optional
+    return(_Super:ft_fSetBufferSize(@nBufferSize))
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:ft_fSetCRLF
+        Autor:Marinaldo de Jesus [http://www.blacktdn.com.br]
+        Data:01/05/2011
+        Descricao:Redefine cCRLF
+        Sintaxe:ftdb():ft_fSetCRLF(cCRLF):nLastCRLF
+    /*/
+//------------------------------------------------------------------------------------------------
+method ft_fSetCRLF(cCRLF) class fTdb
+    DEFAULT cCRLF:=CRLF
+    paramtype cCRLF as character optional
+    return(_Super:ft_fSetCRLF(@cCRLF))
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:ft_fAppend
+        Autor:Marinaldo de Jesus [http://www.blacktdn.com.br]
+        Data:01/05/2011
+        Descricao:Adicionar novo regisro
+        Sintaxe:ftdb():ft_fAppend(cValue):nRecNo
+    /*/
+//------------------------------------------------------------------------------------------------
+method ft_fAppend(cValue) class fTdb
+    local lAppend   as logical
+    local nRecNo    as numeric
+    DEFAULT cValue:=""
+    paramtype cValue as character optional
+    nRecNo:=self:ft_fRecNo()
+    lAppend:=(select(sef:cDbAlias)>0)
+    if (lAppend)
+        (self:cDbAlias)->(dbAppend(.T.))
+        lAppend:=((sef:cDbAlias)->(!netErr()))
+        if (lAppend)
+            (self:cDbAlias)->(FieldPut(1,cValue))
+            nRecNo:=self:ft_fRecNo()
+            (self:cDbAlias)->(dbrUnLock(nRecNo))
+        endif
+    endif
+    return(lAppend)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:ft_fUpdate
+        Autor:Marinaldo de Jesus [http://www.blacktdn.com.br]
+        Data:01/05/2011
+        Descricao:Atualiza um Registro
+        Sintaxe:ftdb():ft_fUpdate(cValue):lUpdate
+    /*/
+//------------------------------------------------------------------------------------------------
+method ft_fUpdate(cValue) class fTdb
+    local lUpdate   as logical
+    local nRecNo    as numeric
+    DEFAULT cValue:=""
+    paramtype cValue as character optional
+    nRecNo:=self:ft_fRecNo()
+    lUpdate:=((select(sef:cDbAlias)>0).and.(self:cDbAlias)->(dbrLock(nRecNo)))
+    if (lUpdate)
+        (self:cDbAlias)->(FieldPut(1,cValue))
+        (self:cDbAlias)->(dbrUnLock(nRecNo))
+    endif
+    return(lUpdate)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:ft_fDelete
+        Autor:Marinaldo de Jesus [http://www.blacktdn.com.br]
+        Data:01/05/2011
+        Descricao:Deleta um Registro
+        Sintaxe:ftdb():ft_fDelete():lDeleted
+    /*/
+//------------------------------------------------------------------------------------------------
+method ft_fDelete() class fTdb
+    local lLock   as logical
+    local lDelete as logical
+    local nRecNo  as numeric
+    nRecNo:=self:ft_fRecNo()
+    lLock:=((select(sef:cDbAlias)>0).and.((sef:cDbAlias)->(dbrLock(nRecNo))))
+    if (lLock)
+        (self:cDbAlias)->(dbDelete())
+        (self:cDbAlias)->(dbrUnLock(nRecNo))
+    endif
+    lDelete:=self:ft_fDeleted()
+    return(lDelete)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:ft_fReCall
+        Autor:Marinaldo de Jesus [http://www.blacktdn.com.br]
+        Data:01/05/2011
+        Descricao:Recupera um Registro
+        Sintaxe:ftdb():ft_fReCall():lReCall
+    /*/
+//------------------------------------------------------------------------------------------------
+method ft_fReCall() class fTdb
+    local lLock   as logical
+    local lReCall as logical
+    local nRecNo  as numeric
+    nRecNo:=self:ft_fRecNo()
+    lLock:=((select(sef:cDbAlias)>0).and.((self:cDbAlias)->(dbrLock(nRecNo))))
+    if (lLock)
+        (self:cDbAlias)->(dbReCall())
+        (self:cDbAlias)->(dbrUnLock(nRecNo))
+    endif
+    lReCall:=self:ft_fDeleted()
+    return(lReCall)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:ft_fDeleted
+        Autor:Marinaldo de Jesus [http://www.blacktdn.com.br]
+        Data:01/05/2011
+        Descricao:Verifica se Registro esta Deletado
+        Sintaxe:ftdb():ft_fDeleted():lDeleted
+    /*/
+//------------------------------------------------------------------------------------------------
+method ft_fDeleted() class fTdb
+    local lDeleted as logical
+    lDeleted:=((select(self:cDbAlias)>0).and.((self:cDbAlias)->(Deleted())))
+    return(lDeleted)
+
+#include "tryexception.ch"

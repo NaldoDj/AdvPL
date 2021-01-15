@@ -1,0 +1,34 @@
+#include "totvs.ch"
+#include "fileio.ch"
+
+class dbEval
+    static method dbEval(cAlias,cExec,cFor,cWhile,nNext,nRegister,lRest,cExit) as logical
+end class
+
+static method dbEval(cAlias,cExec,cFor,cWhile,nNext,nRegister,lRest,cExit) class dbEval
+    return(__dbEval(@cAlias,@cExec,@cFor,@cWhile,@nNext,@nRegister,@lRest,@cExit))
+static function __dbEval(cAlias as character,cExec as character,cFor as character,cWhile as character,nNext as numeric,nRegister as numeric,lRest as logical,cExit as character) as logical
+
+    local bBlock        as block
+    local bFor          as block
+    local bWhile        as block
+    local bSaida        as block
+
+    local ldbEval    as logical
+
+    bBlock:=&("{||"+cValToChar(cExec)+"}")
+    bFor:=&("{||"+cValToChar(cFor)+"}")
+    bWhile:=&("{||"+cValToChar(cWhile)+"}")
+    bSaida:=&("{||"+cValToChar(cExit)+"}")
+
+    if (!lRest)
+        (cAlias)->(dbGotop())
+    endif
+
+    (cAlias)->(dbEval(bBlock,bFor,bWhile,if(empty(nNext),NIL,nNext),if(empty(nRegister),NIL,nRegister),lRest))
+
+    (cAlias)->(Eval(bSaida))
+
+    DEFAULT ldbEval:=.T.
+
+    return(ldbEval)

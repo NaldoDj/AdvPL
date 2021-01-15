@@ -1,0 +1,538 @@
+#include "totvs.ch"
+#include "fileio.ch"
+#include "tbiconn.ch"
+#include "parmtype.ch"
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        class:ufT
+        Autor:Marinaldo de Jesus [http://www.blacktdn.com.br]
+        Data:01/05/2011
+        Descricao:Alternativa aas funcoes tipo FT_F* devido as limitacoes apontadas em (http://tdn.totvs.com.br/kbm#9734)
+        Sintaxe:uft():New():Objeto do Tipo fT
+    /*/
+//------------------------------------------------------------------------------------------------
+class ufT FROM LongclassName
+
+    data aLines as array
+
+    data cCRLF          as character
+    data cFile          as character
+    data cLine          as character
+
+    data nRecno         as numeric
+    data nfHandle       as numeric
+    data nFileSize      as numeric
+    data nLastRecno     as numeric
+    data nBufferSize    as numeric
+
+    data cClassName as character
+
+    public method New() as object /*/\constructor/\*/
+    public method FreeObj()       /*\/destructor\/*/
+
+    public method ClassName() as character
+
+    public method ft_fUse(cFile) as numeric
+    public method ft_fOpen(cFile) as numeric
+    public method ft_fClose() as numeric
+
+    public method ft_fAlias() as character
+
+    public method ft_fExists(cFile) as logical
+
+    public method ft_fRecno() as numeric
+    public method ft_fSkip(nSkipper) as numeric
+    public method ft_fGoTo(nGoTo) as numeric
+    public method ft_fGoTop() as numeric
+    public method ft_fGoBottom() as numeric
+    public method ft_fLastRec() as numeric
+    public method ft_fRecCount() as numeric
+
+    public method ft_fEof() as logical
+    public method ft_fBof() as logical
+
+    public method ft_fReadLn() as character
+    public method ft_fReadLine() as character
+
+    public method ft_fError(cError) as numeric
+
+    public method ft_fSetCRLF(cCRLF) as character
+    public method ft_fSetBufferSize(nBufferSize) as numeric
+
+endclass
+
+function u_uft()
+    return(uft():New())
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:New
+        Autor:Marinaldo de Jesus [http://www.blacktdn.com.br]
+        Data:01/05/2011
+        Descricao:constructor
+        Sintaxe:uft():New():Object do Tipo fT
+    /*/
+//------------------------------------------------------------------------------------------------
+method New() class ufT
+
+    self:ClassName()
+
+    self:aLines:=Array(0)
+
+    self:cFile:=""
+    self:cLine:=""
+
+    self:nRecno:=0
+    self:nLastRecno:=0
+    self:nfHandle:=-1
+    self:nFileSize:=0
+
+    self:ft_fSetCRLF()
+    self:ft_fSetBufferSize()
+
+    return(self)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:FreeObj
+        Autor:Marinaldo de Jesus [http://www.blacktdn.com.br]
+        Data:01/05/2011
+        Descricao:DESTRUCTOR
+        Sintaxe:uft():FreeObj():self
+    /*/
+//------------------------------------------------------------------------------------------------
+method FreeObj() class ufT
+    local oFreeObj as object
+    oFreeObj:=self
+    if (ValType(oFreeObj:aLines)=="A")
+        aSize(oFreeObj:aLines,0)
+    endif
+    oFreeObj:=FreeObj(oFreeObj)
+    return(oFreeObj)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:ClassName
+        Autor:Marinaldo de Jesus [http://www.blacktdn.com.br]
+        Data:01/05/2011
+        Descricao:Retornar o Nome da classe
+        Sintaxe:uft():className():Retorna o Nome da classe
+    /*/
+//------------------------------------------------------------------------------------------------
+method ClassName() class ufT
+    self:cClassName:="UFT"
+    return(self:cClassName)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:ft_fUse
+        Autor:Marinaldo de Jesus [http://www.blacktdn.com.br]
+        Data:01/05/2011
+        Descricao:Abrir o Arquivo Passado como Parametro
+        Sintaxe:uft():ft_fUse(cFile):nfHandle (nfHandle>0 True,False)
+    /*/
+//------------------------------------------------------------------------------------------------
+method ft_fUse(cFile) class ufT
+
+    DEFAULT cFile:=""
+    paramtype cFile as character optional
+
+    self:ft_fClose()
+
+    if (self:ft_fExists(cFile))
+        self:ft_fOpen(cFile)
+    else
+        self:ft_fClose()
+    endif        
+
+    return(self:nfHandle)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:ft_fOpen
+        Autor:Marinaldo de Jesus [http://www.blacktdn.com.br]
+        Data:01/05/2011
+        Descricao:Abrir o Arquivo Passado como Parametro
+        Sintaxe:uft():ft_fOpen(cFile):nfHandle (nfHandle>0 True,False)
+    /*/
+//------------------------------------------------------------------------------------------------
+method ft_fOpen(cFile) class ufT
+
+    paramtype cFile as character
+
+    self:ft_fClose()
+
+    TRYEXCEPTION
+
+        if (!(self:ft_fExists(cFile)))
+            break
+        endif
+
+        self:cFile:=cFile
+        self:nfHandle:=fOpen(self:cFile,FO_READ)
+
+        if (self:nfHandle<=0)
+            break
+        endif
+
+        self:nFileSize:=fSeek(self:nfHandle,0,FS_END)
+
+        fSeek(self:nfHandle,0,FS_SET)
+
+        self:nFileSize:=ReadFile(@self:aLines,@self:nfHandle,@self:nBufferSize,@self:nFileSize,@self:cCRLF)
+
+        self:ft_fGoTop()
+
+    CATCHEXCEPTION
+
+        self:nfHandle:=-1
+
+    ENDEXCEPTION
+
+    return(self:nfHandle)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        Funcao:ReadFile
+        Autor:Marinaldo de Jesus [http://www.blacktdn.com.br]
+        Data:01/05/2011
+        Descricao:Percorre o Arquivo a ser lido e alimento o Array aLines
+        Sintaxe:ReadFile(aLines,nfHandle,nBufferSize,nFileSize,cCRLF):nLines Read
+    /*/
+//------------------------------------------------------------------------------------------------
+Static Function ReadFile(aLines as array,nfHandle as numeric,nBufferSize as numeric,nFileSize as numeric,cCRLF as character)
+
+    local cLine         as character
+    local cBuffer       as character
+
+    local lCRLF         as logical
+
+    local nLines        as numeric
+    local nATCRLF       as numeric
+    local nATPlus       as numeric
+    local nBytesRead    as numeric
+
+    nLines:=0
+    nATPlus:=(len(cCRLF)-1)
+    nBytesRead:=0
+
+    fSeek(nfHandle,0)
+
+    cBuffer:=""
+    while (nBytesRead<=nFileSize)
+        cBuffer+=fReadStr(@nfHandle,@nBufferSize)
+        nBytesRead+=nBufferSize
+        lCRLF:=(cCRLF$cBuffer)
+        if (lCRLF)
+            while (lCRLF)
+                nLines++
+                nATCRLF:=at(cCRLF,cBuffer)
+                cLine:=subStr(cBuffer,1,(nATCRLF+nATPlus))
+                cBuffer:=subStr(cBuffer,len(cLine)+1)
+                cLine:=strTran(cLine,cCRLF,"")
+                aAdd(aLines,cLine)
+                cLine:=""
+                lCRLF:=(cCRLF$cBuffer)
+            end while
+        else
+            aAdd(aLines,cBuffer)
+            cBuffer:=""
+        endif
+    end while
+
+    if (!(empty(cBuffer)))
+        ++nLines
+        aAdd(aLines,cBuffer)
+        cBuffer:=""
+    endif
+
+    return(nLines)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:ft_fClose
+        Autor:Marinaldo de Jesus [http://www.blacktdn.com.br]
+        Data:01/05/2011
+        Descricao:Fechar o Arquivo aberto pela ft_fOpen ou ft_fUse
+        Sintaxe:uft():ft_fClose():nil
+    /*/
+//------------------------------------------------------------------------------------------------
+method ft_fClose() class ufT
+
+    if (self:nfHandle>0)
+        fClose(self:nfHandle)
+    endif
+
+    aSize(self:aLines,0)
+
+    self:cFile:=""
+    self:cLine:=""
+
+    self:nRecno:=0
+    self:nfHandle:=-1
+    self:nFileSize:=0
+    self:nLastRecno:=0
+
+    return(nil)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:ft_fAlias
+        Autor:Marinaldo de Jesus [http://www.blacktdn.com.br]
+        Data:01/05/2011
+        Descricao:Retornar o Nome do Arquivo Atualmente Aberto
+        Sintaxe:uft():ft_fAlias():cFile
+    /*/
+//------------------------------------------------------------------------------------------------
+method ft_fAlias() class ufT
+    return(self:cFile)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:ft_fExists
+        Autor:Marinaldo de Jesus [http://www.blacktdn.com.br]
+        Data:01/05/2011
+        Descricao:Verifica se o Arquivo Existe
+        Sintaxe:uft():ft_fExists(cFile):lExists
+    /*/
+//------------------------------------------------------------------------------------------------
+method ft_fExists(cFile) class ufT
+
+    local lExists   as logical
+    
+    DEFAULT cFile:=""
+    paramtype cFile as character optional
+
+    lExists:=.F.
+
+    TRYEXCEPTION
+
+        if (empty(cFile))
+            break
+        endif
+
+        lExists:=File(cFile)
+
+    CATCHEXCEPTION
+
+        lExists:=.F.
+
+    ENDEXCEPTION
+
+    return(lExists)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:ft_fRecno
+        Autor:Marinaldo de Jesus [http://www.blacktdn.com.br]
+        Data:01/05/2011
+        Descricao:Retorna o Recno Atual
+        Sintaxe:uft():ft_fRecno():nRecno
+    /*/
+//------------------------------------------------------------------------------------------------
+method ft_fRecno() class ufT
+    return(self:nRecno)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:ft_fSkip
+        Autor:Marinaldo de Jesus [http://www.blacktdn.com.br]
+        Data:01/05/2011
+        Descricao:Salta n Posicoes
+        Sintaxe:uft():ft_fSkip(nSkipper):nRecno
+    /*/
+//------------------------------------------------------------------------------------------------
+method ft_fSkip(nSkipper) class ufT
+
+    DEFAULT nSkipper:=1
+    paramtype nSkipper as numeric optional
+
+    self:nRecno+=nSkipper
+
+    return(self:nRecno)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:ft_fGoTo
+        Autor:Marinaldo de Jesus [http://www.blacktdn.com.br]
+        Data:01/05/2011
+        Descricao:Salta para o Registro informando em nGoto
+        Sintaxe:uft():ft_fGoTo(nGoTo):nRecno
+    /*/
+//------------------------------------------------------------------------------------------------
+method ft_fGoTo(nGoTo) class ufT
+
+    paramtype nGoTo as numeric
+
+    self:nRecno:=nGoTo
+
+    return(self:nRecno)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:ft_fGoTop
+        Autor:Marinaldo de Jesus [http://www.blacktdn.com.br]
+        Data:01/05/2011
+        Descricao:Salta para o Inicio do Arquivo
+        Sintaxe:uft():ft_fGoTo(nGoTo):nRecno
+    /*/
+//------------------------------------------------------------------------------------------------
+method ft_fGoTop() class ufT
+    return(self:ft_fGoTo(1))
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:ft_fGoBottom
+        Autor:Marinaldo de Jesus [http://www.blacktdn.com.br]
+        Data:01/05/2011
+        Descricao:Salta para o Final do Arquivo
+        Sintaxe:uft():ft_fGoBottom():nRecno
+    /*/
+//------------------------------------------------------------------------------------------------
+method ft_fGoBottom() class ufT
+    return(self:ft_fGoTo(self:nFileSize))
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:ft_fLastRec
+        Autor:Marinaldo de Jesus [http://www.blacktdn.com.br]
+        Data:01/05/2011
+        Descricao:Retorna o Numero de Registro do Arquivo
+        Sintaxe:uft():ft_fLastRec():nRecCount
+    /*/
+//------------------------------------------------------------------------------------------------
+method ft_fLastRec() class ufT
+    return(self:nFileSize)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:ft_fRecCount
+        Autor:Marinaldo de Jesus [http://www.blacktdn.com.br]
+        Data:01/05/2011
+        Descricao:Retorna o Numero de Registro do Arquivo
+        Sintaxe:uft():ft_fRecCount():nRecCount
+    /*/
+//------------------------------------------------------------------------------------------------
+method ft_fRecCount() class ufT
+    return(self:nFileSize)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:ft_fEof
+        Autor:Marinaldo de Jesus [http://www.blacktdn.com.br]
+        Data:01/05/2011
+        Descricao:Verifica se Atingiu o Final do Arquivo
+        Sintaxe:uft():ft_fEof():lEof
+    /*/
+//------------------------------------------------------------------------------------------------
+method ft_fEof() class ufT
+    return(self:nRecno>self:nFileSize)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:ft_fBof
+        Autor:Marinaldo de Jesus [http://www.blacktdn.com.br]
+        Data:01/05/2011
+        Descricao:Verifica se Atingiu o Inicio do Arquivo
+        Sintaxe:uft():ft_fBof():lBof
+    /*/
+//------------------------------------------------------------------------------------------------
+method ft_fBof() class ufT
+    return(self:nRecno<1)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:ft_fReadLine
+        Autor:Marinaldo de Jesus [http://www.blacktdn.com.br]
+        Data:01/05/2011
+        Descricao:Le a Linha do Registro Atualmente Posicionado
+        Sintaxe:uft():ft_fReadLine():cLine
+    /*/
+//------------------------------------------------------------------------------------------------
+method ft_fReadLine() class ufT
+
+    TRYEXCEPTION
+
+        self:nLastRecno:=self:nRecno
+        self:cLine:=self:aLines[self:nRecno]
+
+    CATCHEXCEPTION
+
+        self:cLine:=""
+
+    ENDEXCEPTION
+
+    return(self:cLine)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:ft_fReadLn
+        Autor:Marinaldo de Jesus [http://www.blacktdn.com.br]
+        Data:01/05/2011
+        Descricao:Le a Linha do Registro Atualmente Posicionado
+        Sintaxe:uft():ft_fReadLn():cLine
+    /*/
+//------------------------------------------------------------------------------------------------
+method ft_fReadLn() class ufT
+    return(self:ft_fReadLine())
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:ft_fError
+        Autor:Marinaldo de Jesus [http://www.blacktdn.com.br]
+        Data:01/05/2011
+        Descricao:Retorna o Ultimo erro ocorrido
+        Sintaxe:uft():ft_fError(@cError):nDosError
+    /*/
+//------------------------------------------------------------------------------------------------
+method ft_fError(cError) class ufT
+    DEFAULT cError:=""
+    paramtype cError as character optional
+    cError:=CaptureError()
+    return(fError())
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:ft_fSetBufferSize
+        Autor:Marinaldo de Jesus [http://www.blacktdn.com.br]
+        Data:01/05/2011
+        Descricao:Redefine nBufferSize
+        Sintaxe:uft():ft_fSetBufferSize(nBufferSize):nLastBufferSize
+    /*/
+//------------------------------------------------------------------------------------------------
+method ft_fSetBufferSize(nBufferSize) class ufT
+
+    local nLastBufferSize:=self:nBufferSize
+
+    DEFAULT nBufferSize:=1024
+    paramtype nBufferSize as numeric optional
+
+    self:nBufferSize:=nBufferSize
+    self:nBufferSize:=Max(self:nBufferSize,1)
+
+    return(nLastBufferSize)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:ft_fSetCRLF
+        Autor:Marinaldo de Jesus [http://www.blacktdn.com.br]
+        Data:01/05/2011
+        Descricao:Redefine cCRLF
+        Sintaxe:uft():ft_fSetCRLF(cCRLF):nLastCRLF
+    /*/
+//------------------------------------------------------------------------------------------------
+method ft_fSetCRLF(cCRLF) class ufT
+
+    local cLastCRLF as character
+    
+    DEFAULT cCRLF:=CRLF
+    paramtype cCRLF as character optional
+
+    cLastCRLF:=self:cCRLF
+
+    self:cCRLF:=cCRLF
+
+    return(cLastCRLF)
+
+#include "tryexception.ch"

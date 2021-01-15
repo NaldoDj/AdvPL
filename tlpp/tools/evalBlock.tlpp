@@ -1,0 +1,189 @@
+#include "totvs.ch"
+#include "fileio.ch"
+
+class evalBlock
+    static method EvalBlock(bEval,xParameter,lShowHelp,cHelp,cMsgHelp) as logical
+    static method Execute(uExec,lShowHelp,cHelp,cMsgHelp) as logical
+end class
+
+static method EvalBlock(bEval,xParameter,lShowHelp,cHelp,cMsgHelp) class evalBlock
+    return(EvalBlock(@bEval,@xParameter,@lShowHelp,@cHelp,@cMsgHelp))
+static function EvalBlock(bEval as block,xParameter,lShowHelp as logical,cHelp as character,cMsgHelp as character) as logical
+    local bExec     as block
+    local lReturn   as logical
+    bExec:={||Eval(@bEval,@xParameter)}
+    DEFAULT lShowHelp:=.F.
+    DEFAULT cHelp:=""
+    DEFAULT cMsgHelp:=""
+    lReturn:=Execute(bExec,@lShowHelp,@cHelp,@cMsgHelp)
+    return(lReturn)
+
+static method Execute(uExec,lShowHelp,cHelp,cMsgHelp) class evalBlock
+    return(Execute(@uExec,@lShowHelp,@cHelp,@cMsgHelp))
+static function Execute(uExec,lShowHelp as logical,cHelp as character,cMsgHelp as character) as logical
+
+    local bErro     as block
+
+    local cType     as character
+
+    local lExecOk   as logical
+
+    DEFAULT uExec:={||.T.}
+    DEFAULT lShowHelp:=.F.
+
+    bErro:=ErrorBlock({|oError|ErrorMessage(@oError,@lExecOk,@lShowHelp,@cHelp,@cMsgHelp)})
+    lExecOk:=.T.
+
+    begin sequence
+        cType:=valType(uExec)
+        if (cType=="C")
+            uExec:=&(uExec)
+        elseif (cType=="B")
+            uExec:=Eval(uExec)
+        endif
+    end sequence
+
+    ErrorBlock(bErro)
+
+    return(lExecOk)
+
+static procedure ErrorMessage(oError as object,lHasError as logical,lShowHelp as logical,cHelp as character,cMsgHelp as character)
+
+    local aErros	as array
+
+    local cID		as character
+    local cCRLF     as character
+    local cfhLog    as character
+    local cLogPath  as character
+    local cLogError	as character
+    local cStkError	as character
+    local cEnvError	as character
+
+    local lfhLog    as logical
+
+    local nErro		as numeric
+    local nErros	as numeric
+    local nfhLog    as numeric
+
+    local oModel	as object
+
+    DEFAULT lShowHelp:=.F.
+
+    lHasError:=(oError:genCode>0)
+
+    if (lHasError)
+
+        lHasError:=.F.
+
+        cCRLF:=CRLF
+
+        if (empty(cHelp))
+        	cHelp:="[GENERIC INTERNAL ERROR] :: "
+        endif
+
+        DEFAULT cMsgHelp:=""
+
+        cLogError:=cHelp
+        cLogError+=cCRLF
+        if (!empty(cMsgHelp))
+        	cLogError+="[ERROR MESSAGE HELP] :: "
+        	cLogError+=cMsgHelp
+        	cLogError+=cCRLF
+        endif
+        aErros:=GetAutoGRLog()
+        nErros:=Len(aErros)
+        if (nErros>0)
+        	cLogError+="[ERROR MESSAGE AUTO] :: "
+        	for nErro:= 1 to nErros
+        		cLogError+=aErros[nErro]
+        		cLogError+=cCRLF
+        	next nErros
+        endif
+
+        cStkError:=cLogError
+        cStkError+=cCRLF
+        cStkError+="[ERROR MESSAGE DESCRIPTION] :: "
+        cStkError+=cCRLF
+        cStkError+=oError:Description
+        cStkError+=cCRLF
+		cStkError+="[ERROR MESSAGE STACK] :: "
+		cStkError+=cCRLF
+		cStkError+=oError:ErrorStack
+		cStkError+=cCRLF
+
+		cEnvError:=cStkError
+		cEnvError+="[ERROR MESSAGE ENV] :: "
+		cEnvError+=cCRLF
+		cEnvError+=oError:ErrorEnv
+		cEnvError+=cCRLF
+
+        cLogPath:=getNewPar("AFX_FHLOGS","\afxfiles\logs\")
+        if (!(right(cLogPath,1)=="\"))
+            cLogPath+="\"
+        endif
+
+        if (direvalBlock():makeDir(cLogPath))
+            cfhLog:=cLogPath
+            cfhLog+=DtoS(Date())
+            cfhLog+="-"
+            cfhLog+=StrTran(Time(),":","")
+            cfhLog+="-"
+            cfhLog+=StrZero(RandoMize(1,999),3)
+            cfhLog+="-"
+            cfhLog+="afxerror"
+            cfhLog+=".log"
+            nfhLog:=fCreate(cfhLog,FC_NORMAL)
+            fClose(nfhLog)
+            nfhLog:=fOpen(cfhLog,FO_READWRITE)
+            lfhLog:=(nfhLog>=0)
+            if (lfhLog)
+                if (fWrite(nfhLog,cEnvError))
+                	cLogError+="[ERROR MESSAGE FULL DETAIL IN SERVER] :: "
+                	cLogError+=cfhLog
+                endif
+            endif
+        endif
+
+        oModel:=FWModelActive()
+        if (valType(oModel)=="O")
+	        if (IsBlind())
+	        	while (cCRLF$cStkError)
+	        		cStkError:=strTran(cStkError,cCRLF," ")
+	        	end while
+	        endif
+	        cID:=oModel:GetID()
+	        oModel:GetModel():SetErrorMessage(cID,"VLDDATA_POST",cID,cID,cID,cStkError,nil,nil,nil)
+        endif
+
+        DEFAULT cID:=""
+        if (!empty(cID))
+        	cID+=" :: "
+        endif
+
+        FWLogMsg("ERROR"/*<cSeverity>*/,/*[cTransactionId]*/,cID+"GENERIC INTERNAL ERROR"/*<cGroup>*/,cID+"INTERNAL ERROR"/*<cCategory>*/,ProcName()/*<cStep >*/,FunName()/*<cMsgId>*/,cEnvError/*<cMessage>*/,0/*<nMensure>*/,0/*<nElapseTime>*/,array(0)/*<aMessage>*/)
+
+        if (lShowHelp)
+            //Quando estiver utilizando JOB
+            if (IsBlind().or.(GetRemoteType()==(-1)))
+                MsgLogGrid(cEnvError,.F.)
+            else
+                EECView(cEnvError,cHelp)
+            endif
+        endif
+
+        if (IsBlind())
+        	while (cCRLF$cStkError)
+        		cStkError:=strTran(cStkError,cCRLF," ")
+        	end while
+        	if (IsInCallStack("WSEXECUTE"))
+    			SetSoapFault("500",cStkError)
+        	elseif (IsInCallStack("WSRESTFUL:CALLMETHOD").or.IsInCallStack("RESTEXECUTE"))
+        		SetRestFault(500/*nCode*/,"GENERIC INTERNAL ERROR"/*cMessage*/,/*lJson*/,/*nStatus*/,cStkError/*cDetailMsg*/,/*cHelpUrl*/,/*aDetails*/)
+        	endif
+        endif
+
+    endif
+
+    break(oError)
+
+    return

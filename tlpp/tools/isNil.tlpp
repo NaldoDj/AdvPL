@@ -1,0 +1,12 @@
+#include "totvs.ch"
+
+class isNil
+    static method IsNil(xValue,xDefault) as logical
+end class
+
+static method IsNil(xValue,xDefault) class isNil
+    return(IsNil(@xValue,@xDefault))
+static function IsNil(xValue,xDefault)
+    local xRet
+    xRet:=if(xValue==nil,xDefault,xValue)
+    return(xRet)

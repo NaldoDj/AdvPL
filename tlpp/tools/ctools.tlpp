@@ -1,0 +1,769 @@
+#include "totvs.ch"
+#include "parmtype.ch"
+
+#define PRETTIFFY_XML   1
+#define PRETTIFFY_HTML  2
+#define PRETTIFFY_JSON  3
+
+static s_CHR009 as character
+static s_CHR010 as character
+static s_CHR013 as character
+
+class ctools
+
+	static method UTF8(cStr,lUTF8,lNoAccent,lTrimSpace) as character
+	static method UTF8Enc(lUTF8,lNoAccent,lTrimSpace) as numeric
+	static method NoAccent(cStrAnsi) as character 
+    static method ReadMemo(cFile) as character 
+
+    static method StrCount(cString,cStrCount) as numeric
+    static method Contains(cContains,cString) as logical
+    
+    static method RightAT(cATString,cString) as numeric
+    static method RightATRemove(cATString,cString,lATStringRem) as character
+    static method RightCharRemove(cStr,cChr) as character
+
+    static method LeftAT(cATString,cString) as numeric
+    static method LeftATRemove(cATString,cString,lATStringRem) as character
+    static method LeftCharRemove(cStr,cChr) as character
+
+    static method NToS(nVal) as character
+    static method RetPictVal(nVal,lDecZero,nInt,nDec,lPictSepMil) as character
+
+    static method StrPrettify(cStrNoPrettify,nType,nTab,nMaxLine) as character
+
+end class
+
+static method UTF8(cStr,lUTF8,lNoAccent,lTrimSpace) class ctools
+	DEFAULT cStr:=""
+	paramtype cStr as character optional
+	DEFAULT lUTF8:=.T.
+	paramtype lUTF8 as logical optional
+	DEFAULT lNoAccent:=.T.
+	paramtype lNoAccent as logical optional
+	DEFAULT lTrimSpace:=.T.
+	paramtype lTrimSpace as logical optional
+	return(UTF8(cStr,lUTF8,lNoAccent,lTrimSpace))
+
+static method UTF8Enc(lUTF8,lNoAccent,lTrimSpace) class ctools
+	DEFAULT lUTF8:=.T.
+	paramtype lUTF8 as logical optional
+	DEFAULT lNoAccent:=.T.
+	paramtype lNoAccent as logical optional
+	DEFAULT lTrimSpace:=.T.
+	paramtype lTrimSpace as logical optional
+	return(UTF8Enc(@lUTF8,@lNoAccent,@lTrimSpace))
+
+static method NoAccent(cStrAnsi) class ctools
+	paramtype cStrAnsi as character
+	return(NoAccent(cStrAnsi))
+
+static function UTF8(cStr as character,lUTF8 as logical,lNoAccent as logical,lTrimSpace as logical) as character
+
+	local cStrNew	as character
+
+	DEFAULT lUTF8:=.T.
+	DEFAULT lNoAccent:=.T.
+	DEFAULT lTrimSpace:=.T.
+
+	begin sequence
+
+		cStrNew:=cStr
+
+		if (lTrimSpace)
+			cStrNew:=allTrim(cStrNew)
+		endif
+
+        DEFAULT s_CHR009:=chr(09)
+        while (s_CHR009$cStrNew)
+            cStrNew:=strTran(cStrNew,s_CHR009,"")
+        end while
+
+        DEFAULT s_CHR010:=chr(10)
+        while (s_CHR010$cStrNew)
+            cStrNew:=strTran(cStrNew,s_CHR010,"")
+        end while
+
+        DEFAULT s_CHR013:=chr(13)
+        while (s_CHR013$cStrNew)
+            cStrNew:=strTran(cStrNew,s_CHR013,"")
+        end while
+
+		if ((lNoAccent).and.(lUTF8))
+			cStrNew:=__UTF8(cStrNew,lUTF8)
+			break
+		endif
+
+		if ((lNoAccent).and.(!lUTF8))
+			cStrNew:=__UTF8(cStrNew,lUTF8)
+			break
+		endif
+
+		if ((!lNoAccent).and.(lUTF8))
+			cStrNew:=EncodeUTF8(cStrNew)
+			break
+		endif
+
+	end sequence
+
+	return(cStrNew)
+
+static function UTF8Enc(lUTF8 as logical,lNoAccent as logical,lTrimSpace as logical) as numeric
+	local nEncode	as numeric
+    DEFAULT lUTF8:=.T.
+    DEFAULT lNoAccent:=.T.
+    DEFAULT lTrimSpace:=.T.
+    if (!(lUTF8.and.lNoAccent.and.lTrimSpace))
+    	nEncode:=0
+    elseif ((lUTF8.and.lNoAccent.and.lTrimSpace))
+        nEncode:=1
+    elseif ((lUTF8.and.!lNoAccent.and.lTrimSpace))
+        nEncode:=2
+    elseif ((lUTF8.and.lNoAccent.and.!lTrimSpace))
+        nEncode:=3
+    elseif ((lUTF8.and.!lNoAccent.and.!lTrimSpace))
+        nEncode:=4
+    elseif ((!lUTF8.and.!lNoAccent.and.lTrimSpace))
+        nEncode:=5
+    elseif ((!lUTF8.and.lNoAccent.and.lTrimSpace))
+        nEncode:=6
+    elseif ((!lUTF8.and.lNoAccent.and.!lTrimSpace))
+        nEncode:=7
+    else
+    	nEncode:=0
+    endif
+	return(nEncode)
+
+//Devera estar no Padrao ANSI utilizar a funcao OemToAnsi() para a conversao
+static function NoAccent(cStrAnsi as character) as character
+
+    local cAcento       as character
+    local cNoAcento     as character
+    local cStrAnsiNoAc  as character
+
+    local nAcento       as numeric
+
+    static __aAcentos   as array
+    static __nAcentos   as numeric
+
+    DEFAULT __aAcentos:={;
+                            {chr(009),""},;
+                            {chr(010),""},;
+                            {chr(013),""},;
+                            {chr(195),"A"},;
+                            {chr(196),"A"},;
+                            {chr(197),"A"},;
+                            {chr(192),"A"},;
+                            {chr(224),"a"},;
+                            {chr(229),"a"},;
+                            {chr(225),"a"},;
+                            {chr(228),"a"},;
+                            {chr(226),"a"},;
+                            {chr(227),"a"},;
+                            {chr(166),"a"},;
+                            {chr(226),"a"},;
+                            {chr(143),"a"},;
+                            {chr(203),"E"},;
+                            {chr(200),"E"},;
+                            {chr(201),"E"},;
+                            {chr(234),"e"},;
+                            {chr(233),"e"},;
+                            {chr(232),"e"},;
+                            {chr(235),"e"},;
+                            {chr(232),"e"},;
+                            {chr(144),"e"},;
+                            {chr(207),"I"},;
+                            {chr(205),"I"},;
+                            {chr(204),"I"},;
+                            {chr(237),"i"},;
+                            {chr(236),"i"},;
+                            {chr(239),"i"},;
+                            {chr(238),"i"},;
+                            {chr(141),"i"},;
+                            {chr(210),"O"},;
+                            {chr(211),"O"},;
+                            {chr(214),"O"},;
+                            {chr(213),"O"},;
+                            {chr(245),"o"},;
+                            {chr(244),"o"},;
+                            {chr(246),"o"},;
+                            {chr(242),"o"},;
+                            {chr(243),"o"},;
+                            {chr(190),"o"},;
+                            {chr(157),"o"},;
+                            {chr(220),"U"},;
+                            {chr(250),"u"},;
+                            {chr(252),"u"},;
+                            {chr(249),"u"},;
+                            {chr(251),"u"},;
+                            {chr(129),"u"},;
+                            {chr(209),"N"},;
+                            {chr(241),"n"},;
+                            {chr(199),"C"},;
+                            {chr(231),"c"};
+                       }
+
+    DEFAULT __nAcentos:=len(__aAcentos)
+
+    begin sequence
+
+        if (empty(cStrAnsi))
+            cStrAnsiNoAc:=cStrAnsi
+            break
+        endif
+
+        cStrAnsiNoAc:=cStrAnsi
+
+        for nAcento:=1 to __nAcentos
+            cAcento:=__aAcentos[nAcento][1]
+            while (cAcento$cStrAnsiNoAc)
+                cNoAcento:=__aAcentos[nAcento][2]
+                cStrAnsiNoAc:=strTran(cStrAnsiNoAc,cAcento,cNoAcento)
+            end while
+        next nAcento
+
+    end sequence
+
+    return(cStrAnsiNoAc)
+
+static function __UTF8(s as character,lUTF8 as logical) as character
+
+    s:=OemToAnsi(s)
+
+    s:=NoAccent(s)
+
+    if (findFunction("fTAcento"))
+    	s:=fTAcento(s)
+    endif
+
+    if (findFunction("NoAcento"))
+    	s:=NoAcento(s)
+    endif
+
+    if (lUTF8)
+    	s:=EncodeUTF8(s)
+    endif
+
+    return(s)
+
+static method ReadMemo(cFile) class ctools
+
+    local cPath     as character
+    local cSPExt    as character
+    local cSPFile   as character
+    local cSPPath   as character
+    local cSPDrive  as character
+	local cTmpFile  as character
+    local cFileTmp  as character
+    local cMemoRead as character
+
+    local lCopyFile as logical
+
+	local oftDB		as object
+
+    paramtype cFile as character
+
+    if (file(cFile))
+        cSPExt:=""
+        cSPFile:=""
+        cSPPath:=""
+        cSPDrive:=""
+        splitPath(cFile,@cSPDrive,@cSPPath,@cSPFile,@cSPExt)
+        cPath:="\tmp\"
+        cTmpFile:=CriaTrab(NIL,.F.)
+        cFileTmp:=cPath
+        cFileTmp+=cTmpFile
+        cFileTmp+=cSPExt
+        while (file(cFileTmp))
+            cTmpFile:=__Soma1(cTmpFile)
+            cFileTmp:=cPath
+            cFileTmp+=cTmpFile
+            cFileTmp+=cSPExt
+        end while
+        if (dirtools():MakeDir(cPath))
+            lCopyFile:=__CopyFile(cFile,cFileTmp)
+            if (lCopyFile)
+                cFile:=cFileTmp
+            endif
+        endif
+    endif
+
+	oftDB:=fTdb():New()
+	oftDB:ft_fUse(cFile)
+	oftDB:ft_fGoTop()
+
+	cMemoRead:=""
+
+	while (!oftDB:ft_fEof())
+		cMemoRead+=oftDB:ft_fReadLine()
+		oftDB:ft_fSkip()
+	end while
+
+	oftDB:ft_fClose()
+	oftDB:=FreeObj(oftDB)
+
+    DEFAULT lCopyFile:=.F.
+    if (lCopyFile)
+        cFile:=cSPDrive
+        cFile+=cSPPath
+        cFile+=cSPFile
+        cFile+=cSPExt
+        fErase(cFileTmp)
+    endif
+
+	return(cMemoRead)
+
+static method StrCount(cString,cStrCount) class ctools
+
+    local cStrTmp   as character
+
+    local nStrCount as numeric
+
+    paramtype cString as character
+    paramtype cStrCount as character
+
+    cStrTmp:=strTran(cString,cStrCount,"")
+    nStrCount:=(Len(cString)-Len(cStrTmp))
+
+    return(nStrCount)
+
+static method Contains(cContains,cString,cDirection) class ctools
+    
+    local cContain  as character
+
+    local lContains as numeric
+
+    local nContain  as numeric
+    local nContains as numeric
+
+    paramtype cContains as character
+    paramtype cString as character
+    DEFAULT cDirection:="A"
+    paramtype cDirection as character optional
+    cDirection:=upper(cDirection)
+
+    nContains:=Len(cContains)
+    for nContain:=1 to nContains
+        cContain:=subStr(cContains,1,1)
+        do case 
+        case ("A"$cDirection)
+            lContains:=if((nContain==1),.T.,lContains).and.(cContain$cString)
+            if (!lContains)
+                exit
+            endif
+            if ("L"$cDirection)
+                lContains:=(ctools():LeftAT(cContain,cString)>0)
+                if ("LR"$cDirection)
+                    lContains:=((lContains).and.(ctools():RightAT(cContain,cString)>0))
+                    if (!lContains)
+                        exit
+                    endif
+                endif
+            endif
+            if ("R"$cDirection)
+                lContains:=(ctools():RightAT(cContain,cString)>0)
+                if ("LR"$cDirection)
+                    lContains:=((lContains).and.(ctools():LeftAT(cContain,cString)>0))
+                endif
+                if (!lContains)
+                    exit
+                endif
+            endif            
+        case ("L"$cDirection)
+            lContains:=(ctools():LeftAT(cContain,cString)>0)
+            if ("LR"$cDirection)
+                lContains:=((lContains).and.(ctools():RightAT(cContain,cString)>0))
+            endif
+            if (!lContains)
+                exit
+            endif
+        case ("R"$cDirection)
+            lContains:=(ctools():RightAT(cContain,cString)>0)
+            if ("LR"$cDirection)
+                lContains:=((lContains).and.(ctools():LeftAT(cContain,cString)>0))
+            endif
+            if (!lContains)
+                exit
+            endif
+        end case
+    next nContain
+
+    return(lContains)
+
+static method RightAT(cATString,cString) class ctools
+    
+    local cStrTmp   as character
+    
+    local nRightAT  as numeric
+    local nATString as numeric
+
+    paramtype cATString as character
+    paramtype cString   as character 
+
+    if (cATString$cString)
+        cStrTmp:=cString
+        nRightAT:=Len(cString)
+        nATString:=Len(cATString)
+        while (nRightAT>0)
+            if (Right(cStrTmp,nATString)==cATString)
+                exit
+            endif
+            nRightAT-=nATString
+            cStrTmp:=subStr(cStrTmp,1,nRightAT)
+        end while
+        nRightAT:=Max(nRightAT,0)
+    endif
+
+    DEFAULT nRightAT:=0
+
+    return(nRightAT)
+
+static method RightATRemove(cATString,cString,lATStringRem) class ctools
+    local cStrRet as character
+    local nStrRet as numeric
+    paramtype cATString as character
+    paramtype cString as character
+    DEFAULT lATStringRem:=.F.
+    paramtype lATStringRem as logical optional
+    cStrRet:=cString
+    if (ctools():StrCount(cStrRet,cATString)>0)
+        nStrRet:=ctools():RightAT(cATString,cStrRet)
+        nStrRet-=if(lATStringRem,1,0)
+        cStrRet:=subStr(cStrRet,1,nStrRet)
+    endif
+    return(cStrRet)
+
+static method RightCharRemove(cStr,cChr,lAll) class ctools
+	local cStrRet  as charactre
+	local nAT	   as numeric
+	local nCHR	   as numeric
+    paramtype cStr as character
+    paramtype cChr as character
+    DEFAULT lAll:=.T.
+    paramtype lAll as logical optional
+	cStrRet:=cStr
+    nCHR:=len(cChr)
+    while (Right(cStrRet,nCHR)==cChr)
+    	nAT:=len(cStrRet)
+    	nAT-=nCHR
+    	cStrRet:=subStr(cStrRet,1,nAT)
+        if (!lAll)
+            exit
+        endif
+    end while
+    return(cStrRet)
+
+static method LeftAT(cATString,cString) class ctools
+    
+    local cStrTmp   as character
+    
+    local nLeftAT   as numeric
+    local nStrSize  as numeric
+    local nATString as numeric
+
+    paramtype cATString as character
+    paramtype cString   as character 
+
+    if (cATString$cString)
+        cStrTmp:=cString
+        nLeftAT:=1
+        nStrSize:=Len(cString)
+        nATString:=Len(cATString)
+        while (nLeftAT<=nStrSize)
+            if (Left(cStrTmp,nATString)==cATString)
+                exit
+            endif
+            nLeftAT+=nATString
+            cStrTmp:=subStr(cStrTmp,nLeftAT)
+        end while
+        nLeftAT:=if(nLeftAT>nStrSize,0,nLeftAT)
+    endif
+
+    DEFAULT nLeftAT:=0
+
+    return(nLeftAT)
+
+static method LeftATRemove(cATString,cString,lATStringRem) class ctools
+    local cStrRet as character
+    local nStrRet as numeric
+    paramtype cATString as character
+    paramtype cString as character
+    DEFAULT lATStringRem:=.T.
+    paramtype lATStringRem as logical optional
+    cStrRet:=cString
+    if (ctools():StrCount(cStrRet,cATString)>0)
+        nStrRet:=ctools():LeftAT(cATString,cStrRet)
+        nStrRet+=if(lATStringRem,1,0)
+        cStrRet:=subStr(cStrRet,nStrRet)
+    endif
+    return(cStrRet)
+
+static method LeftCharRemove(cStr,cChr,lAll) class ctools
+	local cStrRet  as charactre
+	local nAT	   as numeric
+	local nCHR	   as numeric
+    paramtype cStr as character
+    paramtype cChr as character
+    DEFAULT lAll:=.T.
+    paramtype lAll as logical optional
+	cStrRet:=cStr
+    nCHR:=len(cChr)
+    while (Left(cStrRet,nCHR)==cChr)
+    	nAT:=1
+    	nAT+=nCHR
+    	cStrRet:=subStr(cStrRet,nAT)
+        if (!lAll)
+            exit
+        endif
+    end while
+    return(cStrRet)
+
+static method NToS(nVal) class ctools
+    local cVal as character
+    DEFAULT nVal:=0
+    paramtype nVal as numeric optional
+    cVal:=LTrim(Str(nVal))
+    return(cVal)
+
+static method RetPictVal(nVal,lDecZero,nInt,nDec,lPictSepMil) class ctools
+    
+    local cPictVal as character
+
+    paramtype nVal          as numeric
+    paramtype lDecZero      as logical optional
+    paramtype nInt          as numeric optional
+    paramtype nDec          as numeric optional
+    paramtype lPictSepMil   as logical optional
+
+    cPictVal:=RetPictVal(@nVal,@lDecZero,@nInt,@nDec,@lPictSepMil)
+    
+    return(cPictVal)
+
+static function RetPictVal(nVal as numeric,lDecZero as logical,nInt as numeric,nDec as numeric,lPictSepMil as logical) as character
+
+    local cPict         as character
+    local cPictSepMil   as character
+
+    local uInt
+    local uDec
+
+    uInt:=Int(nVal)
+    uDec:=(nVal-uInt)
+    DEFAULT lDecZero:=.F.
+    if ((uDec==0).and.(!(lDecZero)))
+        uDec:=nil
+    endif
+    if (uDec<>nil)
+        uDec:=allTrim(Str(uDec))
+        uDec:=SubStr(uDec,At(".",uDec)+1)
+        uDec:=len(uDec)
+    endif
+    uInt:=len(allTrim(Str(uInt)))
+    nInt:=uInt
+    cPict:=Replicate("9",uInt)
+    DEFAULT lPictSepMil:=.F.
+    if (lPictSepMil)
+        if (nInt>3)
+            cPictSepMil:=cPict
+            cPict:=""
+            for uInt:=nInt To 1 Step-3
+                cPict:=(","+SubStr(cPictSepMil,-3,uInt)+cPict)
+            next uInt
+        endif
+    endif
+    if (uDec<>nil)
+        cPict+="."
+        cPict+=Replicate("9",uDec)
+        nDec:=uDec
+    endif
+
+    return(cPict)
+
+static method StrPrettify(cStrNoPrettify,nType,nTab,nMaxLine) class ctools
+
+	paramtype cStrNoPrettify as character
+	paramtype nType as numeric
+	DEFAULT nTab:=2
+	paramtype nTab as numeric optional
+	DEFAULT nMaxLine:=80
+	paramtype nMaxLine as numeric optional
+
+    begin sequence
+
+        if (nType==PRETTIFFY_XML)
+            cStrPrettify:=XMLPrettify(cStrNoPrettify,nTab,self)
+            break
+        endif
+
+        if (nType==PRETTIFFY_HTML)
+            cStrPrettify:=HTMLPrettify(cStrNoPrettify,nTab,self)
+            break
+        endif
+
+        if (nType==PRETTIFFY_JSON)
+            cStrPrettify:=JSONPrettify(cStrNoPrettify,nTab)
+            break
+        endif
+
+    end sequence
+
+	DEFAULT cStrPrettify:=cStrNoPrettify
+
+	return(cStrPrettify)
+
+static function XMLPrettify(cStrNoPrettify,nTab,self as object) as character
+
+	local aStrPrettify	    as array
+    local aStrNoPrettify    as array
+
+	local cTab			    as character
+	local cCRLF			    as character
+	local cNode			    as character
+    local cLetter           as character
+	local cStrTmp           as character
+    local cStrPrettify	    as character
+
+	local nAT			    as numeric
+    local nLine			    as numeric
+	local nLines		    as numeric
+	local nLetter           as numeric
+    local nATNode		    as numeric
+    local nLetters          as numeric
+
+	paramtype cStrNoPrettify as character
+	paramtype nTab as numeric optional
+
+	cCRLF:=CRLF
+
+	cStrPrettify:=cStrNoPrettify
+
+    while (cCRLF$cStrPrettify)
+        cStrPrettify:=strTran(cStrPrettify,cCRLF,"")
+    end while
+
+    while ("  "$cStrPrettify)
+        cStrPrettify:=strTran(cStrPrettify,"  "," ")
+    end while
+
+    while (" <"$cStrPrettify)
+        cStrPrettify:=strTran(cStrPrettify," <","<")
+    end while
+
+    while ("< "$cStrPrettify)
+        cStrPrettify:=strTran(cStrPrettify,"< ","<")
+    end while
+
+    while ("</ "$cStrPrettify)
+        cStrPrettify:=strTran(cStrPrettify,"</ ","</")
+    end while
+
+    while ("> "$cStrPrettify)
+        cStrPrettify:=strTran(cStrPrettify,"> ",">")
+    end while
+
+    while (" >"$cStrPrettify)
+        cStrPrettify:=strTran(cStrPrettify," >",">")
+    end while
+
+    cStrTmp:=""
+    cBefore:=""
+    
+    nLetters:=Len(cStrPrettify)
+    for nLetter:=1 to nLetters
+        cLetter:=SubStr(cStrPrettify,nLetter,1)
+        if (cLetter=="<")
+            if ((cBefore==cLetter).or.(cBefore==">"))
+                cStrTmp+=cCRLF
+                cStrTmp+=cLetter
+            else
+                cStrTmp+=cLetter
+                cBefore:=cLetter
+            endif
+        elseif ((cLetter=="/").and.(cBefore=="<"))
+            cStrTmp+=cLetter
+            for nLetter:=(nLetter+1) to nLetters
+                cLetter:=SubStr(cStrPrettify,nLetter,1)
+                cStrTmp+=cLetter
+                if (cLetter==">")
+                    cBefore:=cLetter
+                    cStrTmp+=cCRLF
+                    exit
+                endif
+            next nLetter
+        elseif (cLetter=="?")
+            if (cBefore=="<")
+                cBefore+=cLetter
+            endif
+            cStrTmp+=cLetter
+        elseif (cLetter=="!")
+            if (cBefore=="<")
+                cBefore+=cLetter
+            endif
+            cStrTmp+=cLetter
+        elseif (cLetter=="-")
+            if (cBefore$"<!-")
+                cBefore+=cLetter
+            endif
+            cStrTmp+=cLetter
+        elseif (cLetter$"[CDATA")
+            if (cBefore$"<![CDATA")
+                cBefore+=cLetter
+            endif
+            cStrTmp+=cLetter
+        elseif (cLetter==">")
+            if ((cBefore=="<?").or.(cBefore=="<!--").or.(cBefore=="<![CDATA["))
+                cStrTmp+=cLetter
+                cStrTmp+=cCRLF
+            else
+                cStrTmp+=cLetter
+            endif
+            cBefore:=cLetter
+        else
+            cStrTmp+=cLetter
+            if (cBefore==">")
+                cBefore:=""
+            endif
+        endif                
+    next nLetter
+    
+    cStrPrettify:=cStrTmp
+    cStrTmp:=""
+    
+    cTab:=Space(nTab)
+    
+    aStrPrettify:=strToKArr2(cStrPrettify,cCRLF)
+    nLines:=Len(aStrPrettify)
+    aStrNoPrettify:=aClone(aStrPrettify)
+    
+    for nLine:=1 to nLines
+        cNode:=aStrNoPrettify[nLine]
+        cNode:=ctools():LeftATRemove("<",cNode,.T.)
+        while (ctools():RightAt(">",cNode)>0)
+            cNode:=ctools():RightATRemove(">",cNode,.T.)
+        end while
+        while (ctools():RightAt(" ",cNode)>0)
+            cNode:=ctools():RightATRemove(" ",cNode,.T.)
+        end while
+        nATNode:=aScan(aStrNoPrettify,{|s|(subStr(s,1,Len("</"+cNode))==("</"+cNode))})
+        if (nATNode>0)
+            for nAT:=(nLine+1) to (nAtNode-1)
+                aStrPrettify[nAT]:=(cTab+aStrPrettify[nAT])
+            next nLine
+        endif
+    next nLine
+    
+    cStrPrettify:=""
+    aEval(aStrPrettify,{|s|cStrPrettify+=(s+cCRLF)})
+
+    return(cStrPrettify)
+
+static function HTMLPrettify(cStrNoPrettify as character,nTab as numeric,self as object) as character
+    local cStrPrettify as string
+    cStrPrettify:=XMLPrettify(cStrNoPrettify,nTab,self)
+    return(cStrPrettify)
+
+static function JSONPrettify(cStrNoPrettify as character,nTab as numeric) as character
+    local oJSONArray as object
+    oJSONArray:=JSONArray():New()
+    cStrPrettify:=oJSONArray:JSONPrettify(cStrNoPrettify,nTab)
+    return(cStrPrettify)

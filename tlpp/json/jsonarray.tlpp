@@ -1,0 +1,2273 @@
+/*----------------------------------------------------------------------
+JSON for AdvPL
+
+Copyright (C) 2013  Arthur Helfstein Fragoso
+Copyright (C) 2020  Marinaldo de Jesus
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published
+by the Free Software Foundation,either version 3 of the License,or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.   See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with this program.  If not,see <http://www.gnu.org/licenses/>.
+
+This program includes the function JSONMinify that is a ported version
+of JSONLint by Chris Dary. Here is his original license: (MIT License)
+
+Copyright (c) 2011 Chris Dary.
+
+Permission to use,copy,modify,and/or distribute this software for any
+purpose with or without fee is hereby granted,provided that the above
+copyright notice and this permission notice appear in all copies.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ANY SPECIAL,DIRECT,INDIRECT,OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+WHATSOEVER RESULTING FROM LOSS OF USE,DATA OR PROFITS,WHETHER IN AN
+ACTION OF CONTRACT,NEGLIGENCE OR OTHER TORTIOUS ACTION,ARISING OUT OF
+OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+
+----------------------------------------------------------------------
+
+How to use this program:
+
+1 - Add the files JSONArray.tlpp and jsonhash.tlpp to your project.
+
+2 - Compile JSONArray.tlpp and jsonhash.tlpp.
+
+3 - Include the header files to any project you want to use it:
+
+  #include "jsonarray.ch"
+  #include "jsonhash.ch"
+
+4 - See the functions documentation,it's very easy to use it. ;)
+
+----------------------------------------------------------------------*/
+#include "totvs.ch"
+#include "parmtype.ch"
+#include "jsonarray.ch"
+#include "set_default.ch"
+
+#define XML_NLS_ATTRIBUTE_ND "@__NAMESPACE_ND__@@__ATTRIBUTE_ND__@@__ATTRIBUTE_ND__@@__ATTRIBUTE_ND__@@__ATTRIBUTE_ND__@@__ATTRIBUTE_ND__@"
+#define XML_NLS_ATTRIBUTE_NS "@__NAMESPACE_NS__@@__ATTRIBUTE_NS__@@__ATTRIBUTE_NS__@@__ATTRIBUTE_NS__@@__ATTRIBUTE_NS__@@__ATTRIBUTE_NS__@"
+
+/*namespace dna.JSONArray*/
+
+// ASCII Characteres
+static CHR_CRLF		as character
+static nCHR_CRLF	as numeric
+
+static CHR_BS 		as character
+static CHR_HT 		as character
+static CHR_LF 		as character
+static CHR_VT 		as character
+static CHR_FF 		as character
+static CHR_CR 		as character
+
+static CHR_lt 		as character
+static CHR_gt 		as character
+static CHR_Amp 		as character
+static CHR_Apos		as character
+static CHR_Quot 	as character
+static CHR_PTeV		as character
+
+function u_JSONArray(lSection as logical,lHashAsFile as logical) as object
+	return(JSONArray():New(lSection,lHashAsFile))
+
+class JSONArray from JSONhash
+
+	data cClassName			as character
+
+	public data lPrettify	as logical
+	public data nPrettify	as logical
+	public data nTimeStamp	as logical
+
+	public data lUTF8		as logical
+	public data lNoAccent	as logical
+	public data lTrimSpace	as logical
+	
+    public method New(lSection,lHashAsFile)	as object /*/\constructor/\*/
+
+    public method ClassName() as character
+
+    public method ToJSON(uAnyVar) as character
+	public method ToJSONFile(uAnyVar,cJSONFile) as logical
+
+    public method ToXML(cRoot,cAttrSuffix,lArrayToList) as character
+    
+	public method ToHTML(lXML,cAttrSuffix) as character
+	public method ToXHTML() as character
+
+    public method FromINI(cINIStr,cIgnoreToken) as character
+	public method FromXML(cXMLstr,cAttrSuffix,cURL,cEncoding,nOptions,lNameSpaces) as character
+    public method FromJSON(cJSONstr) as object
+	public method FromHashMap(oJSONHashMap) as object
+	
+	public method JSONParser(cJSONstr,lSetFromObject) as object
+	public method JSONParserFile(cFileName,lSetFromObject) as object
+
+    public method EscpJSONStr(cJSONStr) as character
+
+    public method JSONMinify(cJSONstr) as character
+    public method JSONPrettify(cJSONstr,nPrettify) as character
+
+	public method ReadINIFile(cIniFile,cIgnoreToken) as character
+	public method ReadXMLFile(cFileName,cAttrSuffix,cURL,cEncoding,nOptions,lNameSpaces) as character
+	public method ReadJSONFile(cFileName,lStripComments) as object
+
+end class
+
+method New(lSection,lHashAsFile) class JSONArray
+
+    DEFAULT lSection:=.F.
+    paramtype lSection as logical optional
+    DEFAULT lHashAsFile:=.F.
+    paramtype lHashAsFile as logical optional
+
+    _Super:New(lSection,lHashAsFile)
+    self:ClassName()
+
+	DEFAULT self:lUTF8:=.T.
+	DEFAULT self:lNoAccent:=.T.
+	DEFAULT self:lTrimSpace:=.T.
+
+	DEFAULT self:lPrettify:=.F.
+	DEFAULT self:nPrettify:=4
+	DEFAULT self:nTimeStamp:=0
+
+	DEFAULT CHR_CRLF:=(chr(13)+chr(10))
+	DEFAULT nCHR_CRLF:=len(CHR_CRLF)
+
+	DEFAULT CHR_BS:=chr(8)
+	DEFAULT CHR_HT:=chr(9)
+	DEFAULT CHR_LF:=chr(10)
+	DEFAULT CHR_VT:=chr(11)
+	DEFAULT CHR_FF:=chr(12)
+	DEFAULT CHR_CR:=chr(13)
+
+	DEFAULT CHR_lt:=chr(60)
+	DEFAULT CHR_gt:=chr(62)
+	DEFAULT CHR_Amp:=chr(38)
+	DEFAULT CHR_Apos:=chr(39)
+	DEFAULT CHR_Quot:=chr(34)
+	DEFAULT CHR_PTeV:=chr(59)
+
+	cTools()
+	dirtools()
+	StackTools()
+	ArrayUtils()
+
+    return(self)
+
+method ClassName() class JSONArray
+	self:cClassName:="JSONARRAY"
+    return(self:cClassName)
+
+method FromINI(cINIStr,cIgnoreToken) class JSONArray
+
+	local cJSON			as character
+	local cINIFile		as character
+	local cINIFullPath	as character
+
+	local lFromFile		as logical
+
+	paramtype cINIStr as character
+	paramtype cIgnoreToken as character optional
+
+	begin sequence
+
+		lFromFile:=file(cINIStr)
+		if (!lFromFile)
+			self:lHasError:=(!dirTools():MakeDir("\tmp\"))
+			if (self:lHasError)
+				self:SetErrorMsg("Unable to create work directory :: [\temp\]")
+				cJSON:="{"
+				cJSON+=self:ToJSON("error")
+				cJSON+=":"
+				cJSON+=self:ToJSON(self:GetErrorMsg())
+				cJSON+="}"
+				break
+			endif
+			cINIFullPath:="\tmp\"
+			cINIFile:=criaTrab(nil,.F.)
+			cINIFullPath+=cINIFile
+			cINIFullPath+=".ini"
+			while file(cINIFullPath)
+				cINIFile:=__Soma1(cINIFile)
+				cINIFullPath:="\tmp\"
+				cINIFullPath+=cINIFile
+				cINIFullPath+=".ini"
+			end while
+			self:lHasError:=MemoWrite(cINIFullPath,cINIStr)
+			if (self:lHasError)
+				self:SetErrorMsg("Unable to create work file :: ["+cINIFullPath+"]")
+				cJSON:="{"
+				cJSON+=self:ToJSON("error")
+				cJSON+=":"
+				cJSON+=self:ToJSON(self:GetErrorMsg())
+				cJSON+="}"
+				break
+			endif
+		else
+			cINIFullPath:=cINIStr
+		endif
+
+		cJSON:=self:ReadINIFile(cINIFullPath,cIgnoreToken)
+
+		if (!lFromFile)
+			if (!empty(cINIFullPath))
+				if (file(cINIFullPath))
+					fErase(cINIFullPath)
+				endif
+			endif
+		endif
+
+	end sequnce
+
+	return(cJSON)
+
+method FromXML(cXMLstr,cAttrSuffix,cURL,cEncoding,nOptions,lNameSpaces) class JSONArray
+
+	local aChildArray	as array
+	local aAttributes	as array
+	local aNameSpaces	as array
+
+	local cExt			as character
+	local cFile			as character
+	local cPath			as character
+	local cDrive		as character
+	local cName			as character
+	local cJSON			as character
+	local cAttValue 	as character
+	local cAttribute	as character
+
+	local nAttribute	as numeric
+	local nAttributes	as numeric
+
+	local nNameSpace	as numeric
+	local nNameSpaces	as numeric
+
+	local lFromFile		as logical
+	local lCopyFile		as logical
+	local lXMLHasNode	as logical
+
+	local oTXMLManager	as object
+
+	paramtype cXMLstr as character
+
+	DEFAULT cAttrSuffix:="@"
+	paramtype cAttrSuffix as character optional
+
+	paramtype cURL  as character optional
+	paramtype cEncoding  as character optional
+	paramtype nOptions  as numeric optional
+	DEFAULT lNameSpaces:=.T.
+	paramtype lNameSpaces as logical optional
+
+	if (lNameSpaces)
+		private apNameSpaces as array
+		apNameSpaces:=Array(0)
+	endif
+
+	oTXMLManager:=TXMLManager():New()
+	lFromFile:=(!("<"$cXMLstr))
+	if (lFromFile)
+		lFromFile:=file(cXMLstr)
+		if (lFromFile)
+			lCopyFile:=dirTools():MakeDir("\tmp\")
+			if (lCopyFile)
+				cExt:=""
+				cFile=""
+				cPath:=""
+				cDrive=""
+				SplitPath(cXMLstr,@cDrive,@cPath,@cFile,@cExt)
+				cFile:=("\tmp\"+cFile+cExt)
+				lCopyFile:=__CopyFile(cXMLstr,cFile)
+			endif
+			lFromFile:=lCopyFile
+			if (lFromFile)
+				lFromFile:=oTXMLManager:ReadFile(cFile,cEncoding,nOptions)
+			else
+				cXMLstr:=cTools():ReadMemo(cXMLstr)
+			endif
+		endif
+	endif
+	if ((lFromFile).or.(oTXMLManager:Read(cXMLstr,cURL,cEncoding,nOptions)))
+		lXMLHasNode:=.T.
+		if (lNameSpaces)
+			aNameSpaces:=Array(0)
+		endif
+		aAttributes:=Array(0)
+		while (lXMLHasNode)
+			cName:=oTXMLManager:cName
+			self[#cName]:=Array(#)
+			if (lNameSpaces)
+				aNameSpaces:=oTXMLManager:DOMGetNsList()
+			endif
+			if (oTXMLManager:DOMHasAtt())
+				aAttributes:=oTXMLManager:DOMGetAttArray()
+			else
+				aSize(aAttributes,0)
+			endif
+			if (oTXMLManager:DOMHasChildNode())
+				if (lNameSpaces)
+					aSize(apNameSpaces,0)
+				endif
+				aChildArray:=oTXMLManager:XPathGetChildArray(oTXMLManager:cPath)
+				cName:=oTXMLManager:cName
+				self[#cName]:=FromXML(aChildArray,oTXMLManager,cAttrSuffix,lNameSpaces)
+			endif
+			if (lNameSpaces)
+				nNameSpaces:=len(aNameSpaces)
+				for nNameSpace:=1 to nNameSpaces
+					cAttValue:=aNameSpaces[nNameSpace][2]
+					cAttribute:=(cAttrSuffix+aNameSpaces[nNameSpace][1])
+					self[#cAttribute]:=cAttValue
+				next nAttribute
+			endif
+			nAttributes:=len(aAttributes)
+			for nAttribute:=1 to nAttributes
+				cAttValue:=aAttributes[nAttribute][2]
+				cAttribute:=(cAttrSuffix+aAttributes[nAttribute][1])
+				self[#cAttribute]:=cAttValue
+			next nAttribute
+			lXMLHasNode:=oTXMLManager:DOMHasNextNode()
+			if (lXMLHasNode)
+				lXMLHasNode:=oTXMLManager:DOMNextNode()
+			endif
+		end while
+		if (lFromFile)
+			if (lCopyFile)
+				fErase(cFile)
+			endif
+		endif
+		cJSON:=self:ToJSON(self)
+	else
+		self:lHasError:=.T.
+		self:SetErrorMsg(oTXMLManager:Error())
+		cJSON:="{"
+		cJSON+=self:ToJSON("error")
+		cJSON+=":"
+		cJSON+=self:ToJSON(self:GetErrorMsg())
+		cJSON+="}"
+	endif
+
+	self:FromJSON(cJSON)
+
+	return(cJSON)
+
+static function FromXML(aChildArray as array,oXMLNode as object,cAttrSuffix as character,lNameSpaces as logical) as object
+
+	local aXMLChild		as array
+	local aAttributes	as array
+	local aNameSpaces	as array
+
+	local cAttValue 	as character
+	local cAttribute	as character
+
+	local cXMLName		as character
+	local cXMLPath		as character
+	local cXMLValue		as character
+
+	local nChild		as numeric
+	local nChilds		as numeric
+	local nChildAT		as numeric
+	local nChildCount	as numeric
+
+	local nNameSpace	as numeric
+	local nNameSpaces	as numeric
+
+	local nAttribute	as numeric
+	local nAttributes	as numeric
+
+	local oJSONNode		as object
+
+	oJSONNode:=Array(#)
+	nChilds:=len(aChildArray)
+	for nChild:=1 to nChilds
+		cXMLName:=aChildArray[nChild][1]
+		cXMLPath:=aChildArray[nChild][2]
+		cXMLValue:=aChildArray[nChild][3]
+		if (lNameSpaces)
+			aNameSpaces:=oXMLNode:XPathGetNsList(cXMLPath)
+			/*
+				TODO: Temporary workaround because there are no methods in TXMLManager 
+				      that check the NameSpace (equivalent to XPathHasAtt or DOMHasAtt)
+			*/				
+			if (aScan(&("apNameSpaces"),{|aNS|(__ArrayUtils():Compare(aNS[1],aNameSpaces).and.(aNS[2]$cXMLPath))})==0)
+				aAdd(&("apNameSpaces"),{aNameSpaces,cXMLPath})
+			else
+				aSize(aNameSpaces,0)
+			endif	
+		endif
+		nChildCount:=if(oXMLNode:DOMHasChildNode(),oXMLNode:XPathChildCount(cXMLPath),0)
+		if (nChildCount>0)
+			aXMLChild:=oXMLNode:XPathGetChildArray(cXMLPath)
+			if ("["$cXMLPath)
+				if (!(valType(oJSONNode[#cXMLName])=="A"))
+					oJSONNode[#cXMLName]:=Array(0)
+				endif
+				aAdd(oJSONNode[#cXMLName],FromXML(aXMLChild,oXMLNode,cAttrSuffix,lNameSpaces))
+				nChildAT:=len(oJSONNode[#cXMLName])
+				if (lNameSpaces)
+					nNameSpaces:=len(aNameSpaces)
+					for nNameSpace:=1 to nNameSpaces
+						cAttValue:=aNameSpaces[nNameSpace][2]
+						cAttribute:=(cAttrSuffix+aNameSpaces[nNameSpace][1])
+						oJSONNode[#cXMLName][nChildAT][#cAttribute]:=cAttValue
+					next nAttribute
+				endif
+				if (oXMLNode:XPathHasAtt(cXMLPath))
+					aAttributes:=oXMLNode:XPathGetAttArray(cXMLPath)
+					nAttributes:=len(aAttributes)
+					for nAttribute:=1 to nAttributes
+						cAttValue:=aAttributes[nAttribute][2]
+						cAttribute:=(cAttrSuffix+aAttributes[nAttribute][1])
+						oJSONNode[#cXMLName][nChildAT][#cAttribute]:=cAttValue
+					next nAttribute
+				endif
+			else
+				oJSONNode[#cXMLName]:=FromXML(aXMLChild,oXMLNode,cAttrSuffix,lNameSpaces)
+				if (lNameSpaces)
+					nNameSpaces:=len(aNameSpaces)
+					for nNameSpace:=1 to nNameSpaces
+						cAttValue:=aNameSpaces[nNameSpace][2]
+						cAttribute:=(cAttrSuffix+aNameSpaces[nNameSpace][1])
+						oJSONNode[#cAttribute]:=cAttValue
+					next nAttribute
+				endif
+				if (oXMLNode:XPathHasAtt(cXMLPath))
+					aAttributes:=oXMLNode:XPathGetAttArray(cXMLPath)
+					nAttributes:=len(aAttributes)
+					for nAttribute:=1 to nAttributes
+						cAttValue:=aAttributes[nAttribute][2]
+						cAttribute:=(cAttrSuffix+aAttributes[nAttribute][1])
+						oJSONNode[#cAttribute]:=cAttValue
+					next nAttribute
+				endif
+			endif
+		else
+			oJSONNode[#cXMLName]:=cXMLValue
+		endif
+	next nChild
+
+	return(oJSONNode)
+
+/*
+static function: FromJSON(cJSONstr)
+Converts from a JSON string into any value it holds
+
+Example:
+----
+cJSON:='{"Products": [{"Name": "Water","Cost": 1.3},{"Name": "Bread","Cost": 4e-1}],"Users": [{"Name": "Arthur","Comment": "Hello\" \\World"}]}'
+
+aaBusiness:=FromJSON(cJSON)
+
+alert(aaBusiness[#'Products'][1][#'Name']) // returns -> Water
+
+alert(aaBusiness[#'Products'][2][#'Cost']) // returns -> 0.4
+
+alert(aaBusiness[#'Users'][1][#'Comment']) // returns -> Hello" \World
+----
+
+Additional Info:
+Numbers accept the Scientific E Notation
+   234e-7 = 0.0000234
+   57e3   = 57000
+I don't know how I can make an Unicode or UTF-8 character in AdvPL,
+   So,the JSON \uXXXX converts an ASCII code. Values outside the ASCII table becomes '?' (quotation marks).
+
+@param cJSONstr - The JSON string you want to convert from
+@return - The converted JSON string,it can be any type. Or nil in case of a bad formatted JSON string.
+*/
+method FromJSON(cJSONstr) class JSONArray
+	local aSelf				as array
+	local cData 			as character
+	local lGetObjSuperClass	as logical
+	local nD 				as numeric
+	local nJ 				as numeric
+	paramtype cJSONstr 		as character
+	lGetObjSuperClass:=.F.
+	aSelf:=ClassDataArr(self,lGetObjSuperClass)
+	FromJSON(@self,cJSONstr)
+	private pSelf as object
+	pSelf:=self
+	nJ:=len(aSelf)
+	for nD:=1 to nJ
+		cData:="pSelf"
+		cData+=":"
+		cData+=aSelf[nD][1]
+		&(cData):=aSelf[nD][2]
+	next nD
+	return(self)
+
+static function FromJSON(oJSONArray as object,cJSONstr as character) as object
+
+	local aJSONVal		as array
+
+	local cType 		as character
+
+	local nRet			as numeric
+
+	paramtype cJSONstr as character
+
+	aJSONVal:=GetJSONVal(cJSONstr)
+
+	nRet:=aJSONVal[2]
+	if (nRet>=0)
+		cType:=valType(aJSONVal[1])
+		do case
+		case (cType=="O")
+			oJSONArray:SetFromObject(aJSONVal[1])
+		otherwise
+			oJSONArray[#"JSONArray"]:=aJSONVal[1]
+		endcase
+	else
+		oJSONArray:lHasError:=.T.
+		oJSONArray[#"error"]:="Error in JSON Parser"
+		oJSONArray:SetErrorMsg(oJSONArray[#"error"])
+	endif
+
+	return(oJSONArray)
+
+method FromHashMap(oJSONHashMap) class JSONArray
+	paramtype oJSONHashMap as object
+	self:SetFromHashMap(oJSONHashMap)
+	return(self)
+
+method JSONParser(cJSONstr,lSetFromObject) class JSONArray
+
+	local aJSONParser	as array
+
+	local lJSONParser	as logical
+
+	local nATJSON		as numeric
+	local nJSONstr 		as numeric
+
+	local oJSONParser	as object
+	local oJSONHashMap	as object
+
+	paramtype cJSONstr as character
+	DEFAULT lSetFromObject:=.T.
+	paramtype lSetFromObject as logical optional
+
+	nJSONstr:=len(cJSONstr)
+	aJSONParser:=Array(0)
+	nATJSON:=0
+
+	oJSONParser:=TJSONParser():New()
+
+	lJSONParser:=oJSONParser:JSON_Hash(cJSONstr,nJSONstr,@aJSONParser,@nATJSON,@oJSONHashMap)
+
+	if (!lJSONParser)
+		self[#"error"]:="JSON Len :: ["+NToS(nJSONstr)+"], Error AT :: ["+NToS(nATJSON+1)+"]"
+		self:lHasError:=.T.
+		self:SetErrorMsg(self[#"error"])
+	else
+		aSize(aJSONParser,0)
+		if (lSetFromObject)
+			self:SetFromObject(oJSONHashMap)
+		else
+			self:FromHashMap(oJSONHashMap)
+		endif
+	endif
+
+	return(self)
+
+method JSONParserFile(cFileName,lSetFromObject) class JSONArray
+
+	local cJSON	as character
+
+	DEFAULT lSetFromObject:=.T.
+	paramtype lSetFromObject as logical optional
+
+	begin sequence
+
+	    if (!File(cFileName))
+			self[#"error"]:="File ["+cFileName+"] does not exist."
+			self:lHasError:=.T.
+			self:SetErrorMsg(self[#"error"])
+			break
+	    endif
+
+	    cJSON:=cTools():ReadMemo(cFileName)
+
+		self:JSONParser(cJSON,lSetFromObject)
+
+	end sequence		
+	
+	return(self)
+
+/*
+static function: ToJSON(uAnyVar)
+Converts AdvPLs value into a JSON string
+Accepted values: Strings,Numbers,Logicals,nil,Arrays and Associative Arrays (jsonhash Objects)
+
+Example:
+----
+aaBusiness:=Array(#)
+aaBusiness[#'Products']:=Array(2)
+aaBusiness[#'Products'][1]:=Array(#)
+aaBusiness[#'Products'][1][#'Name']:="Water"
+aaBusiness[#'Products'][1][#'Cost']:=1.3
+aaBusiness[#'Products'][2]:=Array(#)
+aaBusiness[#'Products'][2][#'Name']:="Bread"
+aaBusiness[#'Products'][2][#'Cost']:=0.4
+aaBusiness[#'Users']:=Array(1)
+aaBusiness[#'Users'][1]:=Array(#)
+aaBusiness[#'Users'][1][#'Name']:="Arthur"
+aaBusiness[#'Users'][1][#'Comment']:='Hello" \World'
+
+
+alert(ToJSON(aaBusiness))
+
+ returns:
+ {"Products": [{"Name": "Water","Cost": 1.3},{"Name": "Bread","Cost": 0.4}],"Users": [{"Name": "Arthur","Comment": "Hello\" \\World"}]}
+----
+
+@param uAnyVar - The value you want to convert to a JSON string
+@return string - JSON string
+*/
+
+method ToJSON(uAnyVar) class JSONArray
+
+	local cJSON			as character
+
+	local uSelf
+
+	DEFAULT uAnyVar:=self
+
+	if (valType(uAnyVar)=="O")
+		if (GetClassName(uAnyVar)$CLS_NAME_THASH)
+			if (self:GetAT("JSONArray")>0)
+				uSelf:=self:Get("JSONArray")
+			endif
+		endif
+	endif
+
+	DEFAULT uSelf:=uAnyVar
+
+	cJSON:=__ToJSON(uSelf,self)
+
+	cJSON:=cTools():UTF8(cJSON,@self:lUTF8,@self:lNoAccent,@self:lTrimSpace)
+
+	if (self:nPrettify)
+		cJSON:=cTools():StrPrettify(cJSON,3,self:nPrettify)
+	endif
+
+	return(cJSON)
+
+static function __ToJSON(uAnyVar,oJSONArray as object) as character
+
+    local aData					as array
+
+    local cJSON					as character
+    local cType					as character
+
+	local cHashFile				as character
+	local cClsNValue			as character
+
+    local cClassName			as character
+	local cAttribute			as character
+
+	local lHashAsFile			as logical
+	local lGetObjSuperClass		as logical
+	local lHasSectionEnabled	as logical
+
+    local nC					as numeric
+    local nS					as numeric
+    local nD					as numeric
+    local nJ					as numeric
+
+	local nTimeStamp			as numeric
+
+	local oSetHashMap			as object
+
+	local uKey
+	local uValue
+
+	nTimeStamp:=oJSONArray:nTimeStamp
+	lGetObjSuperClass:=oJSONArray:lGetObjSuperClass
+
+	begin sequence
+
+	    cType:=valType(uAnyVar)
+
+	    do case
+		case (cType=="C")
+			if (("thash"$uAnyVar).and.(file(uAnyVar)))
+				uValue:=oJSONArray:RestDataHash("",uAnyVar,"A","")
+				cJSON:=__ToJSON(uValue,oJSONArray)
+			else
+				cJSON:='"'+oJSONArray:EscpJSONStr(uAnyVar)+'"'
+			endif
+			break
+		case (cType=="N")
+			cJSON:=cValToChar(uAnyVar)
+			break
+		case (cType=="L")
+			cJSON:=if(uAnyVar,"true","false")
+			break
+		case (cType=="D")
+			if ((valType(nTimeStamp)=="N").and.(nTimeStamp>0))
+				cJSON:='"'+FWTimeStamp(nTimeStamp,uAnyVar)+'"'
+			else
+				cJSON:='"'+DtoS(uAnyVar)+'"'
+			endif
+			break
+		case (cType=="U")
+			cJSON:="null"
+			break
+		case (cType=="A")
+			if (oJSONArray:ArrayIsHashObject(uAnyVar))
+				uValue:=oJSONArray:ArrayToHashObject(uAnyVar)
+				cJSON:=__ToJSON(uValue,oJSONArray)
+			else
+				cJSON:=''
+				cJSON+='['
+				nJ:=len(uAnyVar)
+				for nD:=1 to nJ
+					uValue:=uAnyVar[nD]
+					cJSON+=__ToJSON(uValue,oJSONArray)
+					cJSON+=','
+				next nD
+				cJSON:=cTools():RightCharRemove(cJSON,',')
+				cJSON+=']'
+			endif
+			break
+		case (cType=="B")
+			cJSON:='"'+getCBSource(uAnyVar)+'"'
+			break
+		case (cType=="O")
+			cClassName:=GetClassName(uAnyVar)
+			if (cClassName=="THASHMAP")
+				oSetHashMap:=Array(#)
+				oSetHashMap:SetFromHashMap(uAnyVar)
+				uAnyVar:=oSetHashMap
+				cClassName:=GetClassName(uAnyVar)
+			endif
+			if (cClassName$CLS_NAME_THASH)
+				if (uAnyVar:GetAT("JSONArray")>0)
+					aData:=uAnyVar:Get("JSONArray")
+				else
+					aData:=uAnyVar:GetHashArray()
+				endif
+				lHashAsFile:=uAnyVar:lHashAsFile()
+				lHasSectionEnabled:=uAnyVar:HasSectionEnabled()
+			else
+				aData:=ClassDataArr(uAnyVar,lGetObjSuperClass)
+				lHashAsFile:=.F.
+				lHasSectionEnabled:=.F.
+			endif
+			cJSON:=''
+			if (lHasSectionEnabled)
+				cJSON+='['
+				nC:=len(aData)
+				for nS:=1 to nC
+					cAttribute:=aData[nS][HASH_SECTION_POSITION]
+					cJSON+='{'
+					cJSON+=__ToJSON(cAttribute,oJSONArray)
+					cJSON+=':'
+					cJSON+='{'
+					nJ:=len(aData[nS][HASH_PROPERTY_POSITION])
+					for nD:=1 to nJ
+						uKey:=aData[nS][HASH_PROPERTY_POSITION][nD][HASH_PROPERTY_KEY]
+						cAttribute:=uKey
+						cHashFile:=aData[nS][HASH_PROPERTY_POSITION][nD][HASH_PROPERTY_FILE]
+						if ((lHashAsFile).or.(!empty(cHashFile)))
+							uValue:=aData[nS][HASH_PROPERTY_POSITION][nD][HASH_PROPERTY_VALUE]
+							if (uValue)
+								cType:=aData[nS][HASH_PROPERTY_POSITION][nD][HASH_PROPERTY_TYPE]
+								cClsNValue:=aData[nS][HASH_PROPERTY_POSITION][nD][HASH_PROPERTY_CLSNAME]
+								uValue:=uAnyVar:RestDataHash(uKey,cHashFile,cType,cClsNValue)
+							endif
+						else
+							uValue:=aData[nS][HASH_PROPERTY_POSITION][nD][HASH_PROPERTY_VALUE]
+						endif
+						cJSON+='"'
+						cJSON+=oJSONArray:EscpJSONStr(cAttribute)
+						cJSON+='":'
+						cJSON+=__ToJSON(uValue,oJSONArray)
+						cJSON+=','
+					next nD
+					cJSON:=cTools():RightCharRemove(cJSON,',')
+					cJSON+='}'
+					cJSON+='}'
+					cJSON+=','
+				next nS
+				cJSON:=cTools():RightCharRemove(cJSON,',')
+				cJSON+=']'
+				break
+			endif /*uAnyVar:HasSectionEnabled()*/
+			cJSON+='{'
+			nJ:=len(aData)
+			for nD:=1 to nJ
+				uKey:=aData[nD][HASH_PROPERTY_KEY]
+				cAttribute:=aData[nD][HASH_PROPERTY_KEY]
+				cHashFile:=aData[nD][HASH_PROPERTY_FILE]
+				if ((lHashAsFile).or.(!empty(cHashFile)))
+					uValue:=aData[nD][HASH_PROPERTY_VALUE]
+					if (uValue)
+						cType:=aData[nD][HASH_PROPERTY_TYPE]
+						cClsNValue:=aData[nD][HASH_PROPERTY_CLSNAME]
+						uValue:=uAnyVar:RestDataHash(uKey,cHashFile,cType,cClsNValue)
+					endif
+				else
+					uValue:=aData[nD][HASH_PROPERTY_VALUE]
+				endif
+				cJSON+='"'
+				cJSON+=oJSONArray:EscpJSONStr(cAttribute)
+				cJSON+='":'
+				cJSON+=__ToJSON(uValue,oJSONArray)
+				cJSON+=','
+			next nD
+			cJSON:=cTools():RightCharRemove(cJSON,',')
+			cJSON+='}'
+	    endcase
+	end sequence
+
+	if (valType(oSetHashMap)=="O")
+		oSetHashMap:=oSetHashMap:FreeObj()
+	endif
+
+    DEFAULT cJSON:="Unknown Data Type ("+cType+")"
+
+    return(cJSON)
+
+method ToJSONFile(uAnyVar,cJSONFile) class JSONArray
+    
+    local cJSON		as character
+	local cJSONTmp	as character
+	
+	local lJSONFile	as logical
+	
+	local nJSONTmp	as numeric
+
+	local uSelf
+
+	DEFAULT uAnyVar:=self
+
+	lJSONFile:=.F.
+
+	begin sequence
+
+		if (valType(uAnyVar)=="O")
+			if (GetClassName(uAnyVar)$CLS_NAME_THASH)
+				if (self:GetAT("JSONArray")>0)
+					uSelf:=self:Get("JSONArray")
+				endif
+			endif
+		endif
+
+		DEFAULT uSelf:=uAnyVar
+
+		self:lHasError:=(!dirTools():MakeDir("\json\"))
+		if (self:lHasError)
+			self:SetErrorMsg("Unable to create work directory :: [\json\]")
+			cJSON:="{"
+			cJSON+=self:ToJSON("error")
+			cJSON+=":"
+			cJSON+=self:ToJSON(self:GetErrorMsg())
+			cJSON+="}"
+			break
+		endif
+
+		self:lHasError:=(!dirTools():MakeDir(cJSONFile))
+		if (self:lHasError)
+			self:SetErrorMsg("Unable to create work directory :: ["+cJSONFile+"]")
+			cJSON:="{"
+			cJSON+=self:ToJSON("error")
+			cJSON+=":"
+			cJSON+=self:ToJSON(self:GetErrorMsg())
+			cJSON+="}"
+			break
+		endif
+
+		cJSONTmp:="\json\"
+		cJSONTmp+=criaTrab(nil,.F.)
+		while (file(cJSONTmp))
+			cJSONTmp:=__Soma1(cJSONTmp)
+		end while
+
+		nJSONTmp:=fCreate(cJSONTmp)
+		self:lHasError:=(!(nJSONTmp>=0))
+		if (self:lHasError)
+			self:SetErrorMsg("Unable to create work file :: ["+cJSONTmp+"] Error :: ["+NToS(fError())+"]")
+			cJSON:="{"
+			cJSON+=self:ToJSON("error")
+			cJSON+=":"
+			cJSON+=self:ToJSON(self:GetErrorMsg())
+			cJSON+="}"
+			break
+		endif
+
+		lJSONFile:=file(cJSONTmp)
+		if (!lJSONFile)
+			break
+		endif
+
+		private c__JSONBuffer as character
+		c__JSONBuffer:=""
+
+		__ToJSONFile(nJSONTmp,uSelf,self)
+
+		if (!empty(c__JSONBuffer))
+			fWrite(nJSONTmp,c__JSONBuffer)
+			c__JSONBuffer:=""
+		endif
+
+		fClose(nJSONTmp)
+
+		lJSONFile:=__CopyFile(cJSONTmp,cJSONFile)
+		
+		fErase(cJSONTmp)
+
+		self:lHasError:=(!lJSONFile)
+		if (self:lHasError)
+			self:SetErrorMsg("Unable to create file :: ["+cJSONFile+"]")
+			cJSON:="{"
+			cJSON+=self:ToJSON("error")
+			cJSON+=":"
+			cJSON+=self:ToJSON(self:GetErrorMsg())
+			cJSON+="}"
+			break
+		endif
+
+	end sequence
+
+	return(lJSONFile)
+
+static procedure __ToJSONFile(nJSONTmp as numeric,uAnyVar,oJSONArray as object)
+
+    local aData					as array
+
+    local cJSON					as character
+    local cType					as character
+
+	local cHashFile				as character
+	local cClsNValue			as character
+
+    local cClassName			as character
+	local cAttribute			as character
+
+	local lHashAsFile			as logical
+	local lGetObjSuperClass		as logical
+	local lHasSectionEnabled	as logical
+
+    local nC					as numeric
+    local nS					as numeric
+    local nD					as numeric
+    local nJ					as numeric
+
+	local nTimeStamp			as numeric
+
+	local oSetHashMap			as object
+
+	local uKey
+	local uValue
+
+	nTimeStamp:=oJSONArray:nTimeStamp
+	lGetObjSuperClass:=oJSONArray:lGetObjSuperClass
+
+	begin sequence
+
+	    cType:=valType(uAnyVar)
+
+	    do case
+		case (cType=="C")
+			if (("thash"$uAnyVar).and.(file(uAnyVar)))
+				uValue:=oJSONArray:RestDataHash("",uAnyVar,"A","")
+				__ToJSONFile(nJSONTmp,uValue,oJSONArray)
+			else
+				cJSON:='"'+oJSONArray:EscpJSONStr(uAnyVar)+'"'
+				cJSON:=cTools():UTF8(cJSON,@oJSONArray:lUTF8,@oJSONArray:lNoAccent,@oJSONArray:lTrimSpace)
+				c__JSONBuffer+=cJSON
+			endif
+			break
+		case (cType=="N")
+			cJSON:=cValToChar(uAnyVar)
+			c__JSONBuffer+=cJSON
+			break
+		case (cType=="L")
+			cJSON:=if(uAnyVar,"true","false")
+			c__JSONBuffer+=cJSON
+			break
+		case (cType=="D")
+			if ((valType(nTimeStamp)=="N").and.(nTimeStamp>0))
+				cJSON:='"'+FWTimeStamp(nTimeStamp,uAnyVar)+'"'
+			else
+				cJSON:='"'+DtoS(uAnyVar)+'"'
+			endif
+			c__JSONBuffer+=cJSON
+			break
+		case (cType=="U")
+			c__JSONBuffer+="null"
+			break
+		case (cType=="A")
+			if (oJSONArray:ArrayIsHashObject(uAnyVar))
+				uValue:=oJSONArray:ArrayToHashObject(uAnyVar)
+				__ToJSONFile(nJSONTmp,uValue,oJSONArray)
+			else
+				c__JSONBuffer+='['
+				nJ:=len(uAnyVar)
+				for nD:=1 to nJ
+					uValue:=uAnyVar[nD]
+					__ToJSONFile(nJSONTmp,uValue,oJSONArray)
+					if (nD<nJ)
+						c__JSONBuffer+=','
+					endif
+					if (len(c__JSONBuffer)>=1024)
+						fWrite(nJSONTmp,c__JSONBuffer)
+						c__JSONBuffer:=""
+					endif
+				next nD
+				c__JSONBuffer+=']'
+			endif
+			break
+		case (cType=="B")
+			cJSON:='"'+getCBSource(uAnyVar)+'"'
+			c__JSONBuffer+=cJSON
+			break
+		case (cType=="O")
+			cClassName:=GetClassName(uAnyVar)
+			if (cClassName=="THASHMAP")
+				oSetHashMap:=Array(#)
+				oSetHashMap:SetFromHashMap(uAnyVar)
+				uAnyVar:=oSetHashMap
+				cClassName:=GetClassName(uAnyVar)
+			endif
+			if (cClassName$CLS_NAME_THASH)
+				if (uAnyVar:GetAT("JSONArray")>0)
+					aData:=uAnyVar:Get("JSONArray")
+				else
+					aData:=uAnyVar:GetHashArray()
+				endif
+				lHashAsFile:=uAnyVar:lHashAsFile()
+				lHasSectionEnabled:=uAnyVar:HasSectionEnabled()
+			else
+				aData:=ClassDataArr(uAnyVar,lGetObjSuperClass)
+				lHashAsFile:=.F.
+				lHasSectionEnabled:=.F.
+			endif
+			if (lHasSectionEnabled)
+				c__JSONBuffer+='['
+				nC:=len(aData)
+				for nS:=1 to nC
+					cAttribute:=aData[nS][HASH_SECTION_POSITION]
+					c__JSONBuffer+='{'
+					__ToJSONFile(nJSONTmp,cAttribute,oJSONArray)
+					c__JSONBuffer+=':'
+					c__JSONBuffer+='{'
+					nJ:=len(aData[nS][HASH_PROPERTY_POSITION])
+					for nD:=1 to nJ
+						uKey:=aData[nS][HASH_PROPERTY_POSITION][nD][HASH_PROPERTY_KEY]
+						cAttribute:=uKey
+						cHashFile:=aData[nS][HASH_PROPERTY_POSITION][nD][HASH_PROPERTY_FILE]
+						if ((lHashAsFile).or.(!empty(cHashFile)))
+							uValue:=aData[nS][HASH_PROPERTY_POSITION][nD][HASH_PROPERTY_VALUE]
+							if (uValue)
+								cType:=aData[nS][HASH_PROPERTY_POSITION][nD][HASH_PROPERTY_TYPE]
+								cClsNValue:=aData[nS][HASH_PROPERTY_POSITION][nD][HASH_PROPERTY_CLSNAME]
+								uValue:=uAnyVar:RestDataHash(uKey,cHashFile,cType,cClsNValue)
+							endif
+						else
+							uValue:=aData[nS][HASH_PROPERTY_POSITION][nD][HASH_PROPERTY_VALUE]
+						endif
+						c__JSONBuffer+='"'
+						cJSON:=oJSONArray:EscpJSONStr(cAttribute)
+						cJSON:=cTools():UTF8(cJSON,@oJSONArray:lUTF8,@oJSONArray:lNoAccent,@oJSONArray:lTrimSpace)
+						c__JSONBuffer+=cJSON
+						c__JSONBuffer+='":'
+						__ToJSONFile(nJSONTmp,uValue,oJSONArray)
+						if (nD<nJ)
+							c__JSONBuffer+=','
+						endif
+						if (len(c__JSONBuffer)>=1024)
+							fWrite(nJSONTmp,c__JSONBuffer)
+							c__JSONBuffer:=""
+						endif
+					next nD
+					c__JSONBuffer+='}'
+					c__JSONBuffer+='}'
+					if (nS<nC)
+						c__JSONBuffer+=','
+					endif
+					if (len(c__JSONBuffer)>=1024)
+						fWrite(nJSONTmp,c__JSONBuffer)
+						c__JSONBuffer:=""
+					endif
+				next nS
+				c__JSONBuffer+=']'
+				break
+			endif /*uAnyVar:HasSectionEnabled()*/
+			c__JSONBuffer+='{'
+			nJ:=len(aData)
+			for nD:=1 to nJ
+				uKey:=aData[nD][HASH_PROPERTY_KEY]
+				cAttribute:=aData[nD][HASH_PROPERTY_KEY]
+				cHashFile:=aData[nD][HASH_PROPERTY_FILE]
+				if ((lHashAsFile).or.(!empty(cHashFile)))
+					uValue:=aData[nD][HASH_PROPERTY_VALUE]
+					if (uValue)
+						cType:=aData[nD][HASH_PROPERTY_TYPE]
+						cClsNValue:=aData[nD][HASH_PROPERTY_CLSNAME]
+						uValue:=uAnyVar:RestDataHash(uKey,cHashFile,cType,cClsNValue)
+					endif
+				else
+					uValue:=aData[nD][HASH_PROPERTY_VALUE]
+				endif
+				c__JSONBuffer+='"'
+				cJSON:=oJSONArray:EscpJSONStr(cAttribute)
+				cJSON:=cTools():UTF8(cJSON,@oJSONArray:lUTF8,@oJSONArray:lNoAccent,@oJSONArray:lTrimSpace)
+				c__JSONBuffer+=cJSON
+				c__JSONBuffer+='":'
+				__ToJSONFile(nJSONTmp,uValue,oJSONArray)
+				if (nD<nJ)
+					c__JSONBuffer+=','
+				endif
+				if (len(c__JSONBuffer)>=1024)
+					fWrite(nJSONTmp,c__JSONBuffer)
+					c__JSONBuffer:=""
+				endif
+			next nD
+			c__JSONBuffer+='}'
+	    endcase
+	end sequence
+
+	if (len(c__JSONBuffer)>=1024)
+		fWrite(nJSONTmp,c__JSONBuffer)
+		c__JSONBuffer:=""
+	endif
+
+	if (valType(oSetHashMap)=="O")
+		oSetHashMap:=oSetHashMap:FreeObj()
+	endif
+
+    return
+
+method ToXML(cXMLRoot,cAttrSuffix,lArrayToList) class JSONArray
+
+	local cXML			as character
+	local cToXML		as character
+	local cXMLNew		as character
+	local cEncode		as character
+	local cVersion		as character
+
+	local oTXMLManager	as object
+
+	local uSelf
+
+	paramtype cXMLRoot as character optional
+	DEFAULT cAttrSuffix:="@"
+	paramtype cAttrSuffix as character optional
+	lArrayToList:=.F.
+	paramtype lArrayToList as logical optional
+
+	if (self:lUTF8)
+		cEncode:='encoding="UTF-8"'
+	endif
+
+	cVersion:='"1.0"'
+	cXML:="<?xml version="+cVersion+" "+cEncode+"?>"
+	DEFAULT cXMLRoot:="xml"
+	cXML+="<"+cXMLRoot+">"
+	if (self:GetAT("JSONArray")>0)
+		uSelf:=self:Get("JSONArray")
+	else
+		uSelf:=self
+	endif
+	private cXMLFull as character
+	cXMLFull:=""
+	private aXMLAttr as array
+	aXMLAttr:=Array(0)
+	__ToXML(uSelf,uSelf,@lArrayToList,@cAttrSuffix)
+	cToXML:=cXMLFull
+	cToXML:=strTran(cToXML,"@__NAMESPACE_ND__@","")
+	cToXML:=strTran(cToXML,"@__NAMESPACE_NS__@","")
+	cToXML:=strTran(cToXML,"@__ATTRIBUTE_ND__@","")
+	cToXML:=strTran(cToXML,"@__ATTRIBUTE_NS__@","")
+	cXML+=cToXML
+	cXML+="</"+cXMLRoot+">"
+
+	//begin TODO: check for attributes and namespace
+	if (("<"+cAttrSuffix)$cXML)
+		cXML:=StrTran(cXML,("<"+cAttrSuffix),"<")
+	endif
+	//end TODO: check for attributes and namespace
+
+	cXML:=cTools():UTF8(cXML,@self:lUTF8,@self:lNoAccent,@self:lTrimSpace)
+
+	if (self:lPrettify)
+		cXML:=cTools():StrPrettify(cXML,1,self:nPrettify)
+	endif
+
+	oTXMLManager:=TXMLManager():New()
+	if (oTXMLManager:Parse(cXML))
+		cXMLNew:=oTXMLManager:Save2String()
+		if (!Empty(cXMLNew))
+			cXML:=cXMLNew
+		endif
+	endif
+
+	return(cXML)
+
+static function __ToXML(uAnyVar,oJSONArray,lArrayToList as logical,cAttrSuffix as character) as character
+
+    local aData					as array
+
+    local cXML					as character
+	local cType					as character
+	local cXMLAttr				as character
+	local cHashFile				as character
+	local cClsNValue			as character
+	local cAttribute			as character
+    local cClassName			as character
+
+	local lHashAsFile			as logical
+	local lAttrSuffixNS			as logical
+	local lAttrSuffixND			as logical
+	local lGetObjSuperClass		as logical
+	local lHasSectionEnabled	as logical
+
+    local nC					as numeric
+    local nS					as numeric
+    local nD					as numeric
+    local nJ					as numeric
+	local nAT					as numeric
+
+	local nStack				as numeric
+	local nATAttr				as numeric
+	local nXMLAttr				as numeric
+	local nStackAttr			as numeric
+	local nTimeStamp 			as numeric
+	
+	local oSetHashMap			as object
+
+	local uKey
+	local uValue
+
+    nStack:=StackTools():StackCount("__ToXML")
+
+	nTimeStamp:=oJSONArray:nTimeStamp
+	lGetObjSuperClass:=oJSONArray:lGetObjSuperClass
+
+	begin sequence
+
+	    cType:=valType(uAnyVar)
+
+	    do case
+		case (cType=="C")
+			if (("thash"$uAnyVar).and.(file(uAnyVar)))
+				uValue:=oJSONArray:RestDataHash("",uAnyVar,"A","")
+				cJSON:=__ToXML(uValue,@oJSONArray,@lArrayToList,@cAttrSuffix)
+			else
+				cXML:=uAnyVar
+			endif
+			break
+		case (cType=="N")
+			cXML:=cValToChar(uAnyVar)
+			break
+		case (cType=="L")
+			cXML:=if(uAnyVar,"true","false")
+			break
+		case (cType=="D")
+			if ((valType(nTimeStamp)=="N").and.(nTimeStamp>0))
+				cXML:=FWTimeStamp(nTimeStamp,uAnyVar)
+			else
+				cXML:=DtoS(uAnyVar)
+			endif
+			break
+		case (cType=="U")
+			cXML:="null"
+			break
+		case (cType=="A")
+			if (oJSONArray:ArrayIsHashObject(uAnyVar))
+            	uValue:=oJSONArray:ArrayToHashObject(uAnyVar)
+				cXML:=__ToXML(uValue,@oJSONArray,@lArrayToList,@cAttrSuffix)
+			else
+				cXML:=""
+				if (lArrayToList)
+					cXML+="<list>"
+				endif
+				nJ:=len(uAnyVar)
+				for nD:=1 to nJ
+					uValue:=uAnyVar[nD]
+					if (lArrayToList)
+						cXML+='<list id="'+NToS(nD)+'">'
+					endif
+					cXML+=__ToXML(uValue,@oJSONArray,@lArrayToList,@cAttrSuffix)
+					if (lArrayToList)
+						cXML+="</list>"
+					endif
+				next nD
+				if (lArrayToList)
+					cXML+="</list>"
+				endif
+			endif
+			break
+		case (cType=="B")
+			cXML:=getCBSource(uAnyVar)
+			break
+		case (cType=="O")
+			cClassName:=GetClassName(uAnyVar)
+			if (cClassName=="THASHMAP")
+				oSetHashMap:=Array(#)
+				oSetHashMap:SetFromHashMap(uAnyVar)
+				uAnyVar:=oSetHashMap
+				cClassName:=GetClassName(uAnyVar)
+			endif
+			if (cClassName$CLS_NAME_THASH)
+	            if (uAnyVar:GetAT("JSONArray")>0)
+    	            aData:=uAnyVar:Get("JSONArray")
+				else
+					aData:=uAnyVar:GetHashArray()
+				endif
+				lHashAsFile:=uAnyVar:lHashAsFile()
+				lHasSectionEnabled:=uAnyVar:HasSectionEnabled()
+			else
+				aData:=ClassDataArr(uAnyVar,lGetObjSuperClass)
+				lHashAsFile:=.F.
+				lHasSectionEnabled:=.F.
+			endif
+			if (lHasSectionEnabled)
+				nC:=len(aData)
+				for nS:=1 to nC
+					cAttribute:=aData[nS][HASH_SECTION_POSITION]
+					lAttrSuffixNS:=(cTools():LeftAT(cAttrSuffix,cAttribute)>0)
+					if (!lAttrSuffixNS)
+						cXMLFull+="<"
+						cXMLFull+=cAttribute
+						cXMLFull+=XML_NLS_ATTRIBUTE_NS
+						cXMLFull+=">"
+					endif
+					nJ:=len(aData[nS][HASH_PROPERTY_POSITION])
+					for nD:=1 to nJ
+						uKey:=aData[nS][HASH_PROPERTY_POSITION][nD][HASH_PROPERTY_KEY]
+						cAttribute:=uKey
+						cHashFile:=aData[nS][HASH_PROPERTY_POSITION][nD][HASH_PROPERTY_FILE]
+						if ((lHashAsFile).or.(!empty(cHashFile)))
+							uValue:=aData[nS][HASH_PROPERTY_POSITION][nD][HASH_PROPERTY_VALUE]
+							if (uValue)
+								cType:=aData[nS][HASH_PROPERTY_POSITION][nD][HASH_PROPERTY_TYPE]
+								cClsNValue:=aData[nS][HASH_PROPERTY_POSITION][nD][HASH_PROPERTY_CLSNAME]
+								uValue:=uAnyVar:RestDataHash(uKey,cHashFile,cType,cClsNValue)
+							endif
+						else
+							uValue:=aData[nS][HASH_PROPERTY_POSITION][nD][HASH_PROPERTY_VALUE]
+						endif
+						lAttrSuffixND:=(cTools():LeftAT(cAttrSuffix,cAttribute)>0)
+						if ((!lAttrSuffixND).and.!(lAttrSuffixNS))
+							cXMLFull+="<"
+							cXMLFull+=cAttribute
+							nXMLAttr:=Len(cXMLFull)
+							aAdd(aXMLAttr,{nStack,nXMLAttr,.F.})
+							cXMLFull+=XML_NLS_ATTRIBUTE_ND
+							cXMLFull+=">"
+							cXMLFull+=__ToXML(uValue,@oJSONArray,@lArrayToList,@cAttrSuffix)
+							if (nXMLAttr>0)
+								cXMLFull:=stuff(cXMLFull,(nXMLAttr+1),len(XML_NLS_ATTRIBUTE_ND),"")	
+							endif
+							cXMLFull+="</"
+							cXMLFull+=cAttribute
+							cXMLFull+=">"
+						else
+							nStackAttr:=nStack
+							nATAttr:=aScan(aXMLAttr,{|e|(e[1]==(--nStackAttr))})
+							if (nXMLAttr==0)
+								while( nStackAttr>0)
+									nATAttr:=aScan(aXMLAttr,{|e|(e[1]==(--nStackAttr))})
+								end while
+							end while
+							if (nATAttr>0)
+								aXMLAttr[nATAttr][3]:=.T.
+								nXMLAttr:=aXMLAttr[nATAttr][2]
+								cAttribute:=cTools():LeftATRemove(cAttrSuffix,cAttribute,.T.)
+								cXMLAttr:=" "
+								cXMLAttr+=cAttribute
+								cXMLAttr+='="'
+								cXMLAttr+=__ToXML(uValue,@oJSONArray,@lArrayToList,@cAttrSuffix)
+								cXMLAttr+='"'
+								if ("ns"$lower(cAttribute))
+									nAT:=cTools():LeftAT("@__NAMESPACE_"+if(lAttrSuffixNS,"NS","ND")+"__@",SubStr(cXMLFull,nXMLAttr))
+									if (nAT>0)
+										nAT:=nXMLAttr
+										cXMLFull:=stuff(cXMLFull,nAT,len("@__NAMESPACE_"+if(lAttrSuffixNS,"NS","ND")+"__@"),cXMLAttr)
+									endif
+								else
+									nAT:=cTools():LeftAT("@__ATTRIBUTE_"+if(lAttrSuffixNS,"NS","ND"),SubStr(cXMLFull,nXMLAttr))
+									if (nAT>0)
+										nAT:=(nXMLAttr+nAT)
+										cXMLFull:=stuff(cXMLFull,nAT,len("@__ATTRIBUTE_"+if(lAttrSuffixNS,"NS","ND")),cXMLAttr)
+									endif
+								endif
+							endif
+						endif
+					next nD
+					if (!lAttrSuffixNS)
+						cXMLFull+="</"
+						cXMLFull+=cAttribute
+						cXMLFull+=">"
+					endif
+				next nS
+			else
+				nJ:=len(aData)
+				for nD:=1 to nJ
+					uKey:=aData[nD][HASH_PROPERTY_KEY]
+					cAttribute:=uKey
+					cHashFile:=aData[nD][HASH_PROPERTY_FILE]
+					if ((lHashAsFile).or.(!empty(cHashFile)))
+						uValue:=aData[nD][HASH_PROPERTY_VALUE]
+						if (uValue)
+							cType:=aData[nD][HASH_PROPERTY_TYPE]
+							cClsNValue:=aData[nD][HASH_PROPERTY_CLSNAME]
+							uValue:=uAnyVar:RestDataHash(uKey,cHashFile,cType,cClsNValue)
+						endif
+					else
+						uValue:=aData[nD][HASH_PROPERTY_VALUE]
+					endif
+					lAttrSuffixND:=(cTools():LeftAT(cAttrSuffix,cAttribute)>0)
+					if (!lAttrSuffixND)
+						cXMLFull+="<"
+						cXMLFull+=cAttribute
+						nXMLAttr:=Len(cXMLFull)
+						aAdd(aXMLAttr,{nStack,nXMLAttr,.F.})
+						cXMLFull+=XML_NLS_ATTRIBUTE_ND
+						cXMLFull+=">"
+						cXMLFull+=__ToXML(uValue,@oJSONArray,@lArrayToList,@cAttrSuffix)
+						if (nXMLAttr>0)
+							cXMLFull:=stuff(cXMLFull,(nXMLAttr+1),len(XML_NLS_ATTRIBUTE_ND),"")	
+						endif
+						cXMLFull+="</"
+						cXMLFull+=cAttribute
+						cXMLFull+=">"
+					else
+						nStackAttr:=nStack
+						nATAttr:=aScan(aXMLAttr,{|e|(e[1]==(--nStackAttr))})
+						if (nXMLAttr==0)
+							while( nStackAttr>0)
+								nATAttr:=aScan(aXMLAttr,{|e|(e[1]==(--nStackAttr))})
+							end while
+						end while
+						if (nATAttr>0)
+							aXMLAttr[nATAttr][3]:=.T.
+							nXMLAttr:=aXMLAttr[nATAttr][2]
+							cAttribute:=cTools():LeftATRemove(cAttrSuffix,cAttribute,.T.)
+							cXMLAttr:=" "
+							cXMLAttr+=cAttribute
+							cXMLAttr+='="'
+							cXMLAttr+=__ToXML(uValue,@oJSONArray,@lArrayToList,@cAttrSuffix)
+							cXMLAttr+='"'
+							if ("ns"$lower(cAttribute))
+								nAT:=cTools():LeftAT("@__NAMESPACE_ND__@",SubStr(cXMLFull,nXMLAttr))
+								if (nAT>0)
+									nAT:=nXMLAttr
+									cXMLFull:=stuff(cXMLFull,nAT,len("@__NAMESPACE_ND__@"),cXMLAttr)
+								endif
+							else
+								nAT:=cTools():LeftAT("@__ATTRIBUTE_ND__@",SubStr(cXMLFull,nXMLAttr))
+								if (nAT>0)
+									nAT:=(nXMLAttr+nAT)
+									cXMLFull:=stuff(cXMLFull,nAT,len("@__ATTRIBUTE_ND__@"),cXMLAttr)
+								endif
+							endif
+						endif
+					endif
+				next nD
+			endif
+	    otherwise 
+			cXML:="Unknown Data Type ("+cType+")"
+		endcase
+	end sequence
+
+	if (valType(oSetHashMap)=="O")
+		oSetHashMap:=oSetHashMap:FreeObj()
+	endif
+
+	DEFAULT cXML:=""
+
+    return(cXML)
+
+method ToHTML(lXML,cAttrSuffix) class JSONArray
+
+	local cHTML			as character
+
+	paramtype lXML as logical optional
+	DEFAULT cAttrSuffix:="@"
+	paramtype cAttrSuffix as character optional
+
+	cHTML:="<!DOCTYPE html>"
+	cHTML+="<html>"
+	cHTML+="    <head>"
+	if (self:lUTF8)
+		cHTML+="        <meta http-equiv='content-type' content='text/html; charset=utf-8'/>"
+	endif
+	cHTML+="        <title></title>"
+	cHTML+="    </head>"
+	cHTML+="    <body>"
+	cHTML+="        <pre>"
+	cHTML+="            <code>"
+	DEFAULT lXML:=.F.
+	if (lXML)
+		cHTML+=self:ToXML(/*cXMLRoot*/,cAttrSuffix,/*lArrayToList*/)
+	else
+		cHTML+=self:ToJSON()
+	endif
+	cHTML+="            </code>"
+	cHTML+="        </pre>"
+	cHTML+="    </body>"
+	cHTML+="</html>"
+
+	if (self:lPrettify)
+		cHTML:=cTools():StrPrettify(cHTML,2,self:nPrettify)
+	endif
+
+	return(cHTML)
+
+method ToXHTML(cAttrSuffix) class JSONArray
+	local cHTML as character
+	DEFAULT cAttrSuffix:="@"
+	paramtype cAttrSuffix as character optional
+	cHTML:=self:ToHTML(.T.,self:lGetObjSuperClass,cAttrSuffix)
+	return(cHTML)
+
+/*
+static function: EscpJSONStr(cJSONStr)
+Escapes string to a JSON string format
+ToJSON() Automatically escapes strings,there is no much use of this function unless
+you want to write the JSON strings yourself.
+
+Example:
+----
+cProdName:='Cool" and \ cool"'
+
+cJSON:='{"Product": {"Name": "'+EscpJSONStr(cProdName) +'"}}'
+
+alert(JSONPrettify(cJSON)) // -> {"Product": {"Name": "Cool\" and \\ cool\""}}
+----
+
+@param cJSONStr - The String you want to escape
+@return cJSONStr - Escaped JSON string
+*/
+
+method EscpJSONStr(cJSONStr) class JSONArray
+	local cJSON			as character
+	paramtype cJSONStr as character
+	cJSON:=EscpJSONStr(cJSONStr,@self:lUTF8,@self:lNoAccent,@self:lTrimSpace)
+	return(cJSON)
+
+static function EscpJSONStr(cJSONStr as character,lUTF8 as logical,lNoAccent as logical,lTrimSpace as logical) as character
+    local cEscpJSON	as character
+    cEscpJSON:=cJSONStr
+	cEscpJSON:=strTran(cEscpJSON,'\','\\') // we must escape \ first,so it won't bug the rest
+	cEscpJSON:=strTran(cEscpJSON,'"','\"')
+	cEscpJSON:=strTran(cEscpJSON,CHR_FF,'\f')
+	cEscpJSON:=strTran(cEscpJSON,CHR_LF,'\n')
+	cEscpJSON:=strTran(cEscpJSON,CHR_CR,'\r')
+	cEscpJSON:=strTran(cEscpJSON,CHR_HT,'\t')
+    if (lUTF8.or.lNoAccent.or.lTrimSpace)
+    	cEscpJSON:=cTools():UTF8(cEscpJSON,@lUTF8,@lNoAccent,@lTrimSpace)
+    endif
+
+    return(cEscpJSON)
+
+/*
+static function: JSONPrettify(cJSONstr [,nPrettify])
+Prettify a JSON string. It will indent and make it more readable
+
+Example:
+-----
+cJSON:='{"Products": [{"Name": "Water","Cost": 1.30},{"Name": "Bread","Cost": 0.40}]}'
+
+alert(JSONPrettify(cJSON,4))
+
+Result:
+
+{
+    "Products": [
+        {
+            "Name": "Water",
+            "Cost": 1.30
+        },
+        {
+            "Name": "Bread",
+            "Cost": 0.40
+        }
+    ]
+}
+----
+
+@param cJSONstr - The JSON string to prettify
+@param nPrettify (opitional) - number of spaces for each indentation,-1 for tabs (\t) (DEFAULT: -1)
+@return string - Prettified JSON string
+*/
+method JSONPrettify(cJSONstr,nPrettify) class JSONArray
+	local cJSON	as character
+	paramtype cJSONstr  as character 
+	DEFAULT nPrettify:=self:nPrettify
+	paramtype nPrettify as numeric optional
+	cJSON:=JSONPrettify(cJSONstr,nPrettify)
+	return(cJSON)
+
+static function JSONPrettify(cJSONstr,nPrettify) as character
+
+    local cTab			as character
+    local cLetter		as character
+    local cBefore		as character
+    local cJSONNew		as character
+
+    local lInString		as logical
+
+    local nLetter		as numeric
+	local nLetters		as numeric
+    local nIdentLev		as numeric
+
+    DEFAULT nPrettify:=-1
+
+    if (nPrettify>0)
+        cTab:=replicate(" ",nPrettify)
+    else
+        cTab:=CHR_HT
+    endif
+
+    cLetter:=""
+    cJSONNew:=""
+    lInString:=.F.
+    nIdentLev:=0
+
+    nLetters:=Len(cJSONstr)
+	for nLetter:=1 to nLetters
+        cBefore:=cLetter
+        cLetter:=subStr(cJSONstr,nLetter,1)
+        if ((cLetter=="{").or.(cLetter=="["))
+            if (!lInString)
+                nIdentLev++
+                cJSONNew+=(cLetter+CHR_CRLF+replicate(cTab,nIdentLev))
+            else
+                cJSONNew+=cLetter
+            endif
+        elseif ((cLetter=="}").or.(cLetter=="]"))
+            if (!lInString)
+                nIdentLev--
+                cJSONNew+=(CHR_CRLF+replicate(cTab,nIdentLev)+cLetter)
+            else
+                cJSONNew+=cLetter
+            endif
+        elseif (cLetter==",")
+               if (!lInString)
+                cJSONNew+=(cLetter+CHR_CRLF+replicate(cTab,nIdentLev))
+            else
+                cJSONNew+=cLetter
+            endif
+        elseif (cLetter==":")
+            if (!lInString)
+                cJSONNew+=": "
+            else
+                cJSONNew+=cLetter
+            endif
+        elseif ((cLetter==" ").or.(cLetter==CHR_LF).or.(cLetter==CHR_HT))
+            if (lInString)
+                cJSONNew+=cLetter
+            endif
+        elseif (cLetter=='"')
+        	if ((!(cBefore=="\")).or.(!IsComment(cJSONstr,nLetter,nLetters)))
+                lInString:=(!lInString)
+            endif
+            cJSONNew+=cLetter
+        else
+            cJSONNew+=cLetter
+        endif
+    next nLetter
+
+    return(cJSONNew)
+
+/*
+static function: JSONMinify(cJSONstr)
+Remove spaces,breaklines,and comments
+
+Comments are not allowed in the JSON specification,but we can remove them with this function.
+
+Allowed comments:
+
+*/
+ // Single line comment
+
+ /*  Multiple Lines
+     Multiple Lines
+     Multiple Lines*/
+/*
+Example:
+-----
+cJSON:='{'+CHR_CRLF
+cJSON+='  // this is a comment'+CHR_CRLF
+cJSON+='  "Products": [35,50]'+CHR_CRLF
+cJSON+='}'
+
+cJSON:=JSONMinify(cJSON) // -> returns '{"Products":[35,50]}'
+-----
+
+function ported from Chris Dary's JSONLint:
+http://JSONlint.com/c/js/jsl.format.js
+https://github.com/arc90/JSONlintdotcom/blob/master/c/js/jsl.format.js
+
+A copy of his license should be at the top of this file.
+
+@param cJSONstr - The JSON string to Minify
+@return string - Minified JSON string
+*/
+
+method JSONMinify(cJSONstr) class JSONArray
+	local cJSON as character
+	paramtype cJSONstr as character
+	cJSON:=JSONMinify(cJSONstr)
+	return(cJSON)
+
+static function JSONMinify(cJSONstr as character) as character
+
+    local cLetter			as character
+    local cBefore			as character
+    local cJSONNew			as character
+
+    local lInString			as logical
+    local lInLineCommt		as logical
+    local lMultLineCommt	as logical
+
+    local nLetter			as numeric
+	local nLetters			as numeric
+
+    cLetter:=""
+    cJSONNew:=""
+    lInString:=.F.
+    lInLineCommt:=.F.
+    lMultLineCommt:=.F.
+
+    nLetters:=Len(cJSONstr)
+	for nLetter:=1 to nLetters
+        cBefore:=cLetter
+        cLetter:=subStr(cJSONstr,nLetter,1)
+        // strip comments
+        if (lInLineCommt)
+            if (cLetter==CHR_LF)// \n
+                lInLineCommt:=.F.
+            endif
+        elseif (lMultLineCommt)
+            if ((cBefore=="*").and.(cLetter=="/"))
+                lMultLineCommt:=.F.
+            endif
+        elseif ((!lInString).and.(cLetter=="/").and.(subStr(cJSONstr,nLetter+1,1)=="/"))
+            lInLineCommt:=.T.
+        elseif ((!lInString).and.(cLetter=="/").and.(subStr(cJSONstr,nLetter+1,1)=="*"))
+            lMultLineCommt:=.T.
+        // real JSON
+        elseif ((cLetter=="{").or.(cLetter=="["))
+            cJSONNew+=cLetter
+        elseif ((cLetter=="}").or.(cLetter=="]"))
+            cJSONNew+=cLetter
+        elseif (cLetter==",")
+            cJSONNew+=cLetter
+        elseif (cLetter==":")
+            cJSONNew+=cLetter
+        elseif ((cLetter==" ").or.(cLetter==CHR_LF).or.(cLetter==CHR_HT).or.(cLetter==CHR_CR))
+            if (lInString)
+                cJSONNew+=cLetter
+            endif
+        elseif (cLetter=='"')
+			if ((!(cBefore=="\")).or.(!IsComment(cJSONstr,nLetter,nLetters)))
+				lInString:=(!lInString)
+			endif
+            cJSONNew+=cLetter
+        else
+            cJSONNew+=cLetter
+        endif
+    next nLetter
+
+    return(cJSONNew)
+
+static function IsComment(cJSONstr as character,nLetter as numeric,nLetters as numeric) as logical
+	local cLetter		as character
+	local cBefore		as character
+	local lIsComment	as logical
+	lIsComment:=.T.
+	for nLetter:=(nLetter+1) to nLetters
+		cBefore:=subStr(cJSONstr,nLetter,1)
+		if (cBefore$',}{][')
+			for nLetter:=(nLetter+1) to nLetters
+				cLetter:=subStr(cJSONstr,nLetter,1)
+				if (cLetter$'",}{][')
+					if (cBefore$',}{][')
+						lIsComment:=.F.
+					endif
+					exit
+				endif
+			next nLetter
+			if (!lIsComment)
+				exit
+			endif
+		endif
+	next nLetter
+	return(lIsComment)	
+
+method ReadINIFile(cIniFile,cIgnoreToken) class JSONArray
+	
+	local cJSON		as character
+	local cEncode	as character
+
+	local oTFINI	as object
+
+	paramtype cIniFile as character
+	paramtype cIgnoreToken as character optional
+
+	oTFINI:=TFINI():New(cIniFile,cIgnoreToken)
+	cEncode:=if(self:lUTF8,"UTF-8","")
+	cJSON:=oTFINI:ToJSON(cEncode,self:lPrettify,self:nPrettify)
+	
+	self:FromJSON(cJSON)
+
+	return(cJSON)
+
+method ReadXMLFile(cFileName,cAttrSuffix,cURL,cEncoding,nOptions,lNameSpaces) class JSONArray
+	local cJSON as character
+	paramtype cFileName as character
+	DEFAULT cAttrSuffix:="@"
+	paramtype cAttrSuffix as character optional
+	paramtype cURL as character optional
+	paramtype cEncoding as character optional
+	paramtype nOptions as numeric optional
+	DEFAULT lNameSpaces:=.T.
+	paramtype lNameSpaces as logical optional
+	cJSON:=self:FromXML(cFileName,cAttrSuffix,cURL,cEncoding,nOptions,lNameSpaces)
+	return(cJSON)
+
+/*
+static function: ReadJSONFile(cFileName [,lStripComments])
+Reads JSON from a JSON file.
+
+Example:
+-----
+aaConf:=ReadJSONFile("D:\TOTVS\Config.JSON")
+alert(aaConf[#'Product'][35][#'name'])
+-----
+
+@param cFileName - Filename
+@param lStripComments (Optional) - .T. removes comments,.F. doesn't. (DEFAULT .T.)
+@return AnyValue - returns the value of the JSON file
+*/
+
+method ReadJSONFile(cFileName,lStripComments) class JSONArray
+	paramtype cFileName as character
+	DEFAULT lStripComments:=.F.
+	paramtype lStripComments as logical optional
+	ReadJSONFile(@self,cFileName,lStripComments)
+	return(self)
+
+static function ReadJSONFile(oJSONArray as object,cFileName as character,lStripComments) as object
+
+	local cJSON			as character
+
+	begin sequence
+
+	    if (!File(cFileName))
+			oJSONArray:lHasError:=.T.
+			oJSONArray[#"error"]:="File ["+cFileName+"] does not exist."
+			oJSONArray:SetErrorMsg(oJSONArray[#"error"])
+			break
+	    endif
+
+	    cJSON:=cTools():ReadMemo(cFileName)
+
+	    DEFAULT lStripComments:=.F.
+	    if (lStripComments)
+	        cJSON:=JSONMinify(cJSON)
+	    endif
+
+	    oJSONArray:FromJSON(cJSON)
+
+	end sequence
+
+    return(oJSONArray)
+
+/// End of User functions
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Bellow there are only internal functions which are necessary for the FromJSON function
+
+/// Begin of Internal functions
+
+/*
+Internal function: GetJSONVal(cJSONstr)
+Converts from a JSON string into any value it holds
+
+@param cJSONstr - The JSON string you want to convert from
+@return Array(
+          uVal,- Value of the converted JSON string,or nil in case of a bad formatted JSON string.
+          nPos  - Position of the last processed character. returns -1 in case of a bad formatted JSON string.
+   )
+*/
+
+static function GetJSONVal(cJSONstr as character) as array
+
+	local aRet		as array
+    local aTmp		as array
+
+    local cLetter	as character
+
+    local nJSONstr	as numeric
+    local nLetter	as numeric
+
+    begin sequence
+
+        nJSONstr:=Len(cJSONstr)
+        for nLetter:=1 to nJSONstr
+            cLetter:=subStr(cJSONstr,nLetter,1)
+            if (cLetter=='"')
+                aTmp:=JSONStr(subStr(cJSONstr,nLetter))
+                break
+            elseif (AT(cLetter,"0123456789.-")>0)
+                aTmp:=JSONNum(subStr(cJSONstr,nLetter))
+                break
+            elseif (cLetter=="[")
+                aTmp:=JSONArr(subStr(cJSONstr,nLetter))
+                break
+            elseif (cLetter=="{")
+                aTmp:=JSONObj(subStr(cJSONstr,nLetter))
+                break
+            elseif (AT(cLetter,"TtFfNn")>0)//True,False or Null
+                aTmp:=JSONTFN(subStr(cJSONstr,nLetter))
+                break
+            endif
+        next nLetter
+
+    end sequence
+
+    if (len(aTmp)>0)
+        if (aTmp[2]<0)
+             aRet:={nil,-1} // Error Code
+        else
+        	aRet:={aTmp[1],nLetter+aTmp[2]-1}
+        endif
+    endif
+
+    DEFAULT aRet:={nil,-1}
+
+    return(aRet)
+
+/*
+Internal function: JSONArr(cJSONstr)
+Converts from a JSON string containing only an Array into an Array
+
+@param cJSONstr - The JSON string you want to convert from
+@return Array(
+          aVal,- Value of the JSON array,or nil in case of a bad formatted JSON string.
+          nPos  - Position of the last processed character. returns -1 in case of a bad formatted JSON string.
+   )
+*/
+
+static function JSONArr(cJSONstr as character) as array
+
+    local aRet			as array
+    local aTmp			as array
+    local aJSONArr		as array
+
+    local cLetter		as character
+
+    local lNeedComma	as logical
+
+    local nLetter		as numeric
+	local nJSONstr		as numeric
+
+    begin sequence
+
+    	aRet:=Array(0)
+    	lNeedComma:=.F.
+
+        nJSONstr:=Len(cJSONstr)
+		for nLetter:=2 to nJSONstr
+            cLetter:=subStr(cJSONstr,nLetter,1)
+            if ((!lNeedComma).and.(AT(cLetter,'"{[0123456789.-')>0))
+                aTmp:=GetJSONVal(subStr(cJSONstr,nLetter))
+                if (aTmp[2]<0)
+                    aJSONArr:={nil,-1} // Error Code
+                    break
+                endif
+                aAdd(aRet,aTmp[1])
+                nLetter:=(nLetter+aTmp[2]-1) // -1 move to last character because the loop will add +1.
+                lNeedComma:=.T.
+            elseif ((lNeedComma).and.(cLetter==','))
+                lNeedComma:=.F.
+            elseif (cLetter==']')
+                aJSONArr:={aRet,nLetter}
+                break
+            endif
+
+        next nLetter
+
+    end sequence
+
+    DEFAULT aJSONArr:={nil,-1}
+
+    return(aJSONArr)
+
+/*
+Internal function: JSONObj(cJSONstr)
+Converts from a JSON string containing only an Object into an Associative Array (jsonhash Object)
+
+@param cJSONstr - The JSON string you want to convert from
+@return Array(
+          aaVal,- Associative Array (jsonhash Object) of the JSON object,or nil in case of a bad formatted JSON string.
+          nPos  - Position of the last processed character. returns -1 in case of a bad formatted JSON string.
+   )
+*/
+
+static function JSONObj(cJSONstr as character) as array
+
+    local aRet			as array
+    local aTmp			as array
+
+    local cLetter		as character
+    local cTmpStr		as character
+
+    local nStep			as numeric
+    local nLetter		as numeric
+    local nJSONstr		as numeric
+
+    local oJSONArray	as object
+
+    oJSONArray:=Array(#)
+
+    begin sequence
+
+    	cTmpStr:=""
+
+    	nStep:=1
+
+        nJSONstr:=Len(cJSONstr)
+        for nLetter:=2 to nJSONstr
+            cLetter:=subStr(cJSONstr,nLetter,1)
+            if ((nStep==1).and.(cLetter=='"'))
+             	aTmp:=JSONStr(subStr(cJSONstr,nLetter))
+                if (aTmp[2]<0)
+                	aRet:={nil,-1} // Error Code
+                	break
+                endif
+                nLetter:=(nLetter+aTmp[2]-1)
+                cTmpStr:=aTmp[1]
+                nStep:=2
+            elseif ((nStep==2).and.(cLetter==':'))
+                nStep:=3
+            elseif ((nStep==3).and.(AT(cLetter,'"{[0123456789.-TtFfNn')>0))
+                aTmp:=GetJSONVal(subStr(cJSONstr,nLetter))
+                if (aTmp[2]<0)
+                    aRet:={nil,-1} // Error Code
+                    break
+                endif
+                nLetter:=(nLetter+aTmp[2]-1)
+                nStep:=4
+            elseif ((nStep==4).and.(cLetter==','))
+                oJSONArray[#cTmpStr]:=aTmp[1]
+                nStep:=1
+            elseif ((nStep==4).and.(cLetter=='}'))
+                oJSONArray[#cTmpStr]:=aTmp[1]
+                aRet:={oJSONArray,nLetter}
+                break
+            endif
+
+        next nLetter
+
+    end sequence
+
+    DEFAULT aRet:={nil,-1}
+
+    return(aRet)
+
+/*
+Internal function: JSONStr(cJSONstr)
+Converts from a JSON string containing only a String into a String
+
+@param cJSONstr - The JSON string you want to convert from
+@return Array(
+          cVal,- Value of the JSON string,or nil in case of a bad formatted JSON string.
+          nPos  - Position of the last processed character. returns -1 in case of a bad formatted JSON string.
+   )
+*/
+
+static function JSONStr(cJSONstr as character) as array
+
+    local aRet		as array
+
+    local cLetter	as character
+    local cTmpStr	as character
+
+    local nUnic		as numeric
+    local nLetter	as numeric
+	local nJSONstr	as numeric
+
+    begin sequence
+
+    	cTmpStr:=""
+
+		nJSONstr:=Len(cJSONstr)
+
+        for nLetter:=2 to nJSONstr
+            cLetter:=subStr(cJSONstr,nLetter,1)
+            if (cLetter=="\")
+                nLetter++
+                cLetter:=subStr(cJSONstr,nLetter,1)
+                if (cLetter=='b')
+                    cTmpStr+=CHR_BS
+                elseif (cLetter=='f')
+                    cTmpStr+=CHR_FF
+                elseif (cLetter=='n')
+                    cTmpStr+=CHR_LF
+                elseif (cLetter=='r')
+                    cTmpStr+=CHR_CR
+                elseif (cLetter=='t')
+                    cTmpStr+=CHR_HT
+                elseif (cLetter=='u')
+                    nUnic:=CTON(UPPER(subStr(cJSONstr,nLetter+1,4)),16)
+                    if (nUnic<=255)
+                        cTmpStr+=chr(nUnic)
+                    else
+                        cTmpStr+='?'
+                    endif
+                    nLetter+=4
+                else
+                    cTmpStr+=cLetter //it will add the char if it doesn't have a special function
+                endif
+            elseif (cLetter=='"')
+                aRet:={cTmpStr,nLetter}
+                break
+            else
+                cTmpStr+=cLetter
+            endif
+        next nLetter
+
+    end sequence
+
+    DEFAULT aRet:={nil,-1}
+
+    return(aRet)
+
+/*
+Internal function: JSONNum(cJSONstr)
+Converts from a JSON string containing only a Number into a Number
+It accepts the (Scientific) E Notation
+
+@param cJSONstr - The JSON string you want to convert from
+@return Array(
+          nVal,- Value of the JSON number,or nil in case of a bad formatted JSON string.
+          nPos  - Position of the last processed character. returns -1 in case of a bad formatted JSON string.
+   )
+*/
+
+static function JSONNum(cJSONstr) as array
+
+	local aRet		as array
+
+	local cLetter	as character
+    local cTmpStr	as character
+
+    local lNegExp	as logical
+
+    local nNum		as numeric
+    local nLetter	as numeric
+	local nJSONstr	as numeric
+
+    lNegExp:=.F.
+
+    begin sequence
+
+    	cTmpStr:=""
+
+        nJSONstr:=Len(cJSONstr)
+		
+		for nLetter:=1 to nJSONstr
+            cLetter:=subStr(cJSONstr,nLetter,1)
+            if (AT(cLetter,'0123456789.-')>0)
+                cTmpStr+=cLetter
+            elseif (len(cLetter)>0).and.(UPPER(cLetter)=='E')
+                nNum:=val(cTmpStr)
+                cTmpStr:=""
+                nLetter++
+                cLetter:=subStr(cJSONstr,nLetter,1)
+                if (cLetter=='-')
+                    lNegExp:=.T.
+                    nLetter++
+                elseif (cLetter=='+')
+                    nLetter++
+                endif
+                cLetter:=subStr(cJSONstr,nLetter,1)
+                while (AT(cLetter,'0123456789')>0)
+                    cTmpStr+=cLetter
+                    nLetter++
+                    cLetter:=subStr(cJSONstr,nLetter,1)
+                end while
+                if (lNegExp)
+                    if (val(cTmpStr)!=0)
+                        nNum*=(val('0.'+replicate('0',val(cTmpStr)-1)+'1'))
+                    endif
+                else
+                    nNum*=(val('1'+replicate('0',val(cTmpStr))))
+                endif
+                aRet:={nNum,nLetter-1}
+                break
+            elseif (len(cLetter)>0)
+                aRet:={val(cTmpStr),nLetter-1}
+                break
+            endif
+        next nLetter
+
+    end sequence
+
+    DEFAULT aRet:={nil,-1}
+
+    return(aRet)
+
+/*
+Internal function: JSONTFN(cJSONstr)
+Converts from a JSON string containing only a logical True,False or Null
+
+@param cJSONstr - The JSON string you want to convert from
+@return Array(
+          lVal,- Value of the JSON logical value,or nil in case of Null or a bad formatted JSON string.
+          nPos  - Position of the last processed character. returns -1 in case of a bad formatted JSON string.
+   )
+*/
+
+static function JSONTFN(cJSONstr as character) as array
+
+    local aRet		as array
+
+    local cTmpStr	as character
+
+    begin sequence
+
+        cTmpStr:=lower(left(cJSONstr,5))
+
+        if (cTmpStr=="false")
+            aRet:={.F.,5}
+            break
+        endif
+
+        cTmpStr:=left(cTmpStr,4)
+
+        if (cTmpStr=="true")
+            aRet:={.T.,4}
+            break
+        endif
+
+        if (cTmpStr=="null")
+            aRet:={nil,4}
+            break
+        endif
+
+    end sequence
+
+    DEFAULT aRet:={nil,-1}
+
+    return(aRet)

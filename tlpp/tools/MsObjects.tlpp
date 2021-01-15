@@ -1,0 +1,173 @@
+#include "totvs.ch"
+#include "parmtype.ch"
+
+class MsObjects
+
+    static method FindMsObjects(cMsClassName,oWnd) as array
+    static method GetOctlFocus(oWnd) as object
+    
+end class
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        Funcao:FindMsObjects
+        Autor:Marinaldo de Jesus
+        Data:17/04/2011
+        Uso:Retornar Array com os Objetos conforme cMsClassName
+        Sintaxe:StaticCall(NDJLIB016,FindMsObjects,cMsClassName,oWnd)
+    /*/
+//------------------------------------------------------------------------------------------------
+static method FindMsObjects(cMsClassName,oWnd) CLASS MsObjects
+	paramtype cMsClassName  as character
+    paramtype oWnd          as object
+    return(FindMsObjects(@cMsClassName,@oWnd))
+static function FindMsObjects(cMsClassName as character,oWnd as object) as array
+
+    local aMsObjects as array
+
+    aMsObjects:=array(0)
+
+    TRYEXCEPTION
+    
+        DEFAULT oWnd:=GetWndDefault()
+        
+        if (!(ValType(oWnd)=="O"))
+            break
+        endif
+        
+        if (!(ValType(cMsClassName)=="C"))
+            break
+        endif
+
+        cMsClassName:=Upper(cMsClassName)
+        aMsObjects:=FindObject(@oWnd,@cMsClassName)
+        AddObj(@oWnd,@cMsClassName,@aMsObjects)
+
+    ENDEXCEPTION
+
+    return(aMsObjects)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        Funcao:FindObject
+        Autor:Marinaldo de Jesus
+        Data:17/04/2011
+        Uso:Retornar Array com os Objetos conforme cMsClassName
+    /*/
+//------------------------------------------------------------------------------------------------
+static function FindObject(oWnd as object,cMsClassName as character,aMsObjects as array) as array
+    
+    local aChild    as array
+    local aControls as array
+
+    local nChild    as numeric
+    local nChilds   as numeric
+    local nControl  as numeric
+    local nControls as numeric
+    
+    local oChild    as object
+
+    DEFAULT aMsObjects:=array(0)
+    
+    BEGIN SEQUENCE
+
+        aControls:=oWnd:aControls
+
+        if (aControls==NIL)
+            AddObj(@oWnd,@cMsClassName,@aMsObjects)
+            oChild:=oWnd:oWnd
+            if !(oChild==NIL)
+                AddObj(@oChild,@cMsClassName,@aMsObjects)
+                FindObject(@oChild,@cMsClassName,@aMsObjects)    
+            endif    
+            break
+        endif
+
+        nControls:=Len(aControls)
+        For nControl:=1 To nControls
+            oChild:=aControls[nControl]
+            if (oChild==NIL)
+                Loop
+            endif
+            AddObj(@oChild,@cMsClassName,@aMsObjects)
+            TRYEXCEPTION
+                aChild:=oChild:aControls 
+                if !(aChild==NIL)
+                    nChilds:=Len(aChild)
+                    For nChild:=1 To nChilds
+                        oChild:=aChild[nChild]
+                        if !(oChild==NIL)
+                            if (oChild==NIL)
+                                Loop
+                            endif
+                            AddObj(@oChild,@cMsClassName,@aMsObjects)
+                            FindObject(@oChild,@cMsClassName,@aMsObjects)    
+                        endif    
+                    Next nChild
+                endif        
+            ENDEXCEPTION
+        Next nControl
+
+        oChild:=oWnd:oWnd
+        if !(oChild==NIL)
+            AddObj(@oChild,@cMsClassName,@aMsObjects)
+            FindObject(@oChild,@cMsClassName,@aMsObjects)    
+        endif    
+
+    END SEQUENCE
+
+    return(aMsObjects)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        Funcao:AddObj
+        Autor:Marinaldo de Jesus
+        Data:17/04/2011
+        Uso:Adicionar o Objeto 
+    /*/
+//------------------------------------------------------------------------------------------------
+static function AddObj(oObj as object,cMsClassName as character,aMsObjects as array) as logical
+
+    local cClassName    as character
+    
+    local lAddObj       as logical
+
+    cClassName:=Upper(oObj:ClassName())
+    lAddObj:=.F.
+
+    if (cClassName==cMsClassName)
+        if (lAddObj:=(aScan(aMsObjects,{|oFind|(oFind==oObj)})==0))
+            aAdd(aMsObjects,oObj)
+        endif
+    endif
+
+    return(lAddObj)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        Funcao:GetOctlFocus
+        Autor:Marinaldo de Jesus
+        Data:26/06/2011
+        Uso:Retorna o Objeto Ativo
+    /*/
+//------------------------------------------------------------------------------------------------
+static method GetOctlFocus(oWnd) class MsObjects
+    paramtype oWnd as object optional
+    return(GetOctlFocus(@oWnd))
+static function GetOctlFocus(oWnd)
+
+    local oCtlFocus as object
+
+    TRYEXCEPTION
+    
+        DEFAULT oWnd:=GetWndDefault()
+        
+        if (!(ValType(oWnd)=="O"))
+            break
+        endif
+
+        oCtlFocus:=oWnd:oCtlFocus
+
+    ENDEXCEPTION
+
+    return(oCtlFocus)

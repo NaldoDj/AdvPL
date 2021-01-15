@@ -1,0 +1,527 @@
+#include "totvs.ch"
+#include "parmtype.ch"
+
+/*namespace dna.udbTools*/
+
+function u_dbToSDF(cQuery as character,cFile as character,lShow as logical) as logical
+
+    local cMsg          as character
+    local cMask         as character
+    local cTitle        as character
+    local cDirectory    as character
+
+    local nOptions      as numeric
+
+    local lRet          as logical
+
+    local oudbToSDF		as object
+
+    if (empty(cQuery))
+        cMask:="Query(s) File | *.sql"
+        cTitle:="Escolha o script SQL para exportar para TXT"
+        cDirectory:="C:"
+        nOptions:=(GETF_LOCALHARD+GETF_NETWORKDRIVE)
+        cQuery:=cGetFile(cMask,cTitle,1,cDirectory,.F.,nOptions,/*[lArvore]*/,/*[lKeepCase]*/)
+    endif
+
+    if (empty(cFile))
+        cMask:="TXT File | *.txt"
+        cTitle:="Escolha/Informe o arquivo para salvar a Query"
+        cDirectory:=getTempPath()
+        cFile:=cGetFile(cMask,cTitle,1,cDirectory,.T.,nOptions,/*[lArvore]*/,/*[lKeepCase]*/)
+        if (empty(cFile))
+        	cFile:=nil
+        endif
+    endif
+
+    DEFAULT lShow:=.T.
+
+    if (!empty(cQuery) )
+        oudbToSDF:=udbTools():New(@cQuery,@cFile)
+        oudbToSDF:lShow:=lShow
+        lRet:=oudbToSDF:dbToSDF(@cQuery,@cFile)
+        if (lRet)
+            cMsg:="Query File :: "+cQuery+CRLF+"TXT File :: "+cFile+CRLF
+            cTitle:="Arquivo Gerado com Sucesso"
+            if (lShow)
+                eeCView(cMsg,cTitle)
+            else
+                FWLogMsg("INFO"/*<cSeverity>*/,/*[cTransactionId]*/,"UDBTOOLS"/*<cGroup>*/,cTitle/*<cCategory>*/,ProcName()/*<cStep >*/,ProcName()/*<cMsgId>*/,cMsg/*<cMessage>*/,0/*<nMensure>*/,0/*<nElapseTime>*/,array(0)/*<aMessage>*/)
+            endif
+        else
+            cMsg:="Query File :: "+cQuery+CRLF+"TXT File :: "+cFile+CRLF
+            cTitle:="Problema na Geração do Arquivo"
+            if (lShow)
+                eeCView(cMsg,cTitle)
+            else
+                FWLogMsg("ERROR"/*<cSeverity>*/,/*[cTransactionId]*/,"UDBTOOLS"/*<cGroup>*/,cTitle/*<cCategory>*/,ProcName()/*<cStep >*/,ProcName()/*<cMsgId>*/,cMsg/*<cMessage>*/,0/*<nMensure>*/,0/*<nElapseTime>*/,array(0)/*<aMessage>*/)
+            endif
+        endif
+    else
+        lRet:=.F.
+        DEFAULT cFile:=""
+        cMsg:="Query File :: "+cQuery+CRLF+"TXT File :: "+cFile+CRLF
+        cTitle:="Arquvo(s) não Encontrado(s)"
+        if (lShow)
+            eeCView(cMsg,cTitle)
+        else
+            FWLogMsg("ERROR"/*<cSeverity>*/,/*[cTransactionId]*/,"UDBTOOLS"/*<cGroup>*/,cTitle/*<cCategory>*/,ProcName()/*<cStep >*/,ProcName()/*<cMsgId>*/,cMsg/*<cMessage>*/,0/*<nMensure>*/,0/*<nElapseTime>*/,array(0)/*<aMessage>*/)
+        endif
+    endif
+
+    return(lRet)
+
+function u_dbToXML(cQuery as character,cFile as character,lPicture as logical,lX3Titulo as logical,lShow as logical) as logical
+
+    local cMsg          as character
+    local cMask         as character
+    local cTitle        as character
+    local cDirectory    as character
+
+    local nOptions      as numeric
+
+    local lRet          as logical
+
+    local oudbToXML		as object
+
+    if (empty(cQuery))
+        cMask:="Query(s) File | *.sql"
+        cTitle:="Escolha o script SQL para exportar para XML"
+        cDirectory:="C:"
+        nOptions:=(GETF_LOCALHARD+GETF_NETWORKDRIVE)
+        cQuery:=cGetFile(cMask,cTitle,1,cDirectory,.F.,nOptions,/*[lArvore]*/,/*[lKeepCase]*/)
+    endif
+
+    if (empty(cFile))
+        cMask:="XML File | *.xml"
+        cTitle:="Escolha/Informe o arquivo para salvar a Query"
+        cDirectory:=getTempPath()
+        cFile:=cGetFile(cMask,cTitle,1,cDirectory,.T.,nOptions,/*[lArvore]*/,/*[lKeepCase]*/)
+        if (empty(cFile))
+        	cFile:=nil
+        endif
+    endif
+
+    DEFAULT lShow:=.T.
+
+    if (!empty(cQuery) )
+        oudbToXML:=udbTools():New(@cQuery,@cFile)
+        oudbToXML:lShow:=lShow
+        lRet:=oudbToXML:dbToXML(@cQuery,@cFile,@lPicture,@lX3Titulo)
+        if (lRet)
+            cMsg:="Query File :: "+cQuery+CRLF+"XML File :: "+cFile+CRLF
+            cTitle:="Arquivo Gerado com Sucesso"
+            if (lShow)
+                eeCView(cMsg,cTitle)
+            else
+                FWLogMsg("INFO"/*<cSeverity>*/,/*[cTransactionId]*/,"UDBTOOLS"/*<cGroup>*/,cTitle/*<cCategory>*/,ProcName()/*<cStep >*/,ProcName()/*<cMsgId>*/,cMsg/*<cMessage>*/,0/*<nMensure>*/,0/*<nElapseTime>*/,array(0)/*<aMessage>*/)
+            endif
+        else
+            cMsg:="Query File :: "+cQuery+CRLF+"XML File :: "+cFile+CRLF
+            cTitle:="Problema na Geração do Arquivo"
+            if (lShow)
+                eeCView(cMsg,cTitle)
+            else
+                FWLogMsg("ERROR"/*<cSeverity>*/,/*[cTransactionId]*/,"UDBTOOLS"/*<cGroup>*/,cTitle/*<cCategory>*/,ProcName()/*<cStep >*/,ProcName()/*<cMsgId>*/,cMsg/*<cMessage>*/,0/*<nMensure>*/,0/*<nElapseTime>*/,array(0)/*<aMessage>*/)
+            endif
+        endif
+    else
+        lRet:=.F.
+        DEFAULT cFile:=""
+        cMsg:="Query File :: "+cQuery+CRLF+"XML File :: "+cFile+CRLF
+        cTitle:="Arquvo(s) não Encontrado(s)"
+        if (lShow)
+            eeCView(cMsg,cTitle)
+        else
+            FWLogMsg("ERROR"/*<cSeverity>*/,/*[cTransactionId]*/,"UDBTOOLS"/*<cGroup>*/,cTitle/*<cCategory>*/,ProcName()/*<cStep >*/,ProcName()/*<cMsgId>*/,cMsg/*<cMessage>*/,0/*<nMensure>*/,0/*<nElapseTime>*/,array(0)/*<aMessage>*/)
+        endif
+    endif
+
+    return(lRet)
+
+function u_dbToJSON(cQuery as character,cFile as character,cJSONMain as character,lX3Titulo as logical,lShow as logical,lIEmptyFields as logical,lHeader as logical,lRowNumber as logical) as logical
+
+    local cMsg          as character
+    local cMask         as character
+    local cTitle        as character
+    local cDirectory    as character
+
+    local nOptions      as numeric
+
+    local lRet          as logical
+
+    local oudbToJSON	as object
+
+    if (empty(cQuery))
+        cMask:="Query(s) File | *.sql"
+        cTitle:="Escolha o script SQL para exportar para JSON"
+        cDirectory:="C:"
+        nOptions:=(GETF_LOCALHARD+GETF_NETWORKDRIVE)
+        cQuery:=cGetFile(cMask,cTitle,1,cDirectory,.F.,nOptions,/*[lArvore]*/,/*[lKeepCase]*/)
+    endif
+
+    if (empty(cFile))
+        cMask:="JSON File | *.json"
+        cTitle:="Escolha/Informe o arquivo para salvar a Query"
+        cDirectory:=getTempPath()
+        cFile:=cGetFile(cMask,cTitle,1,cDirectory,.T.,nOptions,/*[lArvore]*/,/*[lKeepCase]*/)
+        if (empty(cFile))
+        	cFile:=nil
+        endif
+    endif
+
+    DEFAULT lShow:=.T.
+
+    if (!empty(cQuery) )
+        oudbToJSON:=udbTools():New(@cQuery,@cFile)
+        oudbToJSON:lShow:=lShow
+        lRet:=oudbToJSON:dbToJSON(@cQuery,@cFile,@cJSONMain,@lX3Titulo,@lIEmptyFields,@lHeader,@lRowNumber)
+        cMsg:="Query File :: "+cQuery+CRLF+"JSON File :: "+cFile+CRLF
+        cTitle:="Arquivo Gerado com Sucesso"
+        if (lRet)
+            if (lShow)
+                eeCView(cMsg,cTitle)
+            else
+                FWLogMsg("INFO"/*<cSeverity>*/,/*[cTransactionId]*/,"UDBTOOLS"/*<cGroup>*/,cTitle/*<cCategory>*/,ProcName()/*<cStep >*/,ProcName()/*<cMsgId>*/,cMsg/*<cMessage>*/,0/*<nMensure>*/,0/*<nElapseTime>*/,array(0)/*<aMessage>*/)
+            endif
+        else
+            cMsg:="Query File :: "+cQuery+CRLF+"JSON File :: "+cFile+CRLF
+            cTitle:="Problema na Geração do Arquivo"
+            if (lShow)
+                eeCView(cMsg,cTitle)
+            else
+                FWLogMsg("ERROR"/*<cSeverity>*/,/*[cTransactionId]*/,"UDBTOOLS"/*<cGroup>*/,cTitle/*<cCategory>*/,ProcName()/*<cStep >*/,ProcName()/*<cMsgId>*/,cMsg/*<cMessage>*/,0/*<nMensure>*/,0/*<nElapseTime>*/,array(0)/*<aMessage>*/)
+            endif
+        endif
+    else
+        lRet:=.F.
+        DEFAULT cFile:=""
+        cMsg:="Query File :: "+cQuery+CRLF+"JSON File :: "+cFile+CRLF
+        cTitle:="Arquvo(s) não Encontrado(s)"
+        if (lShow)
+            eeCView(cMsg,cTitle)
+        else
+            FWLogMsg("ERROR"/*<cSeverity>*/,/*[cTransactionId]*/,"UDBTOOLS"/*<cGroup>*/,cTitle/*<cCategory>*/,ProcName()/*<cStep >*/,ProcName()/*<cMsgId>*/,cMsg/*<cMessage>*/,0/*<nMensure>*/,0/*<nElapseTime>*/,array(0)/*<aMessage>*/)
+        endif
+    endif
+
+    return(lRet)
+
+function u_dbToDelim(cQuery as character,cFile as character,cDelim as character,cDelimRepl as character,lPicture as logical,lX3Titulo as logical,lShow as logical) as logical
+
+    local cMsg          as character
+    local cMask         as character
+    local cTitle        as character
+    local cDirectory    as character
+
+    local nOptions      as numeric
+
+    local lRet          as logical
+
+    local oudbToDelim	as object
+
+    if (empty(cQuery))
+        cMask:="Query(s) File | *.sql"
+        cTitle:="Escolha o script SQL para exportar para CSV"
+        cDirectory:="C:"
+        nOptions:=(GETF_LOCALHARD+GETF_NETWORKDRIVE)
+        cQuery:=cGetFile(cMask,cTitle,1,cDirectory,.F.,nOptions,/*[lArvore]*/,/*[lKeepCase]*/)
+    endif
+
+    if (empty(cFile))
+        cMask:="CSV File | *.csv"
+        cTitle:="Escolha/Informe o arquivo para salvar a Query"
+        cDirectory:=getTempPath()
+        cFile:=cGetFile(cMask,cTitle,1,cDirectory,.T.,nOptions,/*[lArvore]*/,/*[lKeepCase]*/)
+        if (empty(cFile))
+        	cFile:=nil
+        endif
+    endif
+
+    DEFAULT lShow:=.T.
+
+    if (!empty(cQuery) )
+        oudbToDelim:=udbTools():New(@cQuery,@cFile)
+        oudbToDelim:lShow:=lShow
+        lRet:=oudbToDelim:dbToDelim(@cQuery,@cFile,@cDelim,@cDelimRepl,@lPicture,@lX3Titulo)
+        if (lRet)
+            cMsg:="Query File :: "+cQuery+CRLF+"CSV File :: "+cFile+CRLF
+            cTitle:="Arquivo Gerado com Sucesso"
+            if (lShow)
+                eeCView(cMsg,cTitle)
+            else
+                FWLogMsg("INFO"/*<cSeverity>*/,/*[cTransactionId]*/,"UDBTOOLS"/*<cGroup>*/,cTitle/*<cCategory>*/,ProcName()/*<cStep >*/,ProcName()/*<cMsgId>*/,cMsg/*<cMessage>*/,0/*<nMensure>*/,0/*<nElapseTime>*/,array(0)/*<aMessage>*/)
+            endif
+        else
+            cMsg:="Query File :: "+cQuery+CRLF+"CSV File :: "+cFile+CRLF
+            cTitle:="Problema na Geração do Arquivo"
+            if (lShow)
+                eeCView(cMsg,cTitle)
+            else
+                FWLogMsg("ERROR"/*<cSeverity>*/,/*[cTransactionId]*/,"UDBTOOLS"/*<cGroup>*/,cTitle/*<cCategory>*/,ProcName()/*<cStep >*/,ProcName()/*<cMsgId>*/,cMsg/*<cMessage>*/,0/*<nMensure>*/,0/*<nElapseTime>*/,array(0)/*<aMessage>*/)
+            endif
+        endif
+    else
+        lRet:=.F.
+        cMsg:="Query File :: "+cQuery+CRLF+"CSV File :: "+cFile+CRLF
+        cTitle:="Arquvo(s) não Encontrado(s)"
+        if (lShow)
+            eeCView(cMsg,cTitle)
+        else
+            FWLogMsg("ERROR"/*<cSeverity>*/,/*[cTransactionId]*/,"UDBTOOLS"/*<cGroup>*/,cTitle/*<cCategory>*/,ProcName()/*<cStep >*/,ProcName()/*<cMsgId>*/,cMsg/*<cMessage>*/,0/*<nMensure>*/,0/*<nElapseTime>*/,array(0)/*<aMessage>*/)
+        endif
+    endif
+
+    return(lRet)
+
+class udbTools from dbtools
+
+	public data lShow as logical
+    
+    public method New(cQuery,cFile) as object
+
+	public method dbToSDF(cQuery,cFile)  as logical
+	public method dbToXML(cQuery,cFile,lPicture,lX3Titulo) as logical
+	public method dbToJSON(cQuery,cFile,cJSONMain,lX3Titulo,lIEmptyFields,lHeader,lRowNumber) as logical
+	public method dbToDelim(cQuery,cFile,cDelim,cDelimRepl,lPicture,lX3Titulo) as logical
+
+end class
+
+method New(cQuery,cFile) class udbTools
+	DEFAULT self:lShow:=.T.
+    _Super:New(@cQuery,@cFile)
+	return(self)
+
+method dbToDelim(cQuery,cFile,cDelim,cDelimRepl,lPicture,lX3Titulo) class udbTools
+
+    local cMsg          as character
+    local cTitle        as character
+    local cExtension    as character
+
+    local lRet          as logical
+
+    local otxtTools     as object
+
+    DEFAULT cQuery:=""
+    paramtype cQuery    as character optional
+
+    DEFAULT self:cExtension:=".csv"
+
+    DEFAULT cFile:=(getTempPath()+criaTrab(nil,.F.)+self:cExtension(".csv"))
+    paramtype cFile     as character optional
+
+    DEFAULT cDelim:=";"
+    paramtype cDelim    as character optional
+
+    DEFAULT cDelimRepl:=" "
+    paramtype cDelimRepl as character optional
+
+    DEFAULT lPicture:=.T.
+    paramtype lPicture  as logical   optional
+
+    DEFAULT lX3Titulo:=.F.
+    paramtype lX3Titulo as logical   optional
+
+    SplitPath(cFile,"","","",@cExtension)
+    if (empty(cExtension))
+        cExtension:=".csv"
+        cFile+=cExtension
+    endif
+
+    self:cQuery(cQuery)
+    self:cFile(cFile)
+    self:cDelim(cDelim)
+    self:cDelimRepl(cDelimRepl)
+    self:lPicture(lPicture)
+    self:lX3Titulo(lX3Titulo)
+    self:cExtension(cExtension)
+
+    lRet:=self:ToDelim(@cQuery,@cFile,@cDelim,@cDelimRepl,@lPicture,@lX3Titulo)
+
+    if (lRet)
+        cMsg:="Arquivo gerado com sucesso :: "+cFile
+        cTitle:=cMsg
+        if (self:lShow)
+            self:OpenWithExcel()
+            otxtTools:=txtTools():New(cFile,nil,cTitle)
+            otxtTools:txtFileEdit()
+        else
+            FWLogMsg("INFO"/*<cSeverity>*/,/*[cTransactionId]*/,"UDBTOOLS"/*<cGroup>*/,cTitle/*<cCategory>*/,ProcName()/*<cStep >*/,ProcName()/*<cMsgId>*/,cMsg/*<cMessage>*/,0/*<nMensure>*/,0/*<nElapseTime>*/,array(0)/*<aMessage>*/)
+        endif
+    elseif (self:lHasError())
+        cMsg:=self:cError()
+        cTitle:="A T E N C A O :: Ocorreram erros na geracao do arquivo :: "+cFile
+        if (self:lShow)
+            otxtTools:=txtTools():New(nil,cMsg,cTitle)
+            otxtTools:txtFileEdit()
+        else
+            FWLogMsg("ERROR"/*<cSeverity>*/,/*[cTransactionId]*/,"UDBTOOLS"/*<cGroup>*/,cTitle/*<cCategory>*/,ProcName()/*<cStep >*/,ProcName()/*<cMsgId>*/,cMsg/*<cMessage>*/,0/*<nMensure>*/,0/*<nElapseTime>*/,array(0)/*<aMessage>*/)
+        endif
+    endif
+
+    return(lRet)
+
+method dbToSDF(cQuery,cFile) class udbTools
+
+    local cMsg          as character
+    local cTitle        as character
+    local cExtension    as character
+
+    local lRet          as logical
+
+    local otxtTools     as object
+
+    paramtype cQuery as character optional
+    DEFAULT cFile:=(getTempPath()+CriaTrab(nil,.F.)+".txt")
+    paramtype cFile as character optional
+
+    SplitPath(cFile,"","","",@cExtension)
+    if (empty(cExtension))
+        cExtension:=".txt"
+        cFile+=cExtension
+    endif
+
+    self:cExtension(cExtension)
+
+    lRet:=self:ToSDF(@cQuery,@cFile)
+
+    if (lRet)
+        cMsg:="Arquivo gerado com sucesso :: "+cFile
+        cTitle:=cMsg
+        if (self:lShow)
+            self:ShellExecute()
+            otxtTools:=txtTools():New(cFile,nil,cTitle)
+            otxtTools:txtFileEdit()
+        else
+            FWLogMsg("INFO"/*<cSeverity>*/,/*[cTransactionId]*/,"UDBTOOLS"/*<cGroup>*/,cTitle/*<cCategory>*/,ProcName()/*<cStep >*/,ProcName()/*<cMsgId>*/,cMsg/*<cMessage>*/,0/*<nMensure>*/,0/*<nElapseTime>*/,array(0)/*<aMessage>*/)
+        endif
+    elseif (self:lHasError())
+        cMsg:=self:cError()
+        cTitle:="A T E N C A O :: Ocorreram erros na geracao do arquivo :: "+cFile
+        if (self:lShow)
+            otxtTools:=txtTools():New(nil,cMsg,cTitle)
+            otxtTools:txtFileEdit()
+        else
+            FWLogMsg("ERROR"/*<cSeverity>*/,/*[cTransactionId]*/,"UDBTOOLS"/*<cGroup>*/,cTitle/*<cCategory>*/,ProcName()/*<cStep >*/,ProcName()/*<cMsgId>*/,cMsg/*<cMessage>*/,0/*<nMensure>*/,0/*<nElapseTime>*/,array(0)/*<aMessage>*/)
+        endif
+    endif
+
+    return(lRet)
+
+method dbToXML(cQuery,cFile,lPicture,lX3Titulo) class udbTools
+
+    local cMsg          as character
+    local cTitle        as character
+    local cExtension    as character
+
+    local lRet          as logical
+
+    local otxtTools     as object
+
+    paramtype cQuery as character	optional
+    DEFAULT cFile:=(getTempPath()+CriaTrab(nil,.F.)+".xml")
+    paramtype cFile as character	optional
+    paramtype lPicture as logical	optional
+    paramtype lX3Titulo as logical	optional
+
+    SplitPath(cFile,"","","",@cExtension)
+    if (empty(cExtension))
+        cExtension:=".xml"
+    endif
+
+    self:cQuery(cQuery)
+    self:cFile(cFile)
+    self:lPicture(lPicture)
+    self:lX3Titulo(lX3Titulo)
+    self:cExtension(cExtension)
+
+    lRet:=self:ToXML(@cQuery,@cFile,@lPicture,@lX3Titulo)
+
+    if (lRet)
+        cMsg:="Arquivo gerado com sucesso :: "+cFile
+        cTitle:=cMsg
+        if (self:lShow)
+            self:OpenWithExcel()
+            otxtTools:=txtTools():New(cFile,nil,cTitle)
+            otxtTools:txtFileEdit()
+        else
+            FWLogMsg("INFO"/*<cSeverity>*/,/*[cTransactionId]*/,"UDBTOOLS"/*<cGroup>*/,cTitle/*<cCategory>*/,ProcName()/*<cStep >*/,ProcName()/*<cMsgId>*/,cMsg/*<cMessage>*/,0/*<nMensure>*/,0/*<nElapseTime>*/,array(0)/*<aMessage>*/)
+        endif
+    elseif (self:lHasError())
+        cMsg:=self:cError()
+        cTitle:="A T E N C A O :: Ocorreram erros na geracao do arquivo :: "+cFile
+        if (self:lShow)
+            otxtTools:=txtTools():New(nil,cMsg,cTitle)
+            otxtTools:txtFileEdit()
+        else
+            FWLogMsg("ERROR"/*<cSeverity>*/,/*[cTransactionId]*/,"UDBTOOLS"/*<cGroup>*/,cTitle/*<cCategory>*/,ProcName()/*<cStep >*/,ProcName()/*<cMsgId>*/,cMsg/*<cMessage>*/,0/*<nMensure>*/,0/*<nElapseTime>*/,array(0)/*<aMessage>*/)
+        endif
+    endif
+
+    return(lRet)
+
+method dbToJSON(cQuery,cFile,cJSONMain,lX3Titulo,lIEmptyFields,lHeader,lRowNumber) class udbTools
+
+    local cMsg          as character
+    local cTitle        as character
+    local cExtension    as character
+
+    local lRet          as logical
+
+    local otxtTools     as object
+
+    paramtype cQuery	as character
+    DEFAULT cFile:=(getTempPath()+CriaTrab(nil,.F.)+".json")
+    paramtype cFile		as character optional
+    DEFAULT cJSONMain:="JSONMain"
+    paramtype cJSONMain as character optional
+    DEFAULT lX3Titulo:=.F.
+    paramtype lX3Titulo as logical	 optional
+    DEFAULT lIEmptyFields:=.T.
+    paramtype lIEmptyFields as logical optional
+    DEFAULT lHeader:=.F.
+    paramtype lHeader as logical optional
+    DEFAULT lRowNumber:=.F.
+    paramtype lHeader as logical optional
+
+    if (lHeader)
+        if (lIEmptyFields)
+            lIEmptyFields:=(!lHeader)
+        endif
+    endif
+
+    SplitPath(cFile,"","","",@cExtension)
+    if (empty(cExtension))
+        cExtension:=".json"
+    endif
+
+    self:cQuery(cQuery)
+    self:cFile(cFile)
+    self:cJSONMain(cJSONMain)
+    self:lX3Titulo(lX3Titulo)
+    self:cExtension(cExtension)
+
+    lRet:=self:ToJSON(@cQuery,@cFile,@cJSONMain,@lX3Titulo,@lIEmptyFields,@lHeader,@lRowNumber)
+
+    if (lRet)
+        cMsg:="Arquivo gerado com sucesso :: "+cFile
+        cTitle:=cMsg
+        if (self:lShow)
+            self:ShellExecute()
+            otxtTools:=txtTools():New(cFile,nil,cTitle)
+            otxtTools:txtFileEdit()
+        else
+            FWLogMsg("INFO"/*<cSeverity>*/,/*[cTransactionId]*/,"UDBTOOLS"/*<cGroup>*/,cTitle/*<cCategory>*/,ProcName()/*<cStep >*/,ProcName()/*<cMsgId>*/,cMsg/*<cMessage>*/,0/*<nMensure>*/,0/*<nElapseTime>*/,array(0)/*<aMessage>*/)
+        endif
+    elseif (self:lHasError())
+        cMsg:=self:cError()
+        cTitle:="A T E N C A O :: Ocorreram erros na geracao do arquivo :: "+cFile
+        if (self:lShow)
+            otxtTools:=txtTools():New(nil,cMsg,cTitle)
+            otxtTools:txtFileEdit()
+        else
+            FWLogMsg("ERROR"/*<cSeverity>*/,/*[cTransactionId]*/,"UDBTOOLS"/*<cGroup>*/,cTitle/*<cCategory>*/,ProcName()/*<cStep >*/,ProcName()/*<cMsgId>*/,cMsg/*<cMessage>*/,0/*<nMensure>*/,0/*<nElapseTime>*/,array(0)/*<aMessage>*/)
+        endif
+    endif
+
+    return(lRet)

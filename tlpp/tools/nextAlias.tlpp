@@ -1,0 +1,21 @@
+#include "totvs.ch"
+
+class NextAlias
+    static method NextAlias(lPrefDNA) as character
+end class
+
+static method NextAlias(lPrefDNA) class NextAlias
+    DEFAULT lPrefDNA:=.F.
+    return(NextAlias(lPrefDNA))
+static function NextAlias(lPrefDNA) as character
+    local cNextAlias as character
+    DEFAULT lPrefDNA:=.F.
+    if (lPrefDNA)
+        cNextAlias:="DNA"+SubStr(getNextAlias(),4)
+    else
+        cNextAlias:=getNextAlias()
+    endif
+    while (select(cNextAlias)>0)
+        cNextAlias:=__Soma1(cNextAlias)
+    end while
+    return(cNextAlias)

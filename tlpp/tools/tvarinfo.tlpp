@@ -1,0 +1,937 @@
+#include "totvs.ch"
+#include "shell.ch"
+#include "fileio.ch"
+#include "parmtype.ch"
+
+#DEFINE STACK_NAME          1
+#DEFINE STACK_PARAMETER     2
+
+#DEFINE STACK_ELEMENTS      2
+
+#DEFINE CLS_NAME            1
+
+static __cClassName     as character
+
+static oTVarInfo
+
+class __TVarInfo from TVarInfo
+    static method Echo(uVarInfo,cVarName,nClsIntSleep,nClsAddSleep,lHtml,lTableFormat) as character
+    static method Show(nSWShow,lHtml,lTableFormat) as logical
+    static method Save(lHtml,lTableFormat) as logical
+end class
+
+static method Echo(uVarInfo,cVarName,nClsIntSleep,nClsAddSleep,lHtml,lTableFormat) class __TVarInfo
+    local cEcho as character
+    cEcho:=u_TVarInfoNew(@uVarInfo,@cVarName,@nClsIntSleep,@nClsAddSleep):Echo(@lHtml,@lTableFormat)
+    return(cEcho)
+
+static method Show(nSWShow,lHtml,lTableFormat) class __TVarInfo
+    local lShow as logical
+    lShow:=u_TVarInfoNew(@uVarInfo,@cVarName,@nClsIntSleep,@nClsAddSleep):Show(@nSWShow,@lHtml,@lTableFormat)
+    return(lShow)
+
+static method Save(lHtml,lTableFormat) class __TVarInfo
+    local lShow as logical
+    lShow:=u_TVarInfoNew(@uVarInfo,@cVarName,@nClsIntSleep,@nClsAddSleep):Save(@lHtml,@lTableFormat)
+    return(lShow)
+
+//------------------------------------------------------------------------------------------------
+   /*/
+        Funcao:U_TVarInfoNew
+        Autor:Marinaldo de Jesus [http://www.blacktdn.com.br]
+        data:28/09/2011
+        Descricao:Reproduz as Caracteristicas da Funcao VarInfo resolvendo a Limitacao do Tamanho da String
+        Sintaxe:U_TVarInfoNew(uVarInfo,cVarName)
+   /*/
+//------------------------------------------------------------------------------------------------
+function u_TVarInfoNew(uVarInfo,cVarName,nClsIntSleep,nClsAddSleep)
+    oTVarInfo:=TVarInfo():New(@uVarInfo,@cVarName,@nClsIntSleep,@nClsAddSleep)
+    return(oTVarInfo)
+
+//------------------------------------------------------------------------------------------------
+   /*/
+        Class:TVarInfo [Baseada na Ideia Original de Julio [AUTOMAN] Wittwer]
+        Autor:Marinaldo de Jesus [http://www.blacktdn.com.br]
+        data:28/09/2011
+        Descricao:Reproduz as Caracteristicas da Funcao VarInfo resolvendo a Limitacao do Tamanho da String
+        Sintaxe:TVarInfo():New(uVarInfo,cVarName,nClsIntSleep,@nClsAddSleep)
+   /*/
+//------------------------------------------------------------------------------------------------
+class TVarInfo from LongClassName
+
+    data aTVarInfo  as array
+
+    data cClassName as character
+
+    data nAT as numeric
+    data nSize as numeric
+
+    data cCRLF as character
+
+    data cSRVFile as character
+    data cSRVPath as character
+    data cLocalFile as character
+    data cLocalPath as character
+
+    data lBof as logical
+    data lEof as logical
+
+    data cDateFormat as character
+    data lSetCentury as logical
+
+    data nfHandle as numeric
+
+    public data lEcho as logical
+    public data lLogMsg as logical
+    public data lEchoClean as logical
+    public data lGetObjSuperClass as logical
+
+    public method New(uVarInfo,cVarName,nClsIntSleep,nClsAddSleep) as object /*/\constructor/\*/
+    public method ReSet(uVarInfo,cVarName,nClsIntSleep,nClsAddSleep,lEraseSrv,lEraselocal) as object
+
+    private method Init(uVarInfo,cVarName,nClsIntSleep,nClsAddSleep) as object
+
+    public method FreeObj() /*\/destructor\/*/
+    public method ClassName() as character
+
+    public method Echo(lHtml,lTableFormat) as character
+    public method Show(nSWShow,lHtml,lTableFormat) as logical
+
+    public method Save(lHtml,lTableFormat) as logical
+
+    public method Bof() as logical
+    public method Eof() as logical
+    public method Skip(n) as numeric
+    public method GoTo(n) as numeric
+    public method GoTop() as numeric
+    public method GoBottom() as numeric
+    public method GoNext() as logical
+
+    public method Close(lEraseSrv,lEraselocal) as object
+
+    public method cSRVFile() as character
+    public method cSRVPath() as character
+    public method cLocalFile() as character
+    public method cLocalPath() as character
+
+end class
+
+//------------------------------------------------------------------------------------------------
+   /*/
+        method:New
+        Autor:Marinaldo de Jesus [http://www.blacktdn.com.br]
+        data:28/09/2011
+        Descricao:Constructor
+        Sintaxe:TVarInfo():New(uVarInfo,cVarName,nClsIntSleep,nClsAddSleep)
+   /*/
+//------------------------------------------------------------------------------------------------
+method New(uVarInfo,cVarName,nClsIntSleep,nClsAddSleep) class TVarInfo
+    
+    paramtype cVarName as character optional
+    paramtype nClsIntSleep as numeric optional
+    paramtype nClsAddSleep as numeric optional
+
+    DEFAULT __cClassName:="[TVarInfo][cClassName]"
+   
+    self:ClassName()
+    self:ReSet(uVarInfo,cVarName,nClsIntSleep,nClsAddSleep,.T.,.T.)
+
+    return(self)
+
+//------------------------------------------------------------------------------------------------
+   /*/
+        method:ClassName
+        Autor:Marinaldo de Jesus [http://www.blacktdn.com.br]
+        data:28/09/2011
+        Descricao:Retorna o nome da Classe
+        Sintaxe:TVarInfo():New(uVarInfo,cVarName,nClsIntSleep,nClsAddSleep)
+   /*/
+//------------------------------------------------------------------------------------------------
+method ClassName() class TVarInfo
+    self:cClassName:="TVARINFO"
+    return(self:cClassName)
+
+/*/
+    method:Init
+    Autor:Marinaldo de Jesus [http://www.blacktdn.com.br]
+    data:28/09/2011
+    Descricao:Inicializa
+/*/
+method Init(uVarInfo,cVarName,nClsIntSleep,nClsAddSleep) class TVarInfo
+
+    local aHMList       as array
+    
+    local aStackA       as array
+    local aStackO       as array
+ 
+    local cVarType      as character
+    local cClassName    as character
+
+    local nStackA       as numeric
+    local nStackO       as numeric
+
+    aStackA:=Array(0)
+    aStackO:=Array(0)
+
+    nStackA:=0
+    nStackO:=0
+
+    cVarType:=ValType(uVarInfo)
+    if (cVarType=="O")
+        cClassName:=ClassName(uVarInfo)
+        if (cClassName=="THASHMAP")
+            if (HMList(@uVarInfo,@aHMList))
+                uVarInfo:=aHMList
+                cVarType:=ValType(uVarInfo)
+            endif
+        endif
+    endif
+    
+    if (cVarName==nil)
+        do case
+        case (cVarType=="A")
+            cVarName:="[VAR_ARRAY]"
+        case (cVarType=="C")
+            cVarName:="[VAR_STRING]"
+        case (cVarType=="D")
+            cVarName:="[VAR_DATE]"
+        case (cVarType=="O")
+            cVarName:="[VAR_OBJECT]"
+        case (cVarType=="L")
+            cVarName:="[VAR_BOOLEAN]"
+        case (cVarType=="N")
+            cVarName:="[VAR_NUMERIC]"
+        case (cVarType=="U")
+            cVarName:="[VAR_NOTSET]"
+        otherwise
+            cVarName:="[VAR_"+cVarType+"]"
+        endcase
+    endif
+
+    self:ClassName()
+    self:aTVarInfo:=Array(0)
+    self:cSRVFile:=""
+    self:cSRVPath:="\tmp\tvarinfo\"
+    self:cLocalFile:=""
+    self:cLocalPath:=GetTempPath()
+    self:nfHandle:=-1
+    self:lGetObjSuperClass:=.T.
+
+    DEFAULT self:lEcho:=.F.
+    DEFAULT self:lLogMsg:=.F.
+    DEFAULT self:lEchoClean:=.F.
+
+    DEFAULT self:cCRLF:=CRLF
+
+    /*
+        [TVARINFO]
+        ClsIntSleep=5;Valor Inicial na Ocorrencia da Exception. Incremente em 5
+        ClsAddSleep=1;Valor Inicial na Ocorrencia da Exception. Incremente em 1
+    */
+    DEFAULT nClsIntSleep:=Val(GetPvProfString("TVARINFO","ClsIntSleep","0",GetSrvIniName()))
+    DEFAULT nClsAddSleep:=Val(GetPvProfString("TVARINFO","ClsAddSleep","0",GetSrvIniName()))
+
+    private __nClsIntSleep as numeric
+    private __nClsAddSleep as numeric
+    private __nClsNIntSleep as numeric
+    private __nClsVAddSleep as numeric
+
+    __nClsIntSleep:=nClsIntSleep
+    __nClsAddSleep:=nClsAddSleep
+    __nClsNIntSleep:=Int(__nClsIntSleep/2)
+    __nClsVAddSleep:=0
+
+    self:lSetCentury:=__SetCentury("ON")
+    self:cDateFormat:=Set(4,"dd/mm/yyyy")
+
+    TVarInfo(@self:aTVarInfo,@aStackA,@nStackA,@aStackO,@nStackO,@cVarName,@uVarInfo,0,cClassName,self:lGetObjSuperClass,self:lEchoClean)
+
+    if (.NOT.(self:lSetCentury))
+        __SetCentury("OFF")
+    endif
+    Set(4,self:cDateFormat)
+
+    nStackA:=0
+    aSize(aStackA,nStackA)
+    nStackO:=0
+    aSize(aStackO,nStackO)
+
+    self:nSize:=Len(self:aTVarInfo)
+
+    if (self:nSize>0)
+        self:nAT:=1
+        self:lBof:=.F.
+        self:lEof:=.F.
+    else
+        self:nAT:=0
+        self:lBof:=.T.
+        self:lEof:=.T.
+    endif
+
+    return(self)
+
+//------------------------------------------------------------------------------------------------
+   /*/
+        method:ReSet
+        Autor:Marinaldo de Jesus [http://www.blacktdn.com.br]
+        data:28/09/2011
+        Descricao:ReSet
+   /*/
+//------------------------------------------------------------------------------------------------
+method ReSet(uVarInfo,cVarName,nClsIntSleep,nClsAddSleep,lEraseSrv,lEraselocal) class TVarInfo
+    paramtype cVarName as character optional
+    paramtype nClsIntSleep as numeric optional
+    paramtype nClsAddSleep as numeric optional
+    paramtype lEraseSrv as logical optional
+    paramtype lEraselocal as logical optional
+    self:Close(@lEraseSrv,@lEraselocal)
+    self:Init(@uVarInfo,@cVarName,@nClsIntSleep,@nClsAddSleep)
+    return(self)
+
+//------------------------------------------------------------------------------------------------
+   /*/
+        method:Skip
+        Autor:Marinaldo de Jesus [http://www.blacktdn.com.br]
+        data:28/09/2011
+        Descricao:Salta n Registros (+) ou (-)
+   /*/
+//------------------------------------------------------------------------------------------------
+method Bof() class TVarInfo
+    self:lBof:=(self:nAT<=0)
+    return(self:lBof)
+
+method Eof() class TVarInfo
+    self:lEof:=(self:nAT>self:nSize)
+    return(self:lEof)
+
+//------------------------------------------------------------------------------------------------
+   /*/
+        method:Skip
+        Autor:Marinaldo de Jesus [http://www.blacktdn.com.br]
+        data:28/09/2011
+        Descricao:Salta n Registros (+) ou (-)
+   /*/
+//------------------------------------------------------------------------------------------------
+method Skip(n) class TVarInfo
+    DEFAULT n:=1
+    paramtype n as numeric optional 
+    if (n==1)
+        self:nAT++
+    else
+        self:nAT+=n
+    endif
+    return(self:nAT)
+
+//------------------------------------------------------------------------------------------------
+   /*/
+        method:GoTo
+        Autor:Marinaldo de Jesus [http://www.blacktdn.com.br]
+        data:28/09/2011
+        Descricao:Posiciona no Registro n
+   /*/
+//------------------------------------------------------------------------------------------------
+method GoTo(n) class TVarInfo
+    DEFAULT n:=0
+    paramtype n as numeric optional
+    if ((n>=1).and.(n<=self:nSize))
+        self:nAT:=n
+    endif
+    return(self:nAT)
+
+//------------------------------------------------------------------------------------------------
+   /*/
+        method:GoTop
+        Autor:Marinaldo de Jesus [http://www.blacktdn.com.br]
+        data:28/09/2011
+        Descricao:GoTop
+   /*/
+//------------------------------------------------------------------------------------------------
+method GoTop() class TVarInfo
+    self:nAT:=Min(1,self:nSize)
+    return(self:nAT)
+
+//------------------------------------------------------------------------------------------------
+   /*/
+        method:GoBottom
+        Autor:Marinaldo de Jesus [http://www.blacktdn.com.br]
+        data:28/09/2011
+        Descricao:GoBottom
+   /*/
+//------------------------------------------------------------------------------------------------
+method GoBottom() class TVarInfo
+    self:nAT:=self:nSize
+    return(self:nAT)
+
+//------------------------------------------------------------------------------------------------
+   /*/
+        method:GoNext
+        Autor:Marinaldo de Jesus [http://www.blacktdn.com.br]
+        data:28/09/2011
+        Descricao:Tenta Obter o Proximo Registro
+   /*/
+//------------------------------------------------------------------------------------------------
+method GoNext() class TVarInfo
+
+    local lGoNext as logical
+
+    lGoNext:=.F.
+
+    if (self:nSize>0)
+        self:Skip()
+        lGoNext:=(.NOT.((self:Bof()).or.(self:Eof())))
+    else
+        self:nAT:=0
+        self:lBof:=.T.
+        self:lEof:=.T.
+    endif
+
+    return(lGoNext)
+
+//------------------------------------------------------------------------------------------------
+   /*/
+        method:Echo
+        Autor:Marinaldo de Jesus [http://www.blacktdn.com.br]
+        data:28/09/2011
+        Descricao:Retorna a Linha Atual
+   /*/
+//------------------------------------------------------------------------------------------------
+method Echo(lHtml,lTableFormat) class TVarInfo
+
+    local cEcho as character
+
+    DEFAULT lHtml:=.F.
+    paramtype lHtml as logical optional
+    DEFAULT lTableFormat:=.F.
+    paramtype lTableFormat as logical optional
+
+    cEcho:=""
+
+    if (self:nAT>0.and.self:nAT<=self:nSize)
+        if (lHtml)
+            if (self:nAT==1)
+                cEcho+="<html>"+self:cCRLF
+                cEcho+="   <head>"+self:cCRLF
+                cEcho+="   </head>"+self:cCRLF
+                cEcho+="   <body>"+self:cCRLF
+                if (lTableFormat)
+                    cEcho+="       <table border='0'>"+self:cCRLF
+                    cEcho+="           <thead>"+self:cCRLF
+                    cEcho+="               <tr>"+self:cCRLF
+                    cEcho+="                   <th>"+self:cCRLF
+                    cEcho+="                   </th>"+self:cCRLF
+                    cEcho+="               </tr>"+self:cCRLF
+                    cEcho+="           </thead>"+self:cCRLF
+                    cEcho+="           <tfoot>"+self:cCRLF
+                    cEcho+="           </tfoot>"+self:cCRLF
+                    cEcho+="           <tbody>"+self:cCRLF
+                else
+                    cEcho+="       <pre>"+self:cCRLF
+                endif
+            endif
+            if (lTableFormat)
+                cEcho+="               <tr>"+self:cCRLF
+                cEcho+="                   <td>"+self:cCRLF
+                cEcho+="                       <pre>"+self:cCRLF
+            endif
+            cEcho+=self:aTVarInfo[self:nAT]+self:cCRLF
+            if (lTableFormat)
+                cEcho+="                       </pre>"+self:cCRLF
+                cEcho+="                   </td>"+self:cCRLF
+                cEcho+="               </tr>"+self:cCRLF
+            endif
+            if (self:nAT==self:nSize)
+                if (lTableFormat)
+                    cEcho+="           </tbody>"+self:cCRLF
+                    cEcho+="       </table>"+self:cCRLF
+                else
+                    cEcho+="       </pre>"+self:cCRLF
+                endif
+                cEcho+="   </body>"+self:cCRLF
+                cEcho+="</html>"+self:cCRLF
+            endif
+        else
+            cEcho+=self:aTVarInfo[self:nAT]
+            cEcho+=self:cCRLF
+        endif
+    endif
+
+    if (self:lEcho)
+        if (self:lLogMsg)
+            FWLogMsg("INFO"/*<cSeverity>*/,/*[cTransactionId]*/,"TVARINFO"/*<cGroup>*/,"ECHO"/*<cCategory>*/,ProcName()/*<cStep >*/,ProcName()/*<cMsgId>*/,cEcho/*<cMessage>*/,0/*<nMensure>*/,0/*<nElapseTime>*/,array(0)/*<aMessage>*/)
+        endif
+    endif
+
+    return(cEcho)
+
+//------------------------------------------------------------------------------------------------
+   /*/
+        method:Show
+        Autor:Marinaldo de Jesus [http://www.blacktdn.com.br]
+        data:28/09/2011
+        Descricao:Apresenta o Conteudo obtido pela VarInfo
+   /*/
+//------------------------------------------------------------------------------------------------
+method Show(nSWShow,lHtml,lTableFormat) class TVarInfo
+
+    local lShow as logical
+
+    paramtype nSWShow as numeric optional
+    paramtype lHtml as logical optional
+    paramtype lTableFormat as logical optional
+
+    lShow:=.F.
+
+    if (self:nfHandle<0)
+        self:Save(@lHtml,@lTableFormat)
+    endif
+
+    if ((self:nfHandle>=0).and.File(self:cSRVFile))
+
+        if (.NOT.(SubStr(self:cLocalPath,-1)=="\"))
+            self:cLocalPath+="\"
+        endif
+
+        self:cLocalFile:=(self:cLocalPath+strTran(self:cSRVFile,self:cSRVPath,""))
+
+        lShow:=(__CopyFile(self:cSRVFile,self:cLocalFile))
+        if (.NOT.(self:lEcho))
+            if (lShow)
+                DEFAULT nSWShow:=SW_SHOWMAXIMIZED
+                ShellExecute("Open",self:cLocalFile,"",self:cLocalPath,nSWShow)
+            endif
+        endif
+
+    endif
+
+    return(lShow)
+
+//------------------------------------------------------------------------------------------------
+   /*/
+        method:Save
+        Autor:Marinaldo de Jesus [http://www.blacktdn.com.br]
+        data:28/09/2011
+        Descricao:Salva o Conteudo Obtivo pela VarInfo
+   /*/
+//------------------------------------------------------------------------------------------------
+method Save(lHtml,lTableFormat) class TVarInfo
+
+    local cExt  as character
+    local cEcho as character
+    local cFile as character
+
+    local lSave as logical
+
+    DEFAULT lHtml:=.F.
+    paramtype lHtml as logical optional
+    paramtype lTableFormat as logical optional
+
+    lSave:=.F.
+
+    if (lHtml)
+        cExt:=".html"
+    else
+        cExt:=".txt"
+    endif
+
+    dirTools():MakeDir(self:cSRVPath)
+
+    cFile:=Lower(CriaTrab(nil,.F.))
+    self:cSRVFile:=(self:cSRVPath+cFile+cExt)
+    while (File(self:cSRVFile))
+        cFile:=__Soma1(cFile)
+        self:cSRVFile:=(self:cSRVPath+cFile+cExt)
+    end while
+
+    self:nfHandle:=fCreate(self:cSRVFile,FC_NORMAL)
+    if ((fError()==0).and.File(self:cSRVFile))
+        fClose(self:nfHandle)
+        self:nfHandle:=fOpen(self:cSRVFile,FO_READWRITE)
+        if (fError()==0)
+            cEcho:=self:Echo(@lHtml,@lTableFormat)
+            fWrite(self:nfHandle,cEcho)
+            while (self:GoNext())
+                cEcho:=self:Echo(@lHtml,@lTableFormat)
+                fWrite(self:nfHandle,cEcho)
+            end while
+            fClose(self:nfHandle)
+            self:nfHandle:=fOpen(self:cSRVFile,FO_SHARED)
+            lSave:=(fError()==0)
+        endif
+    endif
+
+    return(lSave)
+
+//------------------------------------------------------------------------------------------------
+   /*/
+        method:Close
+        Autor:Marinaldo de Jesus [http://www.blacktdn.com.br]
+        data:28/09/2011
+        Descricao:Fecha e exclui os arquivos utilizados
+   /*/
+//------------------------------------------------------------------------------------------------
+method Close(lEraseSrv,lEraselocal) class TVarInfo
+
+    DEFAULT lEraseSrv:=.T.
+    paramtype lEraseSrv as logical optional
+    DEFAULT lEraselocal:=.T.
+    paramtype lEraselocal as logical optional
+
+    if (self:nfHandle>=0)
+        fClose(self:nfHandle)
+        self:nfHandle:=-1
+    endif
+
+    if (.NOT.(Empty(self:cSRVFile)))
+        if (lEraseSrv)
+            fErase(self:cSRVFile)
+        endif
+        self:cSRVFile:=""
+    endif
+
+    if (.NOT.(Empty(self:cLocalFile)))
+        if (lEraselocal)
+            fErase(self:cLocalFile)
+        endif
+        self:cLocalFile:=""
+    endif
+
+    aSize(self:aTVarInfo,0)
+    self:nAT:=0
+
+    self:lBof:=.T.
+    self:lEof:=.T.
+
+    self:cCRLF:=nil
+
+    Set(4,self:cDateFormat)
+
+    if (.NOT.(self:lSetCentury))
+        __SetCentury("OFF")
+    endif
+
+    return(self)
+
+method FreeObj(lEraseSrv,lEraselocal) class TVarInfo
+    local oFreeObj as object
+    paramtype lEraseSrv as logical optional
+    paramtype lEraselocal as logical optional
+    self:Close(@lEraseSrv,@lEraselocal)
+    oFreeObj:=self
+    self:=FreeObj(oFreeObj)
+    return(self)
+
+method cSRVFile() class TVarInfo
+    return(self:cSRVFile)
+
+method cSRVPath() class TVarInfo
+    return(self:cSRVPath)
+
+method cLocalFile() class TVarInfo
+    return(self:cLocalFile)
+
+method cLocalPath() class TVarInfo
+    return(self:cLocalPath)
+
+/*/
+    Funcao:TVarInfo
+    Autor:Marinaldo de Jesus [http://www.blacktdn.com.br]
+    data:28/09/2011
+    Descricao:Obtem o Conteudo de uma variavel passada por parametro
+/*/
+static Function TVarInfo(aTVarInfo as array,aStackA as array,nStackA as numeric,aStackO as numeric,nStackO as numeric,cVarName as character,uVarInfo,nNivel as numeric,cClassName as character,lGetObjSuperClass,lEchoClean as logical)
+
+    local aHMList   as array
+
+    local cTab      as character
+    local cNStr     as character
+    local cLine     as character
+    local cVar      as character
+    local cVarType  as character
+
+    local lStack    as logical
+    local lClone    as logical
+    local lPointer  as logical
+
+    local nD        as numeric
+    local nJ        as numeric
+    local nVar      as numeric
+
+    local nStack    as numeric
+
+    local uVar
+
+    DEFAULT nNivel:=0
+
+    cTab:=""
+    cNStr:=""
+    cLine:=""
+    cVar:=""
+    cVarType:=ValType(uVarInfo)
+    nStack:=0
+
+    cTab:=""
+    cNStr:=""
+    cLine:=""
+    cVar:=""
+
+    begin sequence
+
+        if (cVarType=="O")
+            if (ClassName(uVarInfo)=="THASHMAP")
+                if (HMList(@uVarInfo,@aHMList))
+                    uVarInfo:=aHMList
+                    cVarType:=ValType(uVarInfo)
+                endif
+            endif
+        endif
+
+        if (cVarType=="O")
+
+            if (!lEchoClean)
+
+                nNivel++
+
+                cClassName:=GetClassName(uVarInfo)
+
+                nStack:=aScanX(aStackO,{|aStk,nAT|aStackO[nAT][STACK_PARAMETER]==uVarInfo})
+                lStack:=(nStack>0)
+                lPointer:=lStack
+
+                if (!lPointer)
+
+                    nStack:=aScanX(aStackO,{|aStk,nAT|__ArrayUtils():Compare(aStackO[nAT][STACK_PARAMETER],uVarInfo)})
+                    lStack:=(nStack>0)
+
+                    lClone:=lStack
+
+                    if (lClone)
+
+                        cTab:=Space(nNivel*5)
+
+                        cLine+=cTab
+                        cLine+=cVarName
+                        cLine+=" ->OBJECT ("
+                        cLine+=cClassName
+                        cLine+=") "
+                        cLine+="[CLONE OF "
+                        cLine+=aStackO[nStack][STACK_NAME]
+                        cLine+="]"
+
+                        aAdd(aTVarInfo,cLine)
+
+                        break
+
+                    endif
+
+                endif
+
+                if (lPointer)
+
+                    cTab:=Space(nNivel*5)
+
+                    cLine+=cTab
+                    cLine+=cVarName
+                    cLine+=" ->OBJECT ("
+                    cLine+=cClassName
+                    cLine+=") "
+                    cLine+="[POINTER OF "
+                    cLine+=aStackO[nStack][STACK_NAME]
+                    cLine+="]"
+
+                    aAdd(aTVarInfo,cLine)
+
+                    break
+
+                endif
+
+                /*
+                    Exception code:C0000005 ACCESS_VIOLATION
+                    Access Violation tInterFunctionCall on TVARINFO(U_TVARINFO.PRG)
+                    BEGIN Isto "minimiza" a ocorrencia da Exception
+                */
+                    __nClsVAddSleep+=__nClsAddSleep
+                    if (__cClassName==cClassName)
+                        Sleep(__nClsIntSleep+__nClsVAddSleep)
+                    else
+                        __cClassName:=cClassName
+                        Sleep(__nClsNIntSleep)
+                    endif
+                /*
+                    end Isto "minimiza" a ocorrencia da Exception
+                    Exception code:C0000005 ACCESS_VIOLATION
+                    Access Violation tInterFunctionCall on TVARINFO(U_TVARINFO.PRG)
+                */
+
+                aAdd(aStackO,Array(STACK_ELEMENTS))
+
+                nStack:=++nStackO
+                aStackO[nStack][STACK_NAME]:=cVarName
+                aStackO[nStack][STACK_PARAMETER]:=uVarInfo
+
+                cTab:=Space(nNivel*5)
+
+                cLine+=cTab
+                cLine+=cVarName
+                cLine+=" ->OBJECT ("
+                cLine+=cClassName
+                cLine+=") "
+
+                aAdd(aTVarInfo,cLine)
+
+            endif
+            
+            TVarInfo(@aTVarInfo,@aStackA,@nStackA,@aStackO,@nStackO,cVarName,ClassdataArray(uVarInfo,lGetObjSuperClass),nNivel,@cClassName,lGetObjSuperClass,lEchoClean)
+
+        elseif (cVarType=="A")
+
+            nJ:=Len(uVarInfo)
+
+            if (!lEchoClean)
+
+                cTab:=Space(nNivel*5)
+                cNStr:=Transform(nJ,cTools():RetPictVal(nJ))
+
+                nStack:=aScanX(aStackA,{|aStk,nAT|aStackA[nAT][STACK_PARAMETER]==uVarInfo})
+                lStack:=(nStack>0)
+
+                if (lStack)
+
+                    lPointer:=lStack
+
+                    if (!lPointer)
+
+                        nStack:=aScanX(aStackA,{|aStk,nAT|__ArrayUtils():Compare(aStackA[nAT][STACK_PARAMETER],uVarInfo)})
+                        lStack:=(nStack>0)
+
+                        lClone:=lStack
+
+                    endif
+                
+                endif
+
+                if (lPointer)
+
+                    cLine+=cTab
+                    cLine+=cVarName
+                    cLine+=" ->ARRAY ("
+                    cLine+=cNStr
+                    cLine+=") "
+                    cLine+="[POINTER OF "
+                    cLine+=aStackA[nStack][STACK_NAME]
+                    cLine+="]"
+
+                    aAdd(aTVarInfo,cLine)
+
+                    break
+
+                elseif (lClone)
+
+                    cLine+=cTab
+                    cLine+=cVarName
+                    cLine+=" ->ARRAY ("
+                    cLine+=cNStr
+                    cLine+=") "
+                    cLine+="[CLONE OF "
+                    cLine+=aStackA[nStack][STACK_NAME]
+                    cLine+="]"
+
+                    aAdd(aTVarInfo,cLine)
+
+                    break
+
+                else
+
+                    aAdd(aStackA,Array(STACK_ELEMENTS))
+
+                    nStack:=++nStackA
+                    aStackA[nStack][STACK_NAME]:=cVarName
+                    aStackA[nStack][STACK_PARAMETER]:=uVarInfo
+
+                    cLine+=cTab
+                    cLine+=cVarName
+                    cLine+=" ->ARRAY ("
+                    cLine+=cNStr
+                    cLine+=") [...]"
+
+                endif
+
+                aAdd(aTVarInfo,cLine)
+
+                nNivel++
+
+            endif
+
+            for nD:=1 to nJ
+                cNStr:=Transform(nD,cTools():RetPictVal(nD))
+                uVar:=uVarInfo[nD]
+                TVarInfo(@aTVarInfo,@aStackA,@nStackA,@aStackO,@nStackO,cVarName+"["+cNStr+"]",@uVar,nNivel,@cClassName,@lGetObjSuperClass,lEchoClean)
+                uVar:=nil
+            next nD
+
+        else
+
+            cVar:=AllToChar(uVarInfo,cVarType)
+
+            if (!lEchoClean)
+                cTab:=Space(nNivel*5)
+                nVar:=Len(cVar)
+                cLine+=cTab
+                cLine+=cVarName
+                cLine+=" ->"
+                cLine+=cVarType
+                cLine+=" ("
+                cLine+=Transform(nVar,cTools():RetPictVal(nVar))
+                cLine+=") "
+                cLine+="["
+            endif
+            cLine+=cVar
+            if (!lEchoClean)
+                cLine+="]"
+            endif
+
+            aAdd(aTVarInfo,cLine)
+
+        endif
+
+    end sequence
+
+    return(nil)
+
+/*/
+    Funcao:AllToChar
+    Autor:Marinaldo de Jesus [http://www.blacktdn.com.br]
+    data:28/09/2011
+    Descricao:AllToChar
+/*/
+static Function AllToChar(uVarInfo,cVarType as character,cPicture as character)
+
+    local cVar as character
+
+    do case
+    case (cVarType=="N")
+        if (Empty(cPicture))
+            cPicture:=cTools():RetPictVal(uVarInfo,.T.)
+        endif
+        cVar:=Transform(uVarInfo,AllTrim(cPicture))
+    case (cVarType=="C")
+        DEFAULT cPicture:=""
+        if (.NOT.(Empty(cPicture)))
+            cVar:=Transform(uVarInfo,AllTrim(cPicture))
+        else
+            cVar:=uVarInfo
+        endif
+    case (cVarType=="L")
+        cVar:=if(uVarInfo,".T.",".F.")
+    case (cVarType=="D")
+        cVar:=DToC(uVarInfo)
+    case (cVarType=="B")
+        cVar:=GetCbSource(uVarInfo)
+    case (cVarType=="O")
+        cVar:="[OJBECT][...]"
+    otherwise
+        cVar:=""
+    endcase
+
+    return(cVar)
+
+#include "tryexception.ch"

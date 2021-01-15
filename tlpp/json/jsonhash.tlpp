@@ -1,0 +1,76 @@
+/*----------------------------------------------------------------------*\
+ JSONHash - A Simple Hash (Associative Array) for AdvPL
+ Copyright (C) 2013  Arthur Helfstein Fragoso
+ Copyright (C) 2020  Marinaldo de Jesus
+
+ This program is free software:you can redistribute it and/or modify
+ it under the terms of the GNU Lesser General Public License as published
+  by the Free Software Foundation,either version 3 of the License,or
+  (at your option) any later version.
+ 
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+ 
+  You should have received a copy of the GNU Lesser General Public License
+  along with this program.  If not,see <http://www.gnu.org/licenses/>.
+ 
+  This class is an adapted version of Marinaldo de Jesus' THASH class:
+ 
+  https://code.google.com/p/totvs-AdvPL-naldodj/source/browse/trunk/templates/P10/ndj_01/Projeto/NDJLib/NDJLIB022.prg
+ 
+  See the jsonarray.ch header file for instruction on how to use it.
+ 
+\*----------------------------------------------------------------------*/
+
+#include "totvs.ch"
+#include "jsonhash.ch"
+#include "parmtype.ch"
+
+function U_JSONHash(lSection as logical,lHashAsFile as logical) as object
+	return(JSONHash():New(lSection,lHashAsFile))
+
+/*/
+    class:JSONHash
+    Autor:Marinaldo de Jesus
+    Adaptado por:Arthur Helfstein Fragoso
+    Descricao:Simple Hash,Associative Array
+    Sintaxe:JSONHash():New() -> Objeto do Tipo JSONHash
+/*/
+class JSONHash from THASH
+
+    data cClassName	as character
+
+    public method New(lSection,lHashAsFile) as object
+
+    public method ClassName() as character
+
+endclass
+
+/*/
+    method:New
+    Autor:Marinaldo de Jesus
+    Data:04/12/2011
+    Descricao:CONSTRUCTOR
+    Sintaxe:JSONHash():New() -> self
+/*/
+method New(lSection,lHashAsFile) class JSONHash
+    DEFAULT lSection:=.F.
+    paramtype lSection as logical optional
+    DEFAULT lHashAsFile:=.F.
+    paramtype lHashAsFile as logical optional
+    _Super:New(lSection,lHashAsFile)
+    self:ClassName()
+    return(self)
+
+/*/
+    method:ClassName
+    Autor:Marinaldo de Jesus
+    Data:04/12/2011
+    Descricao:Retornar o Nome da classe
+    Sintaxe:JSONHash():className() -> cClassName
+/*/
+method ClassName() class JSONHash
+	self:cClassName:="JSONHASH"
+	return(self:cClassName)

@@ -1,0 +1,3228 @@
+#include "totvs.ch"
+#include "thash.ch"
+#include "parmtype.ch"
+#include "jsonarray.ch"
+
+static __aHashTFile     as array
+static __aTHashFiles    as array
+
+static __cThreadID      as character
+
+static __nID	        as numeric
+static __nLastID	    as numeric
+static __nSection       as numeric
+
+static __uSection
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        class:THash
+        Autor:Marinaldo de Jesus [BlackTDN:(http://www.blacktdn.com.br/)]
+        Data:04/12/2011
+        Descricao:Simular Hash no Protheus
+        Sintaxe:THash():New()->Objeto do Tipo THash
+    /*/
+//------------------------------------------------------------------------------------------------
+class THASH FROM LongclassName
+    
+    data aTHash         as array
+    data aIDChild       as array
+    data aErrorMsg      as array
+
+    data cTHashPath     as character
+
+    data lSection       as logical
+    data lHashAsFile    as logical
+
+    data nID            as numeric
+    data nNodes         as numeric
+    data nSubNodes      as numeric
+    data nIDChilds      as numeric
+    data nIDParent      as numeric
+    data nThashHandle   as numeric
+
+    data cClassName     as character
+
+    protected method SaveDataHash(uValue,cHashFile) as logical
+    protected method RestDataHash(uKey,cHashFile,cType,cClsNValue)
+    protected method ArrayIsHashObject(aArray) as logical
+    protected method ArrayToHashObject(aArray) as object
+
+    public data lHasError as logical
+    public data lGetObjSuperClass as logical
+
+    public method New(lSection,lHashAsFile) as object /*/\constructor/\*/
+    public method ReSet(lSection,lHashAsFile) as object
+    public method ClassName() as character
+
+    public method nID() as numeric
+    public method aIDChild(oTHash) as numeric
+    public method nIDParent(oTHash) as numeric
+    public method lSection(lSection) as logical
+
+    public method lHashAsFile(lHashAsFile) as logical
+
+    public method __nLastID() as numeric
+    public method __nSection() as numeric
+
+    public method Del(uPropertyKey) as logical
+    public method Remove(uPropertyKey) as logical
+
+    public method GetHashArray() as array
+
+    public method SetFromArray(aArray,lTHash) as object
+    public method SetFromObject(oObj) as object
+    public method SetFromObjectArray(aObj,lGetObjSuperClass) as object
+    public method SetFromHashMap(oHashMap) as object
+    public method SetFromHashMapList(aHashMapList,lSort,lSection) as object
+
+    public method GetATProperty(uSection,uPropertyKey,nSection) as numeric
+    public method SetKeyProperty(uSection,uPropertyKey,uNewPropertyKey) as logical
+    public method AddNewProperty(uSection,uPropertyKey,uValue) as logical
+    public method RemoveProperty(uSection,uPropertyKey) as logical
+    public method GetAllProperties(uSection) as array
+
+    public method AddNewSection(uSection) as logical
+    public method RemoveSection(uSection) as logical
+    public method GetSection(uSection) as array
+    public method CloneSection(uSection) as array
+    public method GetAllSections() as array
+    public method CopySection(uSection,uNewSection) as logical
+    public method ExistSection(uSection,nSection) as logical
+    public method ChangeSection(uSection,uNewSection) as logical
+    public method HasSectionEnabled() as logical
+
+    public method FreeObj() /*\/destructor\/*/
+    public method Clear() as object
+
+    public method Set(uPropertyKey,uValue) as object
+    public method Get(uPropertyKey,uDefaultValue)
+    public method GetAT(uPropertyKey) as numeric
+    
+    public method AddItem(uPropertyKey,uValue) as numeric
+    public method GetItem(uPropertyKey,nAT)
+    public method SetItem(uPropertyKey,nAT,uValue) as object
+    public method GetItemValue(uPropertyKey,nAT,uPropertyItem)
+    public method SetItemValue(uPropertyKey,nAT,uPropertyItem,uValue) as object
+
+    public method GetHashMapList(uAnyVar) as array
+    public method GetHashMapValue(uPropertyKey)
+    public method GetHashMapListValue(uPropertyKey)
+
+    public method GetNameProperty(uSection,uPropertyKey)
+    public method GetKeyProperty(uSection,uPropertyKey)
+    public method GetPropertyValue(uSection,uPropertyKey,uDefaultValue)
+    public method SetPropertyValue(uSection,uPropertyKey,uValue) as object
+    
+    public method AddPropertyItem(uSection,uPropertyKey,uValue) as numeric
+    public method GetPropertyItem(uSection,uPropertyKey,nAT)
+    public method SetPropertyItem(uSection,uPropertyKey,nAT,uValue) as object
+    public method GetPropertyItemValue(uSection,uPropertyKey,nAT,uPropertyItem)
+    public method SetPropertyItemValue(uSection,uPropertyKey,nAT,uPropertyItem,uValue) as object
+
+    public method GetLastSectionValue()
+
+    public method SetErrorMsg(uMsgError)
+    public method GetErrorMsg(lArray)
+
+    public method SaveAs(cFileName,lHashMapList,lHtml,lTableFormat) as logical
+    public method SaveAsXML(cXMLFile,cRoot,cEncode) as logical
+    public method SaveAsJSON(cJSONFile) as logical
+
+endclass
+
+function u_THash(lSection,lHashAsFile)
+    local oTHash:=THash():New(lSection,lHashAsFile)
+    return(oTHash)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:New
+        Autor:Marinaldo de Jesus [BlackTDN:(http://www.blacktdn.com.br/)]
+        Data:04/12/2011
+        Descricao:constructor
+        Sintaxe:THash():New()->self
+    /*/
+//------------------------------------------------------------------------------------------------
+method New(lSection,lHashAsFile) class THASH
+
+    DEFAULT lSection:=.T.
+    paramtype lSection as logical optional
+    DEFAULT lHashAsFile:=.F.
+    paramtype lHashAsFile as logical optional
+
+    DEFAULT __aHashTFile:=Array(0)
+    DEFAULT __aTHashFiles:=Array(0)
+
+    DEFAULT __cThreadID:=NTos(ThreadID())
+
+    DEFAULT __nID:=0
+    DEFAULT __nLastID:=0
+    DEFAULT __nSection:=0
+
+    self:nThashHandle:=(-1)
+
+    self:ReSet(lSection,lHashAsFile)
+
+    return(self)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:ReSet 
+        Autor:Marinaldo de Jesus [BlackTDN:(http://www.blacktdn.com.br/)]
+        Data:04/12/2011
+        Descricao:ReSet Object Properties
+        Sintaxe:THash():ReSet(lSection)->self
+    /*/
+//------------------------------------------------------------------------------------------------
+method ReSet(lSection,lHashAsFile) class THASH
+    paramtype lSection as logical optional
+    paramtype lHashAsFile as logical optional
+    self:ClassName()
+    self:Clear()
+    self:lSection(lSection)
+    self:lHashAsFile(lHashAsFile)
+    return(self)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:FreeObj
+        Autor:Marinaldo de Jesus [BlackTDN:(http://www.blacktdn.com.br/)]
+        Data:29/04/2015
+        Descricao:Destructor
+        Sintaxe:THash():FreeObj()->self
+    /*/
+//------------------------------------------------------------------------------------------------
+method FreeObj() class THASH
+    local oFreeObj  as object
+    oFreeObj:=self
+    oFreeObj:Clear()
+    oFreeObj:=FreeObj(oFreeObj)
+    return(oFreeObj)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:Clear
+        Autor:Marinaldo de Jesus [BlackTDN:(http://www.blacktdn.com.br/)]
+        Data:29/04/2015
+        Descricao:Clear
+        Sintaxe:THash():Clear()->self
+    /*/
+//------------------------------------------------------------------------------------------------
+method Clear() class THASH
+
+    local aSections     as array
+
+    local cFile         as character
+    
+    local lFreeObj      as logical
+
+    local nID           as numeric
+    local nIDS          as numeric
+    local nFile         as numeric
+    local nFiles        as numeric
+
+    DEFAULT self:aTHash:=Array(0)
+    DEFAULT self:aIDChild:=Array(0)
+    DEFAULT self:aErrorMsg:=Array(0)
+
+    self:lHasError:=.F.
+    DEFAULT self:lGetObjSuperClass:=.T.
+
+    self:nIDParent:=0
+
+    lFreeObj:=(StackTools():IsInCallStack("FreeObj"))
+    if (!lFreeObj)
+        self:nID:=(++__nID)
+        __nLastID:=self:nID
+    else
+        nFile:=aScan(__aHashTFile,{|ID|ID[1]==self:nID})
+        if (nFile>0)
+            aDel(__aHashTFile,nFile)
+            aSize(__aHashTFile,(len(__aHashTFile)-1))
+        endif
+        nIDs:=len(self:aIDChild)
+        for nID:=1 to nIDs
+            nFile:=aScan(__aHashTFile,{|ID|ID[1]==self:aIDChild[nID]})
+            if (nFile>0)
+                aDel(__aHashTFile,nFile)
+                aSize(__aHashTFile,(len(__aHashTFile)-1))
+            endif
+        next nID
+    endif 
+        
+    DEFAULT self:lHashAsFile:=.F.
+    if (self:lHashAsFile)
+        ClearHashFile(self,self)
+        if (lFreeObj)
+            if (dirtools():makeDir(self:cTHashPath))
+                if (!(self:nThashHandle==(-1)))
+                    fClose(self:nThashHandle)
+                    nFiles:=len(__aTHashFiles)
+                    for nFile:=1 to nFiles
+                        cFile:=__aTHashFiles[nFile][1]
+                        if (file(cFile))
+                            __aTHashFiles[nFile][2]:=fErase(cFile)
+                        else
+                            __aTHashFiles[nFile][2]:=.T.
+                        endif
+                    next nFile
+                    while ((nFile:=aScan(__aTHashFiles,{|x|x[2]}))>0)
+                        aDel(__aTHashFiles,nFile)
+                        aSize(__aTHashFiles,--nFiles)
+                    end while
+                    DirRemove(self:cTHashPath)
+                    self:nThashHandle:=(-1)
+                endif
+            endif
+        endif
+    endif
+
+    aSections:=self:GetAllSections()
+    aEval(aSections,{|s|self:Del(s)})
+    aSize(aSections,0)
+
+    aSize(self:aTHash,0)
+    aSize(self:aIDChild,0)
+    aSize(self:aErrorMsg,0)
+
+    self:nNodes:=0
+    self:nSubNodes:=0
+    self:nIDChilds:=0
+
+    return(self)
+
+static function ClearHashFile(uAnyVar,oTHash as object)
+
+    local aData					as array
+
+    local cFile                 as character
+    local cType					as character
+    local cClassName            as character
+
+	local lHashAsFile			as logical
+	local lHasSectionEnabled	as logical
+
+    local nC					as numeric
+    local nS					as numeric
+    local nD					as numeric
+    local nJ					as numeric
+
+	local uValue
+
+	begin sequence
+
+	    cType:=valType(uAnyVar)
+
+	    do case
+        case (cType=="A")
+            nJ:=len(uAnyVar)
+            for nD:=1 to nJ
+                uValue:=uAnyVar[nD]
+                ClearHashFile(uValue,oTHash)
+            next nD
+            break
+        case (cType=="O")
+            cClassName:=GetClassName(uAnyVar)
+            if (cClassName$CLS_NAME_THASH)
+                aData:=uAnyVar:GetHashArray()
+                lHashAsFile:=uAnyVar:lHashAsFile()
+                lHasSectionEnabled:=uAnyVar:HasSectionEnabled()
+                if (lHasSectionEnabled)
+                    nC:=len(aData)
+                    for nS:=1 to nC
+                        nJ:=len(aData[nS][HASH_PROPERTY_POSITION])
+                        for nD:=1 to nJ
+                            cFile:=aData[nS][HASH_PROPERTY_POSITION][nD][HASH_PROPERTY_FILE]
+                            if (file(cFile))
+                                fErase(cFile)
+                            endif
+                        next nD
+                    next nS
+                    break
+                endif /*uAnyVar:HasSectionEnabled()*/
+                nJ:=len(aData)
+                for nD:=1 to nJ
+                    cFile:=aData[nD][HASH_PROPERTY_FILE]
+                    if (file(cFile))
+                        fErase(cFile)
+                    endif                
+                next nD
+            endif
+	    endcase
+	end sequence
+
+    return(nil)    
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:ClassName
+        Autor:Marinaldo de Jesus [BlackTDN:(http://www.blacktdn.com.br/)]
+        Data:04/12/2011
+        Descricao:Retornar o Nome da classe
+        Sintaxe:THash():className()->cClassName
+    /*/
+//------------------------------------------------------------------------------------------------
+method ClassName() class THASH
+    self:cClassName:="THASH"
+    return(self:cClassName)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:nID()
+        Autor:Marinaldo de Jesus [BlackTDN:(http://www.blacktdn.com.br/)]
+        Data:04/12/2011
+        Descricao:Retornar o nID da Classe
+        Sintaxe:THash():nID()->nID
+    /*/
+//------------------------------------------------------------------------------------------------
+method nID() class THASH
+    return(self:nID)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:aIDChild()
+        Autor:Marinaldo de Jesus [BlackTDN:(http://www.blacktdn.com.br/)]
+        Data:04/12/2011
+        Descricao:Retornar os IDChild da Classe
+        Sintaxe:THash():aIDChild()->nIDChild
+    /*/
+//------------------------------------------------------------------------------------------------
+method aIDChild(oTHash) class THASH
+    local nIDChild  as numeric
+    paramtype oTHash as object optional
+    if (valType(oTHash)=="O")
+        nIDChild:=oTHash:nID()
+        if (aScan(self:aIDChild,{|nID|(nID==nIDChild)})==0)
+            aAdd(self:aIDChild,nIDChild)
+            (self:nIDChilds++)
+        endif
+        if (!(oTHash:nIDParent()==self:nID))
+            oTHash:nIDParent(self)
+        endif
+    endif
+    return(self:aIDChild)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:nIDParent()
+        Autor:Marinaldo de Jesus [BlackTDN:(http://www.blacktdn.com.br/)]
+        Data:04/12/2011
+        Descricao:Retornar o nIDParent da Classe
+        Sintaxe:THash():nIDParent()->nIDParent
+    /*/
+//------------------------------------------------------------------------------------------------
+method nIDParent(oTHash) class THASH
+    local nIDChild  as numeric
+    paramtype oTHash as object optional
+    if (valType(oTHash)=="O")
+        self:nIDParent:=oTHash:nID()
+        nIDChild:=self:nID()
+        if (aScan(oTHash:aIDChild(),{|nID|(nID==nIDChild)})==0)
+            oTHash:aIDChild(self)
+        endif
+    endif
+    return(self:nIDParent)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:lSection()
+        Autor:Marinaldo de Jesus [BlackTDN:(http://www.blacktdn.com.br/)]
+        Data:04/12/2011
+        Descricao:Retornar lSection
+        Sintaxe:THash():lSection()->lSection
+    /*/
+//------------------------------------------------------------------------------------------------
+method lSection(lSection) class THASH
+    DEFAULT lSection:=self:lSection
+    paramtype lSection as logical optional
+    if (!(self:lSection==lSection))
+        self:lSection:=lSection
+    endif
+    return(self:lSection)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:lHashAsFile()
+        Autor:Marinaldo de Jesus [BlackTDN:(http://www.blacktdn.com.br/)]
+        Data:04/12/2011
+        Descricao:Retornar lHashAsFile
+        Sintaxe:THash():lHashAsFile()->lHashAsFile
+    /*/
+//------------------------------------------------------------------------------------------------
+method lHashAsFile(lHashAsFile) class THASH
+    loca cHashFile as character
+    DEFAULT self:lHashAsFile:=.F.
+    DEFAULT lHashAsFile:=self:lHashAsFile
+    paramtype lHashAsFile as logical optional
+    if (!(self:lHashAsFile==lHashAsFile))
+        self:lHashAsFile:=lHashAsFile
+    endif
+    if ((self:lHashAsFile).and.(StackTools():IsInCallStack("ReSet")))
+        self:cTHashPath:=("\thash\"+__cThreadID+"\")
+        self:lHashAsFile:=dirtools():MakeDir(self:cTHashPath)
+        if ((self:lHashAsFile).and.(self:nThashHandle==(-1)))
+            cHashFile:=(self:cTHashPath+"__thashtmpfile")
+            self:nThashHandle:=fCreate(cHashFile)
+            if (aScan(__aTHashFiles,{|x|(x[1]==cHashFile)})==0)
+                aAdd(__aTHashFiles,{cHashFile,.F.})
+            endif
+        endif
+    endif
+    return(self:lHashAsFile)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:SaveDataHash 
+        Autor:Marinaldo de Jesus [BlackTDN:(http://www.blacktdn.com.br/)]
+        Data:04/12/2011
+        Descricao:Salva dados em Arquivo
+        Sintaxe:THash():SaveDataHash(uValue,cHashFile)->lSave
+    /*/
+//------------------------------------------------------------------------------------------------
+method SaveDataHash(uValue,cHashFile) class THASH
+    local lSave as logical
+    paramtype cHashFile as character
+    lSave:=__ArrayUtils():SaveArray({uValue},cHashFile)
+    if (lSave)
+        if (aScan(__aTHashFiles,{|x|(x[1]==cHashFile)})==0)
+            aAdd(__aTHashFiles,{cHashFile,.F.})
+        endif
+    endif
+    return(lSave)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:RestDataHash
+        Autor:Marinaldo de Jesus [BlackTDN:(http://www.blacktdn.com.br/)]
+        Data:04/12/2011
+        Descricao:Restaura dados de Arquivo
+        Sintaxe:THash():RestDataHash(cHashFile,cType,cClsNValue)->uValue
+    /*/
+//------------------------------------------------------------------------------------------------
+method RestDataHash(uKey,cHashFile,cType,cClsNValue) class THASH
+
+    local aData as array
+    
+    local uValue
+
+    paramtype cHashFile as character
+    paramtype cType     as character
+    DEFAULT cClsNValue:=""
+    paramtype cClsNValue as character optional
+
+    uValue:=__ArrayUtils():RestArray(cHashFile)[1]
+    if (cType=="O")
+        aData:=Array(HASH_PROPERTY_ELEMENTS)
+        aData[HASH_PROPERTY_KEY]:=uKey
+        aData[HASH_PROPERTY_VALUE]:=uValue
+        aData[HASH_PROPERTY_FILE]:=cHashFile
+        aData[HASH_PROPERTY_TYPE]:=cType
+        aData[HASH_PROPERTY_CLSNAME]:=cClsNValue
+        if (self:ArrayIsHashObject(aData))
+            uValue:=self:ArrayToHashObject(aData)
+        endif
+    elseif (cType=="A")
+        if (self:ArrayIsHashObject(uValue))
+            uValue:=self:ArrayToHashObject(uValue)
+        endif
+    endif
+
+    return(uValue)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:ArrayIsHashObject
+        Autor:Marinaldo de Jesus [BlackTDN:(http://www.blacktdn.com.br/)]
+        Data:04/12/2011
+        Descricao:Verifica se Array corresponde a THash
+        Sintaxe:THash():ArrayIsHashObject(aArray)->lIsHashObject
+    /*/
+//------------------------------------------------------------------------------------------------
+method ArrayIsHashObject(aArray) class THASH
+    local lIsHashObject as logical
+    paramtype aArray as array
+    begin sequence
+        lIsHashObject:=(len(aArray)==HASH_PROPERTY_ELEMENTS)
+        if (!lIsHashObject)
+            break
+        endif
+        lIsHashObject:=(valType(aArray[HASH_PROPERTY_VALUE])$"ALO")
+        if (!lIsHashObject)
+            break
+        endif
+        lIsHashObject:=(valType(aArray[HASH_PROPERTY_TYPE])=="C")
+        if (!lIsHashObject)
+            break
+        endif
+        lIsHashObject:=(aArray[HASH_PROPERTY_TYPE]=="O")
+        if (!lIsHashObject)
+            break
+        endif
+        lIsHashObject:=(valType(aArray[HASH_PROPERTY_CLSNAME])=="C")
+        if (!lIsHashObject)
+            break
+        endif
+        lIsHashObject:=(aArray[HASH_PROPERTY_CLSNAME]$CLS_NAME_THASH)
+    end sequence
+    return(lIsHashObject)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:ArrayToHashObject
+        Autor:Marinaldo de Jesus [BlackTDN:(http://www.blacktdn.com.br/)]
+        Data:04/12/2011
+        Descricao:Verifica se Array corresponde a THash
+        Sintaxe:THash():ArrayToHashObject(aArray)->oObjRet
+    /*/
+//------------------------------------------------------------------------------------------------
+method ArrayToHashObject(aArray) class THASH
+    local cType         as character
+    local cClsNValue    as character
+    local uKey
+    local uData
+    paramtype aArray as array
+    if (self:ArrayIsHashObject(aArray))
+        uData:=aArray[HASH_PROPERTY_VALUE]
+        cType:=valType(uData)
+        cClsNValue:=aArray[HASH_PROPERTY_CLSNAME]
+        if (cType=="A")
+            oObjRet:=&(cClsNValue+"():New()")
+            oObjRet:SetFromObjectArray(uData,.T.)
+        elseif (cType=="L")
+            uKey:=aArray[HASH_PROPERTY_KEY] 
+            cType:=aArray[HASH_PROPERTY_TYPE] 
+            cHashFile:=aArray[HASH_PROPERTY_FILE]
+            oObjRet:=self:RestDataHash(uKey,cHashFile,cType,cClsNValue)
+        else
+            oObjRet:=uData
+        endif
+    endif
+    return(oObjRet)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:__nLastID()
+        Autor:Marinaldo de Jesus [BlackTDN:(http://www.blacktdn.com.br/)]
+        Data:04/12/2011
+        Descricao:Retornar o ID corrente
+        Sintaxe:THash():__nLastID()->__nLastID
+    /*/
+//------------------------------------------------------------------------------------------------
+method __nLastID() class THASH
+    return(__nLastID)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:__nSection()
+        Autor:Marinaldo de Jesus [BlackTDN:(http://www.blacktdn.com.br/)]
+        Data:04/12/2011
+        Descricao:Retornar o ID da Section corrente
+        Sintaxe:THash():__nSection()->__nSection
+    /*/
+//------------------------------------------------------------------------------------------------
+method __nSection() class THASH    
+    return(__nSection)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:__nSection()
+        Autor:Marinaldo de Jesus [BlackTDN:(http://www.blacktdn.com.br/)]
+        Data:04/12/2011
+        Descricao:Retornar o ID da Section corrente
+        Sintaxe:THash():__nSection()->__nSection
+    /*/
+//------------------------------------------------------------------------------------------------
+method GetLastSectionValue() class THASH
+    return(__uSection)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:Set
+        Autor:Marinaldo de Jesus [BlackTDN:(http://www.blacktdn.com.br/)]
+        Data:31/12/2014
+        Descricao:Adicionar uma nova propriedade/Valor
+        Sintaxe:THash():Set(uPropertyKey,uValue)->self
+    /*/
+//------------------------------------------------------------------------------------------------
+method Set(uPropertyKey,uValue) class THASH
+    
+    local nSection  as numeric
+    local nProperty as numeric
+    
+    local uSection
+    
+    if (self:lSection)
+        uSection:=uPropertyKey
+        if (!(self:ExistSection(@uSection,@nSection)))
+            self:AddNewSection(@uSection)
+        endif
+    endif
+    
+    nProperty:=self:GetATProperty(@uSection,@uPropertyKey,@nSection)
+    if (nProperty==0)
+        self:AddNewProperty(@uSection,@uPropertyKey,uValue)
+    else
+        self:SetPropertyValue(@uSection,@uPropertyKey,uValue)
+    endif
+    
+    return(self)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:Get
+        Autor:Marinaldo de Jesus [BlackTDN:(http://www.blacktdn.com.br/)]
+        Data:31/12/2014
+        Descricao:Obter o Valor atribuido a uma Propriedade
+        Sintaxe:THash():Get(uPropertyKey,uDefaultValue)->uValue
+    /*/
+//------------------------------------------------------------------------------------------------
+method Get(uPropertyKey,uDefaultValue) class THASH
+    
+    local uValue
+    local uSection
+    
+    if (self:lSection)
+        uSection:=uPropertyKey
+    endif
+    
+    uValue:=self:GetPropertyValue(uSection,uPropertyKey,uDefaultValue)
+    
+    return(uValue)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:GetAT
+        Autor:Marinaldo de Jesus [BlackTDN:(http://www.blacktdn.com.br/)]
+        Data:31/12/2014
+        Descricao:Obter o IDAT do Elemento
+        Sintaxe:THash():GetAT(uPropertyKey)->nAT
+    /*/
+//------------------------------------------------------------------------------------------------
+method GetAT(uPropertyKey) class THASH
+    
+    local nAT as numeric
+    
+    local uSection
+    
+    if (self:lSection)
+        uSection:=uPropertyKey
+    endif
+    
+    nAT:=self:GetATProperty(@uSection,@uPropertyKey)
+    
+    return(nAT)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:AddItem
+        Autor:Marinaldo de Jesus [BlackTDN:(http://www.blacktdn.com.br/)]
+        Data:31/12/2014
+        Descricao:Adicionar Item a uma Propriedade Array
+        Sintaxe:THash():AddItem(uPropertyKey,uValue)->nAT
+    /*/
+//------------------------------------------------------------------------------------------------
+method AddItem(uPropertyKey,uValue) class THASH
+
+    local aArray        as array
+    local aArrayItem    as array
+
+    local cType         as character
+    local cHashFile     as character
+    local cClsNSelf     as character
+    local cClsNValue    as character
+    
+    local nAT           as numeric
+
+    local nProperty     as numeric
+
+    cType:=valType(uValue)
+    if (cType=="O")
+        cClsNSelf:=GetClassName(self)
+        cClsNValue:=GetClassName(uValue)
+        if (cClsNSelf==cClsNValue)
+            uValue:nIDParent(self)
+        endif
+    endif
+
+    nProperty:=self:GetAT(@uPropertyKey)
+    if (nProperty==0)
+        aArray:=Array(0)
+        self:AddNewProperty(@uPropertyKey,@uPropertyKey,aArray)
+        nAT:=self:AddItem(uPropertyKey,uValue)
+    else
+        aArray:=self:Get(@uPropertyKey,Array(0))
+        if (self:lHashAsFile)
+            aArrayItem:=Array(HASH_PROPERTY_ELEMENTS)
+            aArrayItem[HASH_PROPERTY_KEY]:=uPropertyKey
+            aArrayItem[HASH_PROPERTY_FILE]:=""
+            aArrayItem[HASH_PROPERTY_VALUE]:=uValue
+            aArrayItem[HASH_PROPERTY_TYPE]:=cType
+            aArrayItem[HASH_PROPERTY_CLSNAME]:=cClsNValue
+            cHashFile:=getHashFile(self:nID,self:cTHashPath)
+            self:SaveDataHash(aArrayItem,cHashFile)
+            aAdd(aArray,cHashFile)
+        else
+            aAdd(aArray,uValue)
+        endif
+        self:Set(@uPropertyKey,aArray)
+    endif
+
+    nAT:=len(aArray)
+
+    return(nAT)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:GetItem
+        Autor:Marinaldo de Jesus [BlackTDN:(http://www.blacktdn.com.br/)]
+        Data:31/12/2014
+        Descricao:Obter Item a uma Propriedade Array
+        Sintaxe:THash():GetItem(uPropertyKey,nAT)->uValue
+    /*/
+//------------------------------------------------------------------------------------------------
+method GetItem(uPropertyKey,nAT) class THASH
+
+    local aArray        as array
+
+    local cType         as character
+    local cHashFile     as character
+
+    local nProperty     as numeric
+
+    local uValue
+
+    paramtype nAT as numeric
+
+    begin sequence
+
+        nProperty:=self:GetAT(@uPropertyKey)
+        if (nProperty==0)
+            break
+        endif
+        
+        aArray:=self:Get(@uPropertyKey,Array(0))
+        if (len(aArray)>=nAT)
+            if (self:lHashAsFile)
+                cType:="A"
+                cHashFile:=aArray[nAT]
+                uValue:=self:RestDataHash("",cHashFile,cType,"")
+            else
+                uValue:=aArray[nAT]
+            endif
+        endif
+
+    end sequence
+
+    return(uValue)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:SetItem
+        Autor:Marinaldo de Jesus [BlackTDN:(http://www.blacktdn.com.br/)]
+        Data:31/12/2014
+        Descricao:Setar Item de uma Propriedade Array
+        Sintaxe:THash():GetItem(uPropertyKey,nAT)->uValue
+    /*/
+//------------------------------------------------------------------------------------------------
+method SetItem(uPropertyKey,nAT,uValue) class THASH
+
+    local aArray        as array
+    local aArrayItem    as array
+
+    local cType         as character
+    local cHashFile     as character
+    local cClsNSelf     as character
+    local cClsNValue    as character
+
+    local nProperty     as numeric
+
+    paramtype nAT as numeric
+
+    begin sequence
+
+        nProperty:=self:GetAT(@uPropertyKey)
+        if (nProperty==0)
+            break
+        endif
+    
+        aArray:=self:Get(@uPropertyKey,Array(0))
+        if (len(aArray)>=nAT)
+            cType:=valType(uValue)
+            if (cType=="O")
+                cClsNSelf:=GetClassName(self)
+                cClsNValue:=GetClassName(uValue)
+                if (cClsNSelf==cClsNValue)
+                    uValue:nIDParent(self)
+                endif
+            endif
+            if (self:lHashAsFile)
+                aArrayItem:=Array(HASH_PROPERTY_ELEMENTS) 
+                aArrayItem[HASH_PROPERTY_KEY]:=uPropertyKey
+                aArrayItem[HASH_PROPERTY_VALUE]:=uValue
+                aArrayItem[HASH_PROPERTY_FILE]:=""
+                aArrayItem[HASH_PROPERTY_TYPE]:=cType
+                aArrayItem[HASH_PROPERTY_CLSNAME]:=cClsNValue
+                cHashFile:=aArray[nAT]
+                self:SaveDataHash(aArrayItem,cHashFile)
+            else
+                aArray[nAT]:=uValue
+            endif
+        endif
+
+    end sequence
+
+    return(self)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:GetItemValue()
+        Autor:Marinaldo de Jesus [BlackTDN:(http://www.blacktdn.com.br/)]
+        Data:04/12/2011
+        Descricao:Obter Valor de um Item
+        Sintaxe:THash():GetItemValue(uPropertyKey,nAT,uPropertyItem)->uValue
+    /*/
+//------------------------------------------------------------------------------------------------
+method GetItemValue(uPropertyKey,nAT,uPropertyItem) class THASH
+    
+    local aArray        as array
+
+    local cType         as character
+    local cHashFile     as character
+
+    local nProperty     as numeric
+
+    local uValue
+
+    paramtype nAT as numeric
+
+    begin sequence
+
+        nProperty:=self:GetAT(@uPropertyKey)
+        if (nProperty==0)
+            break
+        endif
+
+        aArray:=self:Get(@uPropertyKey,Array(0))
+        if (len(aArray)>=nAT)
+            if (self:lHashAsFile)
+                cType:="A"
+                cHashFile:=aArray[nAT]
+                uValue:=self:RestDataHash("",cHashFile,cType,"")
+                uValue:Get(uPropertyItem)
+            else
+                uValue:=aArray[nAT]:Get(uPropertyItem)
+            endif
+        endif
+
+    end sequence
+
+    return(uValue)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:SetItemValue()
+        Autor:Marinaldo de Jesus [BlackTDN:(http://www.blacktdn.com.br/)]
+        Data:04/12/2011
+        Descricao:Setar Valor de um Item
+        Sintaxe:THash():SetItemValue(uPropertyKey,nAT,uPropertyItem,uValue)->self
+    /*/
+//------------------------------------------------------------------------------------------------
+method SetItemValue(uPropertyKey,nAT,uPropertyItem,uValue) class THASH
+
+    local aArray        as array
+
+    local cHashFile     as character
+
+    local nProperty     as numeric
+    
+    local oObjValue     as object
+
+    paramtype nAT as numeric
+
+    begin sequence
+
+        nProperty:=self:GetAT(@uPropertyKey)
+        if (nProperty==0)
+            break
+        endif
+    
+        aArray:=self:Get(@uPropertyKey,Array(0))
+        if (len(aArray)>=nAT)
+            if (self:lHashAsFile)
+                cHashFile:=aArray[nAT]
+                oObjValue:=self:RestDataHash("",cHashFile,"A","")
+            else
+                oObjValue:=aArray[nAT]
+            endif
+            oObjValue:Set(@uPropertyItem,uValue)
+            self:SetItem(uPropertyKey,nAT,oObjValue)
+        endif
+
+    end sequence
+
+    return(self)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:GetHashMapList()
+        Autor:Marinaldo de Jesus [BlackTDN:(http://www.blacktdn.com.br/)]
+        Data:04/12/2011
+        Descricao:Retornar aTHashList
+        Sintaxe:THash():GetHashMapList()->aTHashList
+    /*/
+//------------------------------------------------------------------------------------------------
+method GetHashMapList(uAnyVar) class THASH
+    
+    local aTHashList    as array
+    
+    local cNode         as character
+    local cSection      as character
+
+    aTHashList:=Array(0)
+
+    cNode:=""
+    cSection:=""
+
+    DEFAULT uAnyVar:=self
+
+    HashToList(self,@uAnyVar,@aTHashList,cSection,cNode)
+    
+    return(aTHashList)
+
+static procedure HashToList(self as object,uAnyVar,aTHashList as array,cSection as character,cNode as character) as array
+
+    local aData					as array
+
+    local cType					as character
+    local cHashFile             as character
+    local cClsNValue            as character
+    local cClassName			as character
+
+	local lHashAsFile           as logical
+    local lHasSectionEnabled	as logical
+
+    local nC					as numeric
+    local nS					as numeric
+    local nD					as numeric
+    local nJ					as numeric
+
+    local nStackCount           as numeric
+
+    local oJSONArray            as object
+
+    local uKey
+    local uValue
+
+	begin sequence
+    
+	    cType:=valType(uAnyVar)
+        nStackCount:=StackTools():StackCount("HashToList")
+
+	    do case
+        case (cType=="A")
+            if (self:ArrayIsHashObject(uAnyVar))
+                HashToList(self,self:ArrayToHashObject(uAnyVar),@aTHashList,@cSection,@cNode)
+            else
+                cNode:=cTools():RightCharRemove(cNode,".")
+                nJ:=len(uAnyVar)
+                for nD:=1 to nJ
+                    if (nStackCount==1)
+                        cNode:=""
+                    endif
+                    if (!empty(cNode))
+                        cNode+="["+NToS(nD-1)+"]"
+                        cNode+="."
+                    endif
+                    HashToList(self,uAnyVar[nD],@aTHashList,@cSection,@cNode)
+                    cNode:=cTools():RightATRemove("[",cNode,.T.)
+                next nD
+            endif
+            break
+        case (cType=="O")
+            cClassName:=GetClassName(uAnyVar)
+            if (cClassName=="THASHMAP")
+                oJSONArray:=Array(#)
+                oJSONArray:SetFromHashMap(uAnyVar)
+                uAnyVar:=oJSONArray
+                cClassName:=GetClassName(uAnyVar)
+            endif
+            if (cClassName$CLS_NAME_THASH)
+                aData:=uAnyVar:GetHashArray()
+                lHashAsFile:=uAnyVar:lHashAsFile()
+                lHasSectionEnabled:=uAnyVar:HasSectionEnabled()
+            else
+                aData:=ClassDataArr(uAnyVar,lGetObjSuperClass)
+                lHashAsFile:=.F.
+                lHasSectionEnabled:=.F.
+            endif
+            if (lHasSectionEnabled)
+                nC:=len(aData)
+                for nS:=1 to nC
+                    if (nStackCount==1)
+                        cSection:=""
+                    endif
+                    for nS:=nS to nS
+                        cSection+=aData[nS][HASH_SECTION_POSITION]
+                        cSection+="."
+                        nJ:=len(aData[nS][HASH_PROPERTY_POSITION])
+                        for nD:=1 to nJ
+                            if (nStackCount==1)
+                                cNode:=""
+                            endif
+                            for nD:=nD to nD
+                                uKey:=aData[nS][HASH_PROPERTY_POSITION][nD][HASH_PROPERTY_KEY]
+                                cNode+=uKey
+                                cNode+="."
+                                cHashFile:=aData[nS][HASH_PROPERTY_POSITION][nD][HASH_PROPERTY_FILE]
+                                if ((lHashAsFile).or.!empty(cHashFile))
+                                    uValue:=aData[nS][HASH_PROPERTY_POSITION][nD][HASH_PROPERTY_VALUE]
+                                    if (uValue)
+                                        cType:=aData[nS][HASH_PROPERTY_POSITION][nD][HASH_PROPERTY_TYPE]
+                                        cClsNValue:=aData[nS][HASH_PROPERTY_POSITION][nD][HASH_PROPERTY_CLSNAME]
+                                        uValue:=uAnyVar:RestDataHash(uKey,cHashFile,cType,cClsNValue)
+                                    endif
+                                else
+                                    uValue:=aData[nS][HASH_PROPERTY_POSITION][nD][HASH_PROPERTY_VALUE]
+                                endif
+                                HashToList(self,uValue,@aTHashList,@cSection,@cNode)
+                            next nD
+                            cNode:=cTools():RightATRemove(".",cNode,.F.) 
+                            nD--
+                        next nD
+                    next nS
+                    cSection:=cTools():RightATRemove(".",cSection,.F.) 
+                    nS--
+                next nS
+                break
+            endif /*uAnyVar:HasSectionEnabled()*/
+            nJ:=len(aData)
+            for nD:=1 to nJ
+                if (nStackCount==1)
+                    cNode:=""
+                endif
+                for nD:=nD to nD
+                    uKey:=aData[nD][HASH_PROPERTY_KEY]
+                    cNode+=uKey
+                    cNode+="."
+                    cHashFile:=aData[nD][HASH_PROPERTY_FILE]
+                    if ((lHashAsFile).or.!empty(cHashFile))
+                        uValue:=aData[nD][HASH_PROPERTY_VALUE]
+                        if (uValue)
+                            cType:=aData[nD][HASH_PROPERTY_TYPE]
+                            cClsNValue:=aData[nD][HASH_PROPERTY_CLSNAME]
+                            uValue:=uAnyVar:RestDataHash(uKey,cHashFile,cType,cClsNValue)
+                        endif
+                    else
+                        uValue:=aData[nD][HASH_PROPERTY_VALUE]
+                    endif
+                    HashToList(self,uValue,@aTHashList,@cSection,@cNode)
+                next nD
+                cNode:=cTools():RightATRemove(".",cNode,.F.) 
+                nD--
+            next nD
+            break
+        otherwise 
+            cNode:=cTools():RightCharRemove(cNode,".")
+            if (!empty(cSection))
+                cSection:=cTools():RightCharRemove(cSection,".")
+                aAdd(aTHashList,{cNode,uAnyVar,cSection})
+            else
+                aAdd(aTHashList,{cNode,uAnyVar})
+            endif
+        end case
+	
+    end sequence
+
+    return
+    
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:GetHashMapValue
+        Autor:Marinaldo de Jesus [BlackTDN:(http://www.blacktdn.com.br/)]
+        Data:31/12/2014
+        Descricao:Obter valor conforme Node
+        Sintaxe:THash():GetHashMapValue(uPropertyKey)->uValue
+    /*/
+//------------------------------------------------------------------------------------------------
+method GetHashMapValue(uTHashKeys) class THASH
+    local uValue:=self:GetHashMapListValue(uTHashKeys)
+    return(uValue)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:GetHashMapListValue
+        Autor:Marinaldo de Jesus [BlackTDN:(http://www.blacktdn.com.br/)]
+        Data:31/12/2014
+        Descricao:Obter valor conforme Node
+        Sintaxe:THash():GetHashMapListValue(uPropertyKey)->uValue
+    /*/
+//------------------------------------------------------------------------------------------------
+method GetHashMapListValue(uTHashKeys) class THASH
+    
+    local aTHashArray       as array
+    
+    local cType             as character
+    local cSection          as character
+    local cKeyNode          as character
+
+    local cClassName        as character
+
+    local nD                as numeric
+    local nJ                as numeric
+
+    local oTHashKeys        as object   
+    local oTHashGetValue    as object
+
+    local uValue
+
+    begin sequence
+
+        oTHashGetValue:=self
+
+        cType:=valType(uTHashKeys)
+        do case
+        case (cType=="C")
+            oTHashKeys:=Array(#)
+            if (cTools():Contains("{}",uTHashKeys,"LR"))
+                oTHashKeys:FromJSON(uTHashKeys)
+                if (oTHashKeys:lHasError)
+                    self:lHasError:=.T.
+                    self:SetErrorMsg("Invalid JSON Object :: ["+uTHashKeys+"]")
+                    break
+                endif
+            else
+                if (self:lSection)
+                    cSection:=cTools():RightATRemove(":",cNodePath,.T.)
+                    if (empty(cSection))
+                        cSection:=self:GetLastSectionValue()
+                    endif
+                    cKeyNode:=cTools():LeftATRemove(":",cNodePath,.T.)
+                else
+                    cSection:=""
+                    cKeyNode:=uTHashKeys
+                endif
+                oTHashKeys[#"section"]:=cSection
+                oTHashKeys[#"keynode"]:=cKeyNode
+            endif
+            if (self:GetAT("JSONArray")>0)
+                if (valType(self:Get("JSONArray"))=="A")
+                    aTHashArray:=self:Get("JSONArray")
+                    nJ:=len(aTHashArray)
+                    for nD:=1 to nJ
+                        if (valType(aTHashArray[nD])=="O")
+                            oTHashGetValue:=aTHashArray[nD]
+                            uValue:=GetHashMapListValue(oTHashKeys,oTHashGetValue)
+                            if (!(uValue==nil))
+                                exit
+                            endif
+                        endif
+                    next nD
+                endif
+            else
+                uValue:=GetHashMapListValue(oTHashKeys,oTHashGetValue)
+            endif
+        case (cType=="O")
+            cClassName:=GetClassName(uTHashKeys)
+            if (cClassName$"|JSONHASH|JSONARRAY|THASH|TFINI|THASH_TFINI|THASHMAP|")
+                if (cClassName=="THASHMAP")
+                    oTHashKeys:=Array(#)
+                    oTHashKeys:SetFromHashMap(uTHashKeys)
+                else
+                    oTHashKeys:=uTHashKeys
+                endif
+                if (self:GetAT("JSONArray")>0)
+                    if (valType(self:Get("JSONArray"))=="A")
+                        aTHashArray:=self:Get("JSONArray")
+                        nJ:=len(aTHashArray)
+                        for nD:=1 to nJ
+                            if (valType(aTHashArray[nD])=="O")
+                                oTHashGetValue:=aTHashArray[nD]
+                                uValue:=GetHashMapListValue(oTHashKeys,oTHashGetValue)
+                                if (!(uValue==nil))
+                                    exit
+                                endif
+                            endif
+                        next nD
+                    endif
+                else
+                    uValue:=GetHashMapListValue(oTHashKeys,oTHashGetValue)
+                endif
+            else
+                uValue:=oTHashGetValue:Get(uTHashKeys)
+            endif
+        otherwise 
+            uValue:=oTHashGetValue:Get(uTHashKeys)
+        end case
+
+    end sequence
+
+    return(uValue)
+
+static function GetHashMapListValue(oTHashKeys as object,oTHashGetValue as object)
+    
+    local aHashMapList  as array
+
+    local bAscanMapList as block
+
+    local cSection      as character
+    local cKeyNode      as character
+
+    local nAT           as numeric
+
+    local uValue
+
+    cSection:=oTHashKeys:Get("section")
+    cKeyNode:=oTHashKeys:Get("keynode")
+    
+    aHashMapList:=oTHashGetValue:GetHashMapList()
+
+    if (oTHashGetValue:HasSectionEnabled())
+        bAscanMapList:={|k|(__ArrayUtils():Compare(k[1],cKeyNode).and.__ArrayUtils():Compare(k[3],cSection))}
+    else
+        bAscanMapList:={|k|(__ArrayUtils():Compare(k[1],cKeyNode))}
+    endif
+
+    nAT:=aScan(aHashMapList,bAscanMapList)
+    if (nAT>0)
+        uValue:=aHashMapList[nAT][2]
+    endif
+
+    return(uValue)
+
+//---------------------------------------------------------
+   /*/
+        METHOD:Del
+        Autor:Marinaldo de Jesus [BlackTDN:(http://www.blacktdn.com.br/)]
+        Data:13/01/2015
+        Descricao:Excluir uma Propriedade
+        Sintaxe:THash():Del(uPropertyKey)->lDel
+    /*/
+//------------------------------------------------------------------------------------------------
+method Del(uPropertyKey) class THASH
+    
+    local lDel      as logical
+    local nSection  as numeric
+    
+    local uSection
+
+    if (self:lSection)
+        uSection:=uPropertyKey
+    endif
+    
+    self:RemoveProperty(@uSection,@uPropertyKey)
+    self:RemoveSection(@uSection)
+    
+    lDel:=(!(self:ExistSection(@uSection,@nSection)))
+    
+    return(lDel)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:Remove
+        Autor:Marinaldo de Jesus [BlackTDN:(http://www.blacktdn.com.br/)]
+        Data:13/01/2015
+        Descricao:Excluir uma Propriedade
+        Sintaxe:THash():Remove(uPropertyKey)->lRemove
+    /*/
+//------------------------------------------------------------------------------------------------
+method Remove(uPropertyKey) class THASH
+    local lRemove as logical
+    lRemove:=self:Del(uPropertyKey)
+    return(lRemove)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:GetHashArray
+        Autor:Marinaldo de Jesus [BlackTDN:(http://www.blacktdn.com.br/)]
+        Data:13/01/2015
+        Descricao:Retorna todas as Sections
+        Sintaxe:THash():GetHashArray()->aTHash
+    /*/
+//------------------------------------------------------------------------------------------------
+method GetHashArray() class THASH
+    return(self:aTHash)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:SetFromArray
+        Autor:Marinaldo de Jesus [BlackTDN:(http://www.blacktdn.com.br/)]
+        Data:02/04/2015
+        Descricao:Carregar os Dados Baseados em Array
+        Sintaxe:THash():SetFromArray(aArray,lTHash)->self
+    /*/
+//------------------------------------------------------------------------------------------------
+method SetFromArray(aArray,lTHash) class THASH
+
+    local cType         as character
+    local cHashFile     as character
+    local cClsNValue    as character
+
+    local lHashAsFile   as logical
+    
+    local nC            as numeric
+    local nS            as numeric
+    local nD            as numeric
+    local nJ            as numeric
+  
+    local uKey
+    local uValue
+    local uSection 
+    
+    paramtype aArray as array
+    DEFAULT lTHash:=.T.
+    paramtype lTHash as logical optional   
+
+    lHashAsFile:=self:lHashAsFile
+    self:ReSet(self:lSection,lHashAsFile)
+
+    nJ:=len(aArray)
+    for nD:=1 to nJ
+        if (lTHash)
+            if (self:lSection)
+                uSection:=aArray[nD][HASH_SECTION_POSITION]
+                self:AddNewSection(uSection)
+                nS:=len(aArray[nD][HASH_PROPERTY_POSITION])
+                for nC:=1 to nS
+                    uKey:=aArray[nD][HASH_PROPERTY_POSITION][nS][HASH_PROPERTY_KEY]
+                    cHashFile:=aArray[nD][HASH_PROPERTY_POSITION][nS][HASH_PROPERTY_FILE]
+                    if ((lHashAsFile).or.!empty(cHashFile))
+                        uValue:=aArray[nD][HASH_PROPERTY_POSITION][nS][HASH_PROPERTY_VALUE]
+                        if (uValue)
+                            cType:=aArray[nD][HASH_PROPERTY_POSITION][nS][HASH_PROPERTY_TYPE]
+                            cClsNValue:=aArray[nD][HASH_PROPERTY_POSITION][nS][HASH_PROPERTY_CLSNAME]
+                            uValue:=self:RestDataHash(uKey,cHashFile,cType,cClsNValue)
+                        endif
+                    else
+                        uValue:=aArray[nD][HASH_PROPERTY_POSITION][nS][HASH_PROPERTY_VALUE]
+                    endif
+                    self:AddNewProperty(uSection,uKey,uValue)
+                next nC
+            else
+                uKey:=aArray[nD][HASH_PROPERTY_KEY]
+                uValue:=aArray[nD][HASH_PROPERTY_VALUE]
+                if ((lHashAsFile).or.(len(aArray[nD])>=3))
+                    if (len(aArray[nD])>=3)
+                        if (valType(uValue)=="L")
+                            if ((uValue).and.(!empty(aArray[nD][HASH_PROPERTY_FILE])))
+                                cHashFile:=aArray[nD][HASH_PROPERTY_FILE]
+                                if (file(cHashFile))
+                                    cType:=aArray[nD][HASH_PROPERTY_TYPE]
+                                    cClsNValue:=aArray[nD][HASH_PROPERTY_CLSNAME]
+                                    uValue:=self:RestDataHash(uKey,cHashFile,cType,cClsNValue)
+                                endif
+                            endif
+                        endif
+                    endif
+                endif
+                self:Set(uKey,uValue)
+            endif
+        else
+            self:Set("THASH_ID_"+NToS(nD),aArray[nD])
+        endif
+    next nD
+
+    return(self)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:SetFromObject
+        Autor:Marinaldo de Jesus [BlackTDN:(http://www.blacktdn.com.br/)]
+        Data:02/04/2015
+        Descricao:Carregar os Dados Baseados em Array
+        Sintaxe:THash():SetFromObject(oObj)->self
+    /*/
+//------------------------------------------------------------------------------------------------
+method SetFromObject(oObj) class THASH
+
+    local aObj      as array
+    local aSelf     as array
+    
+    local cData     as character
+    local cClsNSelf as character
+    local cClsNoObj as character
+
+    local lTHash    as logical
+
+    local nD        as numeric
+    local nJ        as numeric
+
+    paramtype oObj as object
+
+    cClsNSelf:=GetClassName(self)
+    cClsNoObj:=GetClassName(oObj)
+
+    if (cClsNoObj=="THASHMAP")
+        self:SetFromHashMap(oObj)
+    else
+        aObj:=ClassDataArr(oObj,self:lGetObjSuperClass)
+        lTHash:=(cClsNSelf==cClsNoObj)
+        if (lTHash)
+            private pSelf as object
+            pSelf:=self
+            aSelf:=ClassDataArr(pSelf,self:lGetObjSuperClass)
+            nJ:=len(aSelf)
+            for nD:=1 to nJ
+                cData:="pSelf"
+                cData+=":"
+                cData+=aSelf[nD][1]
+                &(cData):=aObj[nD][2]
+            next nD
+        else
+            self:SetFromArray(aObj,.T.)
+        endif
+    endif
+
+    return(self)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:SetFromObjectArray
+        Autor:Marinaldo de Jesus [BlackTDN:(http://www.blacktdn.com.br/)]
+        Data:02/04/2015
+        Descricao:Carregar os Dados Baseados em Array
+        Sintaxe:THash():SetFromObjectArray(aObj,lGetObjSuperClass)->self
+    /*/
+//------------------------------------------------------------------------------------------------
+method SetFromObjectArray(aObj,lGetObjSuperClass) class THASH
+
+    local aSelf     as array
+    
+    local cData     as character
+
+    local nD        as numeric
+    local nJ        as numeric
+
+    paramtype aObj as array
+    DEFAULT lGetObjSuperClass:=.T.
+    paramtype lGetObjSuperClass as logical optional
+
+    self:lGetObjSuperClass:=lGetObjSuperClass
+
+    private pSelf as object
+    pSelf:=self
+    aSelf:=ClassDataArr(pSelf,self:lGetObjSuperClass)
+    nJ:=len(aSelf)
+    for nD:=1 to nJ
+        cData:="pSelf"
+        cData+=":"
+        cData+=aSelf[nD][1]
+        &(cData):=aObj[nD][2]
+    next nD
+
+    return(self)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:SetFromHashMap
+        Autor:Marinaldo de Jesus [BlackTDN:(http://www.blacktdn.com.br/)]
+        Data:02/04/2015
+        Descricao:Carregar os Dados Baseados em Array
+        Sintaxe:THash():SetFromHashMap(oHashMap)->self
+    /*/
+//------------------------------------------------------------------------------------------------
+method SetFromHashMap(oHashMap) class THASH
+
+    local aHashMapList	as array
+
+    local oJSONArray    as object
+
+	paramtype oHashMap  as object
+
+	aHashMapList:=Array(0)
+
+    oJSONArray:=Array(#)
+    oJSONArray:lSection(self:lSection)
+    oJSONArray:lHashAsFile(self:lHashAsFile)
+
+	if (HMList(@oHashMap,@aHashMapList))
+        oJSONArray:SetFromHashMapList(@aHashMapList,.T.,.F.)
+    else
+    	oJSONArray:=lHasError:=.T.
+        oJSONArray[#"error"]:="HMList :: undefined error"
+        oJSONArray:SetErrorMsg(oJSONArray[#"error"])
+    endif
+
+    if (GetClassName(self)$"|JSONHASH|JSONARRAY|THASH|")
+        self:SetFromObject(oJSONArray)
+    endif
+
+	return(oJSONArray)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:SetFromHashMapList()
+        Autor:Marinaldo de Jesus [BlackTDN:(http://www.blacktdn.com.br/)]
+        Data:04/12/2011
+        Descricao:Retornar oJSONArray
+        Sintaxe:THash():SetFromHashMapList()->oJSONArray
+    /*/
+//------------------------------------------------------------------------------------------------
+method SetFromHashMapList(aHashMapList,lSort,lSection) class THASH
+
+    local oJSONArray as object 
+
+    paramtype aHashMapList as array
+    DEFAULT lSort:=.T.
+    paramtype lSort as logical optional
+    DEFAULT lSection:=self:lSection
+    paramtype lSection as logical optional
+
+    if (lSort)
+        aSort(@aHashMapList,nil,nil,{|x,y|(x[1]<y[1])})
+    endif
+    
+    oJSONArray:=Array(#)
+    oJSONArray:lSection(lSection)
+    oJSONArray:lHashAsFile(self:lHashAsFile)
+
+    setHashMapKeys(@oJSONArray,@aHashMapList)
+
+    if (GetClassName(self)$"|JSONHASH|JSONARRAY|THASH|")
+        self:SetFromObject(oJSONArray)
+    endif
+
+    return(oJSONArray)
+
+static function setHashMapKeys(oTHash as object,aHashMapList as array) as array
+	
+    local aArrayNew     as array
+    local aStackHash    as array
+    local aStackArray   as array
+
+	local cKey		    as character
+    local cSection      as character
+    local cKeyNode      as character
+    local cNodeArray    as character
+    local cItemArray    as character
+
+	local lIsArray 	    as logical
+    local lNewItem      as logical
+    local lSection      as logical
+    local lHashAsFile   as logical
+
+	local nC            as numeric
+	local nS 		    as numeric
+	local nD 		    as numeric
+	local nJ		    as numeric
+    local nAT           as numeric
+
+    local oTHashNew     as object
+
+    local uValue
+
+    aStackArray:=Array(0)
+
+	nJ:=len(aHashMapList)
+
+    lHashAsFile:=oTHash:lHashAsFile()
+
+	for nD:=1 to nJ
+		cKeyNode:=aHashMapList[nD][1]
+        if ("["$cKeyNode)
+            cNodeArray:=cTools():RightATRemove(".",cKeyNode,.T.)
+        endif
+        uValue:=aHashMapList[nD][2]
+		lSection:=(len(aHashMapList[nD])>2)
+        if (lSection)
+            cSection:=aHashMapList[nD][3]
+            if (!(oTHash:HasSectionEnabled()))
+                oTHash:ReSet(lSection,lHashAsFile)
+            endif
+            if (!oTHash:ExistSection(@cSection))
+                oTHash:AddNewSection(cSection)
+            endif
+        else
+            if (oTHash:HasSectionEnabled())
+                oTHash:ReSet(lSection,lHashAsFile)
+            endif
+        endif
+        aStackHash:=strToKArr2(cKeyNode,".")
+        nS:=len(aStackHash)
+        for nC:=1 to nS 
+            cKey:=aStackHash[nC]
+            if (nC<nS)
+                lIsArray:=("["$cKey)
+                if (lIsArray)
+                    cItemArray:=""
+                    for nAT:=1 to nC
+                        cItemArray+=aStackHash[nAT]
+                        cItemArray+="."
+                    next nAT
+                    cItemArray:=cTools():RightCharRemove(cItemArray,".")
+                    lNewItem:=(aScan(aStackArray,{|k|(k==cItemArray)})==0)
+                    if (lNewItem)
+                        aAdd(aStackArray,cItemArray)
+                    endif                    
+                    cKey:=cTools():RightATRemove("[",cKey,.T.)
+                    if (lSection)
+                        if ((nAT:=oTHash:GetATProperty(cSection,cKey))==0)
+                            aArrayNew:=Array(0)
+                            oTHash:SetPropertyValue(cSection,cKey,aArrayNew)
+                        else
+                            aArrayNew:=oTHash:GetPropertyValue(cSection,cKey)
+                        endif
+                    else
+                        if ((nAT:=oTHash:GetAT(cKey))==0)
+                            aArrayNew:=Array(0)
+                            oTHash:Set(cKey,aArrayNew)
+                        else
+                            aArrayNew:=oTHash:Get(cKey)
+                        endif
+                    endif
+                    if (lNewItem)
+                        oTHashNew:=Array(#)
+                        oTHashNew:lSection(lSection)
+                        oTHashNew:lHashAsFile(lHashAsFile)
+                        aAdd(aArrayNew,oTHashNew)
+                    else
+                        nAT:=len(aArrayNew)
+                        oTHashNew:=aArrayNew[nAT]
+                    endif
+                else
+                    if (lSection)
+                        if ((nAT:=oTHash:GetATProperty(cSection,cKey))==0)
+                            oTHashNew:=Array(#)
+                            oTHashNew:lSection(lSection)
+                            oTHashNew:lHashAsFile(lHashAsFile)
+                            oTHash:SetPropertyValue(cSection,cKey,oTHashNew)
+                        else
+                            oTHashNew:=oTHash:GetPropertyValue(cSection,cKey)
+                        endif
+                    else
+                        if ((nAT:=oTHash:GetAT(cKey))==0)
+                            oTHashNew:=Array(#)
+                            oTHashNew:lSection(lSection)
+                            oTHashNew:lHashAsFile(lHashAsFile)
+                            oTHash:Set(cKey,oTHashNew)
+                        else
+                            oTHashNew:=oTHash:Get(cKey)
+                        endif
+                    endif
+                endif
+                ++nC
+                setHashMapNodes(@oTHashNew,@aStackHash,@nC,@nS,@uValue,@cNodeArray,@aStackArray,@cSection)
+            else
+                if (lSection)
+                    if ((nAT:=oTHash:GetATProperty(cSection,cKey))==0)
+                        oTHash:AddNewProperty(cSection,cKey)
+                    endif
+                    oTHashNew:=oTHash
+                else
+                    oTHashNew:=oTHash
+                endif
+                setHashMapNodes(@oTHashNew,@aStackHash,@nC,@nS,@uValue,@cNodeArray,@aStackArray,@cSection)
+            endif
+        next nC
+	next nD
+
+	return
+
+static procedure setHashMapNodes(oTHash as object,aStackHash as array,nC as numeric,nS as numeric,uValue,cNodeArray as character,aStackArray as array,cSection as character)
+
+    local aArrayNew     as array
+
+    local cKey          as character
+    local cItemArray    as character
+    
+    local lIsArray      as logical
+    local lNewItem      as logical
+    local lSection      as logical
+    local lHashAsFile   as logical
+
+    local nAT           as numeric
+
+    local oTHashNew     as object
+
+    lSection:=oTHash:HasSectionEnabled()
+    lHashAsFile:=oTHash:lHashAsFile()
+
+    for nC:=nC to nS 
+        cKey:=aStackHash[nC]
+        if (nC<nS)
+            lIsArray:=("["$cKey)
+            if (lIsArray)
+                cItemArray:=""
+                for nAT:=1 to nC
+                    cItemArray+=aStackHash[nAT]
+                    cItemArray+="."
+                next nAT
+                cItemArray:=cTools():RightCharRemove(cItemArray,".")
+                lNewItem:=(aScan(aStackArray,{|k|(k==cItemArray)})==0)
+                if (lNewItem)
+                    aAdd(aStackArray,cItemArray)
+                endif
+                cKey:=cTools():RightATRemove("[",cKey,.T.)
+                if (lSection)
+                    if ((nAT:=oTHash:GetATProperty(cSection,cKey))==0)
+                        aArrayNew:=Array(0)
+                        oTHash:SetPropertyValue(cSection,cKey,aArrayNew)
+                    else
+                        aArrayNew:=oTHash:GetPropertyValue(cSection,cKey)
+                    endif
+                else
+                    if ((nAT:=oTHash:GetAT(cKey))==0)
+                        aArrayNew:=Array(0)
+                        oTHash:Set(cKey,aArrayNew)
+                    else
+                        aArrayNew:=oTHash:Get(cKey)
+                    endif
+                endif
+                if (lNewItem)
+                    oTHashNew:=Array(#)
+                    oTHashNew:lSection(lSection)
+                    oTHashNew:lHashAsFile(lHashAsFile)
+                    aAdd(aArrayNew,oTHashNew)
+                else
+                    nAT:=len(aArrayNew) 
+                    oTHashNew:=aArrayNew[nAT]
+                endif
+            else
+                if (lSection)
+                    if ((nAT:=oTHash:GetATProperty(cSection,cKey))==0)
+                        oTHashNew:=Array(#)
+                        oTHashNew:lSection(lSection)
+                        oTHashNew:lHashAsFile(lHashAsFile)
+                        oTHash:SetPropertyValue(cSection,cKey,oTHashNew)
+                    else
+                        oTHashNew:=oTHash:GetPropertyValue(cSection,cKey)
+                    endif
+                else
+                    if ((nAT:=oTHash:GetAT(cKey))==0)
+                        oTHashNew:=Array(#)
+                        oTHashNew:lSection(lSection)
+                        oTHashNew:lHashAsFile(lHashAsFile)
+                        oTHash:Set(cKey,oTHashNew)
+                    else
+                        oTHashNew:=oTHash:Get(cKey)
+                    endif
+                endif
+            endif
+            ++nC
+            setHashMapNodes(@oTHashNew,@aStackHash,@nC,@nS,@uValue,@cNodeArray,@aStackArray,@cSection)
+        else
+            if (lSection)
+                oTHash:SetPropertyValue(cSection,cKey,uValue)
+            else
+                oTHash:Set(cKey,uValue)
+            endif
+        endif
+    next nC
+
+    return
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:GetATProperty
+        Autor:Marinaldo de Jesus [BlackTDN:(http://www.blacktdn.com.br/)]
+        Data:04/12/2011
+        Descricao:Obter a Posicao da Propriedade Passada por parametro e de acordo com a Secao
+        Sintaxe:THash():GetATProperty(uSection,uPropertyKey,nSection)->nATProperty
+    /*/
+//------------------------------------------------------------------------------------------------
+method GetATProperty(uSection,uPropertyKey,nSection) class THASH
+
+    local nATProperty   as numeric
+
+    nATProperty:=0
+
+    begin sequence
+
+        if (self:lSection)
+            if (empty(nSection))
+                if (!(self:ExistSection(@uSection,@nSection)))
+                    break
+                endif
+            endif
+            nATProperty:=aScan(self:aTHash[nSection][HASH_PROPERTY_POSITION],{|aValues|(__ArrayUtils():Compare(aValues[HASH_PROPERTY_KEY],uPropertyKey))})
+        else
+            nATProperty:=aScan(self:aTHASH,{|aValues|(__ArrayUtils():Compare(aValues[HASH_PROPERTY_KEY],uPropertyKey))})
+        endif
+
+    end sequence
+
+    return(nATProperty)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:GetNameProperty
+        Autor:Marinaldo de Jesus [BlackTDN:(http://www.blacktdn.com.br/)]
+        Data:04/12/2011
+        Descricao:Obter o Nome da Propriedade Passada por parametro e de acordo com a Secao
+        Sintaxe:THash():GetNameProperty(uSection,uPropertyKey)->uKeyProperty
+    /*/
+//------------------------------------------------------------------------------------------------
+method GetNameProperty(uSection,uPropertyKey) class THASH
+    local uKeyProperty:=self:GetKeyProperty(uSection,uPropertyKey)
+    return(uKeyProperty)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:GetKeyProperty
+        Autor:Marinaldo de Jesus [BlackTDN:(http://www.blacktdn.com.br/)]
+        Data:04/12/2011
+        Descricao:Obter o Chave da Propriedade Passada por parametro e de acordo com a Secao
+        Sintaxe:THash():GetKeyProperty(uSection,uPropertyKey)->uKeyProperty
+    /*/
+//------------------------------------------------------------------------------------------------
+method GetKeyProperty(uSection,uPropertyKey) class THASH
+
+    local uKeyProperty
+
+    local nSection  as numeric
+    local nProperty as numeric
+
+    begin sequence
+
+        if (self:lSection)
+
+            if (!(self:ExistSection(@uSection,@nSection)))
+                break
+            endif
+
+        endif
+
+        nProperty:=self:GetATProperty(@uSection,@uPropertyKey,@nSection)
+        if (nProperty==0)
+            break
+        endif
+
+        if (self:lSection)
+
+            uKeyProperty:=self:aTHash[nSection][HASH_PROPERTY_POSITION][nProperty][HASH_PROPERTY_KEY]
+
+        else
+
+            uKeyProperty:=self:aTHash[nProperty][HASH_PROPERTY_KEY]
+
+        endif
+
+    end sequence
+
+    return(uKeyProperty)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:SetKeyProperty
+        Autor:Marinaldo de Jesus [BlackTDN:(http://www.blacktdn.com.br/)]
+        Data:04/12/2011
+        Descricao:Setar a Chave da Propriedade Passada por parametro e de acordo com a Secao
+        Sintaxe:THash():SetKeyProperty(uSection,uPropertyKey,uNewPropertyKey)->lSuccess
+    /*/
+//------------------------------------------------------------------------------------------------
+method SetKeyProperty(uSection,uPropertyKey,uNewPropertyKey) class THASH
+
+    local lSuccess  as logical
+
+    local nSection  as numeric
+    local nProperty as numeric
+
+    lSuccess:=.F.
+
+    begin sequence
+
+        if (self:lSection)
+        
+            if (!(self:ExistSection(@uSection,@nSection)))
+                break
+            endif
+
+        endif
+
+        nProperty:=self:GetATProperty(@uSection,@uPropertyKey,@nSection)
+        if (nProperty==0)
+            break
+        endif
+
+        if (self:lSection)
+            self:aTHash[nSection][HASH_PROPERTY_POSITION][nProperty][HASH_PROPERTY_KEY]:=uNewPropertyKey
+        else
+            self:aTHash[nProperty][HASH_PROPERTY_KEY]:=uNewPropertyKey
+        endif
+
+        lSuccess:=.T.
+
+    end sequence
+
+    return(lSuccess)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:GetPropertyValue
+        Autor:Marinaldo de Jesus [BlackTDN:(http://www.blacktdn.com.br/)]
+        Data:04/12/2011
+        Descricao:Obter o valor da Propriedade Passada por parametro e de acordo com a Secao
+        Sintaxe:THash():GetPropertyValue(uSection,uPropertyKey,uDefaultValue)->uPropertyValue
+    /*/
+//------------------------------------------------------------------------------------------------
+method GetPropertyValue(uSection,uPropertyKey,uDefaultValue) class THASH
+
+    local cType         as character
+    local cHashFile     as character
+    local cClsNValue    as character
+
+    local nSection      as numeric
+    local nProperty     as numeric
+
+    local uPropertyValue:="@__PROPERTY_NOT_FOUND__@"
+
+    begin sequence
+
+        if (self:lSection)
+            if (!(self:ExistSection(@uSection,@nSection)))
+                break
+            endif
+        endif
+
+        nProperty:=self:GetATProperty(@uSection,@uPropertyKey,@nSection)
+        if (nProperty==0)
+            break
+        endif
+
+        if (self:lSection)
+            if (self:lHashAsFile)
+                DEFAULT self:aTHash[nSection][HASH_PROPERTY_POSITION][nProperty][HASH_PROPERTY_VALUE]:=.F.
+                uPropertyValue:=self:aTHash[nSection][HASH_PROPERTY_POSITION][nProperty][HASH_PROPERTY_VALUE]
+                if (uPropertyValue)
+                    cHashFile:=self:aTHash[nSection][HASH_PROPERTY_POSITION][nProperty][HASH_PROPERTY_FILE]
+                    cType:=self:aTHash[nSection][HASH_PROPERTY_POSITION][nProperty][HASH_PROPERTY_TYPE]
+                    cClsNValue:=self:aTHash[nSection][HASH_PROPERTY_POSITION][nProperty][HASH_PROPERTY_CLSNAME]
+                    uPropertyValue:=self:RestDataHash(uPropertyKey,cHashFile,cType,cClsNValue)
+                endif
+            else
+                uPropertyValue:=self:aTHash[nSection][HASH_PROPERTY_POSITION][nProperty][HASH_PROPERTY_VALUE]
+            endif
+        else
+            if (self:lHashAsFile)
+                DEFAULT self:aTHash[nProperty][HASH_PROPERTY_VALUE]:=.F.
+                uPropertyValue:=self:aTHash[nProperty][HASH_PROPERTY_VALUE]
+                if (uPropertyValue)
+                    cHashFile:=self:aTHash[nProperty][HASH_PROPERTY_FILE]
+                    cType:=self:aTHash[nProperty][HASH_PROPERTY_TYPE]
+                    cClsNValue:=self:aTHash[nProperty][HASH_PROPERTY_CLSNAME]
+                    uPropertyValue:=self:RestDataHash(uPropertyKey,cHashFile,cType,cClsNValue)
+                endif
+            else
+                uPropertyValue:=self:aTHash[nProperty][HASH_PROPERTY_VALUE]
+            endif
+        endif
+
+    end sequence
+
+    if (__ArrayUtils():Compare(uPropertyValue,"@__PROPERTY_NOT_FOUND__@"))
+        if (!(uDefaultValue==nil))
+            uPropertyValue:=uDefaultValue
+        else
+            uPropertyValue:=nil
+        endif
+    endif
+
+    return(uPropertyValue)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:SetPropertyValue
+        Autor:Marinaldo de Jesus [BlackTDN:(http://www.blacktdn.com.br/)]
+        Data:04/12/2011
+        Descricao:Setar o Valor em uma determinada Propriedade
+        Sintaxe:THash():SetPropertyValue(uSection,uPropertyKey,uValue)->self
+    /*/
+//------------------------------------------------------------------------------------------------
+method SetPropertyValue(uSection,uPropertyKey,uValue) class THASH
+
+    local cType         as character
+    local cHashFile     as character
+    local cClsNSelf     as character
+    local cClsNValue    as character
+
+    local nSection      as numeric
+    local nProperty     as numeric
+
+    begin sequence
+
+        if (self:lSection)
+            if (!(self:ExistSection(@uSection,@nSection)))
+                if (self:AddNewSection(@uSection))
+                    if (!(self:ExistSection(@uSection,@nSection)))
+                        break
+                    endif
+                endif
+            endif
+        endif
+
+        nProperty:=self:GetATProperty(@uSection,@uPropertyKey,@nSection)
+        if (nProperty==0)
+            self:AddNewProperty(@uSection,@uPropertyKey,uValue)
+            break
+        endif
+
+        cType:=valType(uValue)
+        if (cType=="O")
+            cClsNSelf:=GetClassName(self)
+            cClsNValue:=GetClassName(uValue)
+            if (cClsNSelf==cClsNValue)
+                uValue:nIDParent(self)
+            endif
+        else
+            cClsNValue:=""
+        endif
+
+        if (self:lSection)
+            if (self:lHashAsFile)
+                DEFAULT self:aTHash[nSection][HASH_PROPERTY_POSITION][nProperty][HASH_PROPERTY_FILE]:=getHashFile(self:nID,self:cTHashPath)
+                cHashFile:=self:aTHash[nSection][HASH_PROPERTY_POSITION][nProperty][HASH_PROPERTY_FILE]
+                self:aTHash[nSection][HASH_PROPERTY_POSITION][nProperty][HASH_PROPERTY_VALUE]:=self:SaveDataHash(uValue,cHashFile)
+            else
+                self:aTHash[nSection][HASH_PROPERTY_POSITION][nProperty][HASH_PROPERTY_VALUE]:=uValue
+            endif            
+            DEFAULT self:aTHash[nSection][HASH_PROPERTY_POSITION][nProperty][HASH_PROPERTY_FILE]:=""
+            self:aTHash[nSection][HASH_PROPERTY_POSITION][nProperty][HASH_PROPERTY_TYPE]:=cType
+            self:aTHash[nSection][HASH_PROPERTY_POSITION][nProperty][HASH_PROPERTY_CLSNAME]:=cClsNValue
+        else
+            if (self:lHashAsFile)
+                DEFAULT self:aTHash[nProperty][HASH_PROPERTY_FILE]:=getHashFile(self:nID,self:cTHashPath)
+                cHashFile:=self:aTHash[nProperty][HASH_PROPERTY_FILE]
+                self:aTHash[nProperty][HASH_PROPERTY_VALUE]:=self:SaveDataHash(uValue,cHashFile)
+            else
+                self:aTHash[nProperty][HASH_PROPERTY_VALUE]:=uValue
+            endif
+            DEFAULT self:aTHash[nProperty][HASH_PROPERTY_FILE]:=""
+            self:aTHash[nProperty][HASH_PROPERTY_TYPE]:=cType
+            self:aTHash[nProperty][HASH_PROPERTY_CLSNAME]:=cClsNValue
+        endif
+
+    end sequence
+
+    return(self)
+
+static function getHashFile(nID as numeric,cTHashPath as character) as character    
+    
+    local cFile         as character
+    local cFilePre      as character
+    local cHashFile     as character
+    
+    local lHashAsFile   as logical
+        
+    local nHandle       as numeric
+    local nHashTFile    as numeric
+    
+    DEFAULT __aHashTFile:=Array(0)
+
+    nHashTFile:=aScan(__aHashTFile,{|ID|ID[1]==nID})
+    if (nHashTFile==0)
+        aAdd(__aHashTFile,{nID,0,0})
+        nHashTFile:=len(__aHashTFile)
+    endif
+
+    cFile:=NToS(nID)
+    cFile+=NToS(__aHashTFile[nHashTFile][2]++)
+    cFilePre:=cFile
+
+    cHashFile:=cTHashPath
+    cHashFile+="thash"
+    cHashFile+=cFile
+    while (file(cHashFile))
+        cFile:=cFilePre
+        cFile+=NToS(__aHashTFile[nHashTFile][3]++)
+        cHashFile:=cTHashPath
+        cHashFile+="thash"
+        cHashFile+=cFile
+    end while
+    nHandle:=fCreate(cHashFile)
+    lHashAsFile:=(nHandle>=0)
+    if (lHashAsFile)
+        fClose(nHandle)
+    endif
+    
+    return(cHashFile)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:AddPropertyValueItem
+        Autor:Marinaldo de Jesus [BlackTDN:(http://www.blacktdn.com.br/)]
+        Data:04/12/2011
+        Descricao:Adicionar valor a uma propriedade Array
+        Sintaxe:THash():AddPropertyItem(uSection,uPropertyKey,uValue)->nAT
+    /*/
+//------------------------------------------------------------------------------------------------
+method AddPropertyItem(uSection,uPropertyKey,uValue) class THASH
+
+    local aArray        as array
+    local aArrayItem    as array
+    
+    local cHashFile     as character
+    local cClsNSelf     as character
+    local cClsNValue    as character
+
+    local nAT           as numeric
+    local nSection      as numeric
+    local nProperty     as numeric
+
+    begin sequence
+
+        if (self:lSection)
+            if (!(self:ExistSection(@uSection,@nSection)))
+                if (self:AddNewSection(@uSection))
+                    if (!(self:ExistSection(@uSection,@nSection)))
+                        nAT:=0
+                        break
+                    endif
+                endif
+            endif
+        endif
+
+        if (valType(uValue)=="O")
+            cClsNSelf:=GetClassName(self)
+            cClsNValue:=GetClassName(uValue)
+            if (cClsNSelf==cClsNValue)
+                uValue:nIDParent(self)
+            endif
+        endif
+
+        nProperty:=self:GetATProperty(@uSection,@uPropertyKey,@nSection)
+        if (nProperty==0)
+            aArray:=Array(0)
+            self:AddNewProperty(@uSection,@uPropertyKey,aArray)
+            nAT:=self:AddPropertyItem(uSection,uPropertyKey,uValue)
+            break
+        endif
+
+        aArray:=self:GetPropertyValue(uSection,uPropertyKey,Array(0))
+        if (self:lHashAsFile)
+            aArrayItem:=Array(HASH_PROPERTY_ELEMENTS)
+            aArrayItem[HASH_PROPERTY_KEY]:=uPropertyKey
+            aArrayItem[HASH_PROPERTY_VALUE]:=uValue
+            aArrayItem[HASH_PROPERTY_FILE]:=""
+            aArrayItem[HASH_PROPERTY_TYPE]:=cType
+            aArrayItem[HASH_PROPERTY_CLSNAME]:=cClsNValue
+            cHashFile:=getHashFile(self:nID,self:cTHashPath)
+            self:SaveDataHash(aArrayItem,cHashFile)
+            aAdd(aArray,cHashFile)
+        else
+            aAdd(aArray,uValue)
+        endif
+        
+        nAT:=len(aArray)
+
+    end sequence
+
+    return(nAT)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:GetPropertyValueItem
+        Autor:Marinaldo de Jesus [BlackTDN:(http://www.blacktdn.com.br/)]
+        Data:04/12/2011
+        Descricao:Adicionar valor a uma propriedade Array
+        Sintaxe:THash():GetPropertyItem(uSection,uPropertyKey,nAT)->uValue
+    /*/
+//------------------------------------------------------------------------------------------------
+method GetPropertyItem(uSection,uPropertyKey,nAT) class THASH
+
+    local aArray        as array
+    
+    local cType         as character
+    local cHashFile     as character
+
+    local nSection      as numeric
+    local nProperty     as numeric
+
+    local uValue        
+
+    paramtype nAT as numeric
+
+    begin sequence
+
+        if (self:lSection)
+            if (!(self:ExistSection(@uSection,@nSection)))
+                break
+            endif
+        endif
+
+        nProperty:=self:GetATProperty(@uSection,@uPropertyKey,@nSection)
+        if (nProperty==0)
+            break
+        endif
+
+        aArray:=self:GetPropertyValue(uSection,uPropertyKey,Array(0))
+        if (len(aArray)>=nAT)
+            if (self:lHashAsFile)
+                cType:="A"
+                cHashFile:=aArray[nAT]
+                uValue:=self:RestDataHash("",cHashFile,cType,"")
+            else
+                uValue:=aArray[nAT]
+            endif
+        endif
+        
+    end sequence
+
+    return(uValue)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:SetPropertyValueItem
+        Autor:Marinaldo de Jesus [BlackTDN:(http://www.blacktdn.com.br/)]
+        Data:04/12/2011
+        Descricao:Adicionar valor a uma propriedade Array
+        Sintaxe:THash():SetPropertyItem(uSection,uPropertyKey,nAT,uValue)->self
+    /*/
+//------------------------------------------------------------------------------------------------
+method SetPropertyItem(uSection,uPropertyKey,nAT,uValue) class THASH
+
+    local aArray        as array
+    local aArrayItem    as array
+    
+    local cClsNValue    as character
+
+    local nSection      as numeric
+    local nProperty     as numeric
+
+    paramtype nAT as numeric
+
+    begin sequence
+
+        if (self:lSection)
+            if (!(self:ExistSection(@uSection,@nSection)))
+                break
+            endif
+        endif
+
+        nProperty:=self:GetATProperty(@uSection,@uPropertyKey,@nSection)
+        if (nProperty==0)
+            break
+        endif
+
+        aArray:=self:GetPropertyValue(uSection,uPropertyKey,Array(0))
+        if (len(aArray)>=nAT)
+            if (self:lHashAsFile)
+                aArrayItem:=Array(HASH_PROPERTY_ELEMENTS)
+                aArrayItem[HASH_PROPERTY_KEY]:=uPropertyKey
+                aArrayItem[HASH_PROPERTY_VALUE]:=uValue
+                aArrayItem[HASH_PROPERTY_FILE]:=""
+                aArrayItem[HASH_PROPERTY_TYPE]:=cType
+                aArrayItem[HASH_PROPERTY_CLSNAME]:=cClsNValue
+                cHashFile:=aArray[nAT]
+                self:SaveDataHash(aArrayItem,cHashFile)
+            else
+                aArray[nAT]:=uValue
+            endif
+        endif
+        
+    end sequence
+
+    return(self)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:GetPropertyItemValue
+        Autor:Marinaldo de Jesus [BlackTDN:(http://www.blacktdn.com.br/)]
+        Data:04/12/2011
+        Descricao:Obter valor de uma propriedade Array
+        Sintaxe:THash():GetPropertyItemValue(uSection,uPropertyKey,nAT,uPropertyItem)->uValue
+    /*/
+//------------------------------------------------------------------------------------------------
+method GetPropertyItemValue(uSection,uPropertyKey,nAT,uPropertyItem) class THASH
+
+    local aArray        as array
+    
+    local cType         as character
+    local cHashFile     as character
+
+    local nSection      as numeric
+    local nProperty     as numeric
+
+    local oObjRet       as object
+
+    local uValue        
+
+    paramtype nAT as numeric
+
+    begin sequence
+
+        if (self:lSection)
+            if (!(self:ExistSection(@uSection,@nSection)))
+                break
+            endif
+        endif
+
+        nProperty:=self:GetATProperty(@uSection,@uPropertyKey,@nSection)
+        if (nProperty==0)
+            break
+        endif
+
+        aArray:=self:GetPropertyValue(uSection,uPropertyKey,Array(0))
+        if (len(aArray)>=nAT)
+            if (self:lHashAsFile)
+                cType:="A"
+                cHashFile:=aArray[nAT]
+                oObjRet:=self:RestDataHash("",cHashFile,cType,"")
+            else
+                oObjRet:=aArray[nAT]
+            endif
+            uValue:=oObjRet:GetPropertyValue(uPropertyKey,uPropertyItem)
+        endif
+        
+    end sequence
+
+    return(uValue)
+    
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:SetPropertyItemValue
+        Autor:Marinaldo de Jesus [BlackTDN:(http://www.blacktdn.com.br/)]
+        Data:04/12/2011
+        Descricao:Obter valor de uma propriedade Array
+        Sintaxe:THash():SetPropertyItemValue(uSection,uPropertyKey,nAT,uPropertyItem,uValue)->self
+    /*/
+//------------------------------------------------------------------------------------------------
+method SetPropertyItemValue(uSection,uPropertyKey,nAT,uPropertyItem,uValue) class THASH
+    
+    local aArray        as array
+
+    local cType         as character
+
+    local nSection      as numeric
+    local nProperty     as numeric
+
+    local oObjValue     as object
+
+    paramtype nAT as numeric
+
+    begin sequence
+
+        if (self:lSection)
+            if (!(self:ExistSection(@uSection,@nSection)))
+                break
+            endif
+        endif
+
+        nProperty:=self:GetATProperty(@uSection,@uPropertyKey,@nSection)
+        if (nProperty==0)
+            break
+        endif
+
+        aArray:=self:GetPropertyValue(uSection,uPropertyKey,Array(0))
+        if (len(aArray)>=nAT)
+            if (len(aArray)>=nAT)
+                if (self:lHashAsFile)
+                    cType:="A"
+                    cHashFile:=aArray[nAT]
+                    oObjValue:=self:RestDataHash("",cHashFile,cType,"")
+                else
+                    oObjValue:=aArray[nAT]
+                endif
+                oObjValue:SetPropertyValue(uPropertyKey,uPropertyItem,uValue)
+                self:SetPropertyItem(uSection,uPropertyKey,nAT,oObjValue)
+            endif
+        endif
+
+    end sequence
+
+    return(self)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:AddNewProperty
+        Autor:Marinaldo de Jesus [BlackTDN:(http://www.blacktdn.com.br/)]
+        Data:04/12/2011
+        Descricao:Adicionar uma nova propriedade
+        Sintaxe:THash():AddNewProperty(uSection,uPropertyKey,uValue)->lSuccess
+    /*/
+//------------------------------------------------------------------------------------------------
+method AddNewProperty(uSection,uPropertyKey,uValue) class THASH
+
+    local lSuccess  as logical
+
+    local nSection  as numeric
+    local nProperty as numeric
+
+    lSuccess:=.F.
+
+    begin sequence
+
+        if (self:lSection)
+            if (!(self:ExistSection(@uSection,@nSection)))
+                if (self:AddNewSection(@uSection))
+                    if (!(self:ExistSection(@uSection,@nSection)))
+                        break
+                    endif
+                endif
+            endif
+        endif
+
+        nProperty:=self:GetATProperty(@uSection,@uPropertyKey,@nSection)
+
+        if (nProperty==0)
+            if (self:lSection)
+                aAdd(self:aTHash[nSection][HASH_PROPERTY_POSITION],Array(HASH_PROPERTY_ELEMENTS))
+                nProperty:=len(self:aTHash[nSection][HASH_PROPERTY_POSITION])
+                (self:nSubNodes++)
+            else
+                aAdd(self:aTHash,Array(HASH_PROPERTY_ELEMENTS))
+                nProperty:=len(self:aTHash)
+                (self:nNodes++)
+            endif
+        endif
+
+        if (self:lSection)
+            self:aTHash[nSection][HASH_PROPERTY_POSITION][nProperty][HASH_PROPERTY_KEY]:=uPropertyKey
+            self:SetPropertyValue(@uSection,@uPropertyKey,uValue)
+        else
+            self:aTHash[nProperty][HASH_PROPERTY_KEY]:=uPropertyKey
+            self:SetPropertyValue(@uSection,@uPropertyKey,uValue)
+        endif
+
+        lSuccess:=.T.
+
+    end sequence
+
+    return(lSuccess)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:RemoveProperty
+        Autor:Marinaldo de Jesus [BlackTDN:(http://www.blacktdn.com.br/)]
+        Data:04/12/2011
+        Descricao:Remover Determinada Propriedade
+        Sintaxe:THash():RemoveProperty(uSection,uPropertyKey)->lSuccess
+    /*/
+//------------------------------------------------------------------------------------------------
+method RemoveProperty(uSection,uPropertyKey) class THASH
+
+    local cHashFile     as character
+    local cClsNSelf     as character
+    local cClsNValue    as character
+
+    local lSuccess      as logical
+
+    local nIDChild      as numeric
+    local nSection      as numeric
+    local nProperty     as numeric
+
+    local uValue
+
+    lSuccess:=.F.
+
+    begin sequence
+
+        if (self:lSection)
+            if (!(self:ExistSection(@uSection,@nSection)))
+                lSuccess:=.T.
+                break
+            endif
+        endif
+
+        nProperty:=self:GetATProperty(@uSection,@uPropertyKey,@nSection)
+        if (nProperty==0)
+            break
+        endif
+
+        uValue:=self:GetPropertyValue(uSection,uPropertyKey)
+        if (valType(uValue)=="O")
+            cClsNSelf:=GetClassName(self)
+            cClsNValue:=GetClassName(uValue)
+            if (cClsNSelf==cClsNValue)
+                nIDChild:=aScan(__aHashTFile,{|ID|ID[1]==uValue:nID()})
+                if (nIDChild>0)
+                    aDel(__aHashTFile,nIDChild)
+                    aSize(__aHashTFile,(len(__aHashTFile)-1))
+                endif
+                nIDChild:=aScan(self:aIDChild,{|nID|(nID==uValue:nID())})
+                if (nIDChild>0)
+                    aDel(self:aIDChild,nIDChild)
+                    aSize(self:aIDChild,(--self:nIDChilds))
+                endif
+            endif
+        endif
+
+        if (self:lSection)
+            if (self:lHashAsFile)
+                cHashFile:=self:aTHash[nSection][HASH_PROPERTY_POSITION][nProperty][HASH_PROPERTY_FILE]
+                if (file(cHashFile))
+                    fErase(cHashFile)
+                endif
+            endif
+            aDel(self:aTHash[nSection][HASH_PROPERTY_POSITION],nProperty)
+            aSize(self:aTHash[nSection][HASH_PROPERTY_POSITION],(--self:nSubNodes))
+        else
+            if (self:lHashAsFile)
+                cHashFile:=self:aTHash[nProperty][HASH_PROPERTY_FILE]
+                if (file(cHashFile))
+                    fErase(cHashFile)
+                endif
+            endif
+            aDel(self:aTHash,nProperty)
+            aSize(self:aTHash,(--self:nNodes))
+        endif            
+
+        lSuccess:=.T.
+
+    end sequence
+
+    return(lSuccess)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:GetAllProperties
+        Autor:Marinaldo de Jesus [BlackTDN:(http://www.blacktdn.com.br/)]
+        Data:04/12/2011
+        Descricao:Retornar todas as propriedades
+        Sintaxe:THash():GetAllProperties(uSection)->aAllProperties
+    /*/
+//------------------------------------------------------------------------------------------------
+method GetAllProperties(uSection) class THASH
+
+    local aAllProperties    as array
+
+    local nSection          as numeric
+
+    aAllProperties:=Array(0)
+
+    begin sequence
+
+        if (self:lSection)
+            if (!(self:ExistSection(@uSection,@nSection)))
+                break
+            endif
+            aAllProperties:=self:aTHash[nSection][HASH_PROPERTY_POSITION]
+        else
+            aEval(self:aTHash,{|e|aAdd(aAllProperties,e[HASH_PROPERTY_KEY])})
+        endif
+
+    end sequence
+
+    return(aAllProperties)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:AddNewSection
+        Autor:Marinaldo de Jesus [BlackTDN:(http://www.blacktdn.com.br/)]
+        Data:04/12/2011
+        Descricao:Adicionar nova Secao
+        Sintaxe:THash():AddNewSection(uSection)->lSuccess
+    /*/
+//------------------------------------------------------------------------------------------------
+method AddNewSection(uSection) class THASH
+
+    local lSuccess  as logical
+
+    local nSection  as numeric
+
+    lSuccess:=.F.
+
+    begin sequence
+
+        if (!self:lSection)
+            break
+        endif
+
+        if (self:ExistSection(@uSection,@nSection))
+            lSuccess:=.T.
+            break
+        endif
+
+        aAdd(self:aTHash,{uSection,Array(0)})
+
+        __uSection:=uSection
+        __nSection:=len(self:aTHash)
+        __nLastID:=self:nID
+
+        (self:nNodes++)
+
+        lSuccess:=.T.
+
+    end sequence
+
+    return(lSuccess)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:RemoveSection
+        Autor:Marinaldo de Jesus [BlackTDN:(http://www.blacktdn.com.br/)]
+        Data:04/12/2011
+        Descricao:Remover Determinada Secao
+        Sintaxe:THash():RemoveSection(uSection)->lSuccess
+    /*/
+//------------------------------------------------------------------------------------------------
+method RemoveSection(uSection) class THASH
+
+    local lSuccess  as logical
+
+    local nSection  as numeric
+
+    lSuccess:=.F.
+
+    begin sequence
+
+        if (!self:lSection)
+            break
+        endif
+
+        if (!(self:ExistSection(@uSection,@nSection)))
+            lSuccess:=.T.
+            break
+        endif
+
+        aDel(self:aTHash,nSection)
+        aSize(self:aTHash,(--self:nNodes))
+
+        __uSection:=nil
+        __nSection:=0
+        __nLastID:=0
+
+        lSuccess:=.T.
+
+    end sequence
+
+    return(lSuccess)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:GetSection
+        Autor:Marinaldo de Jesus [BlackTDN:(http://www.blacktdn.com.br/)]
+        Data:04/12/2011
+        Descricao:Obter uma Secao
+        Sintaxe:THash():GetSection(uSection)->aSection
+    /*/
+//------------------------------------------------------------------------------------------------
+method GetSection(uSection) class THASH
+
+    local aSection  as array
+
+    local nSection  as numeric
+
+    aSection:=Array(0)
+
+    begin sequence
+
+        if (!self:lSection)
+            break
+        endif
+
+        if (!(self:ExistSection(@uSection,@nSection)))
+            break
+        endif
+
+        aSection:=self:aTHash[nSection]
+
+    end sequence
+
+    return(aSection)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:CloneSection
+        Autor:Marinaldo de Jesus [BlackTDN:(http://www.blacktdn.com.br/)]
+        Data:04/12/2011
+        Descricao:Clonar uma Secao
+        Sintaxe:THash():CloneSection(uSection)->aClone
+    /*/
+//------------------------------------------------------------------------------------------------
+method CloneSection(uSection) class THASH
+    local aClone as array
+    aClone:=aClone(self:GetSection(uSection))
+    return(aClone)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:GetAllSections
+        Autor:Marinaldo de Jesus [BlackTDN:(http://www.blacktdn.com.br/)]
+        Data:04/12/2011
+        Descricao:Obter Todas as Secoes do Hash
+        Sintaxe:THash():GetAllSections()->aAllSections
+    /*/
+//------------------------------------------------------------------------------------------------
+method GetAllSections() class THASH
+
+    local aAllSections  as array
+
+    local nSection      as numeric
+    local nSections     as numeric
+
+    aAllSections:=Array(0)
+
+    begin sequence
+
+        if (!self:lSection)
+            break
+        endif
+
+        if (empty(self:aTHash))
+            break
+        endif
+
+        nSections:=len(self:aTHash)
+        for nSection:=1 To nSections
+            aAdd(aAllSections,self:aTHash[nSection][HASH_SECTION_POSITION])
+        next nSection
+
+    end sequence
+
+    return(aAllSections)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:CopySection
+        Autor:Marinaldo de Jesus [BlackTDN:(http://www.blacktdn.com.br/)]
+        Data:04/12/2011
+        Descricao:Copiar uma Secao
+        Sintaxe:THash():CopySection(uSection,uNewSection)->lSuccess
+    /*/
+//------------------------------------------------------------------------------------------------
+method CopySection(uSection,uNewSection) class THASH
+
+    local aProperties   as array
+
+    local lSuccess      as logical
+
+    local nSource       as numeric
+    local nTarget       as numeric
+
+    lSuccess:=.F.
+
+    begin sequence
+
+        if (!self:lSection)
+            break
+        endif
+
+        if (!(self:ExistSection(@uSection,@nSource)))
+            break
+        endif
+
+        if (!(self:AddNewSection(@uNewSection)))
+            break
+        endif
+
+        aProperties:=self:GetAllProperties(uSection)
+        if (!(self:ExistSection(@uNewSection,@nTarget)))
+            break
+        endif
+
+        self:aTHash[nTarget][HASH_PROPERTY_POSITION]:=aClone(aProperties)
+
+        lSuccess:=__ArrayUtils():ArrayCompare(self:aTHash[nSource][HASH_PROPERTY_POSITION],self:aTHash[nTarget][HASH_PROPERTY_POSITION])
+
+    end sequence
+
+    return(lSuccess)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:ExistSection
+        Autor:Marinaldo de Jesus [BlackTDN:(http://www.blacktdn.com.br/)]
+        Data:04/12/2011
+        Descricao:Copiar uma Secao
+        Sintaxe:THash():ExistSection(uSection,nSection)->lExist
+    /*/
+//------------------------------------------------------------------------------------------------
+method ExistSection(uSection,nSection) class THASH
+
+    local lExistSection as logical
+
+    if (self:lSection)
+    
+        lExistSection:=((__nLastID==self:nID).and.(__nSection>0).and.__ArrayUtils():Compare(__uSection,uSection))
+
+        if (lExistSection)
+            nSection:=__nSection
+        else
+            nSection:=aScan(self:aTHash,{|aFindSection|(__ArrayUtils():Compare(aFindSection[HASH_SECTION_POSITION],uSection))})
+            __nSection:=nSection
+            __uSection:=uSection
+            __nLastID:=self:nID
+            lExistSection:=(nSection>0)
+        endif
+
+    else
+        
+        lExistSection:=.F.
+
+    endif
+
+    return(lExistSection)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:ChangeSection
+        Autor:Marinaldo de Jesus [BlackTDN:(http://www.blacktdn.com.br/)]
+        Data:04/12/2011
+        Descricao:Renomear uma Secao
+        Sintaxe:THash():ChangeSection(uSection,nSection)->lSuccess
+    /*/
+//------------------------------------------------------------------------------------------------
+method ChangeSection(uSection,uNewSection) class THASH
+
+    local lSuccess  as logical
+
+    local nSection  as numeric
+
+    lSuccess:=.F.
+
+    if (self:lSection)
+
+        if (self:ExistSection(uSection,@nSection))
+            self:aTHash[nSection][HASH_SECTION_POSITION]:=uNewSection
+            lSuccess:=.T.
+        endif
+
+    endif
+
+    return(lSuccess)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:HasSectionEnabled
+        Autor:Marinaldo de Jesus [BlackTDN:(http://www.blacktdn.com.br/)]
+        Data:04/12/2011
+        Descricao:Verificar se Section Esta Habilitada
+        Sintaxe:THash():HasSectionEnabled->lSection
+    /*/
+//------------------------------------------------------------------------------------------------
+method HasSectionEnabled() class THASH
+    return(self:lSection())
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:SetErrorMsg
+        Autor:Marinaldo de Jesus [BlackTDN:(http://www.blacktdn.com.br/)]
+        Data:04/12/2011
+        Descricao:Setar Mensagem(ns) de Erro
+        Sintaxe:THash():SetErrorMsg(uMsgError)
+    /*/
+//------------------------------------------------------------------------------------------------
+method SetErrorMsg(uMsgError) class THASH
+    local cType as character
+    cType:=valType(uMsgError)
+    if (cType=="C")
+        aAdd(self:aErrorMsg,uMsgError)
+    elseif (cType=="A")
+        aEval(uMsgError,{|cMsgError|aAdd(self:aErrorMsg,cMsgError)})
+    endif    
+    return(self:aErrorMsg) 
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:GetErrorMsg
+        Autor:Marinaldo de Jesus [BlackTDN:(http://www.blacktdn.com.br/)]
+        Data:04/12/2011
+        Descricao:Retornar Mensagem(ns) de Erro
+        Sintaxe:THash():GetErrorMsg(lArray)->uMsgError
+    /*/
+//------------------------------------------------------------------------------------------------
+method GetErrorMsg(lArray) class THASH
+    
+    local cCRLF     as character
+    local cMsgError as character
+    
+    local uMsgError
+    
+    DEFAULT lArray:=.T.
+    paramtype lArray as logical optional
+    
+    if (lArray)
+        uMsgError:=self:aErrorMsg
+    else
+        cCRLF:=CRLF
+        cMsgError:=""
+        aEval(self:aErrorMsg,{|e|cMsgError+=e,cMsgError+=cCRLF})
+        uMsgError:=cMsgError
+        cMsgError:=""
+    endif
+    
+    return(uMsgError)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:SaveAs()
+        Autor:Marinaldo de Jesus [BlackTDN:(http://www.blacktdn.com.br/)]
+        Data:04/12/2011
+        Descricao:Salvar THash
+        Sintaxe:THash():SaveAs()->lSaveAs
+    /*/
+//------------------------------------------------------------------------------------------------
+method SaveAs(cFileName,lHashMapList,lClean,lHtml,lTableFormat) class THASH
+	
+    local aArray    as array
+    
+    local cCRLF     as character
+    local cLine     as character
+    local cVarName  as character
+    local cTmpFile  as character
+    local cMemoRead as character
+
+    local lSaveAs   as logical
+    local lSection  as logical
+
+    local nLine     as numeric
+    local nfError   as numeric
+
+    local oftDB     as object
+    local oTVarInfo as object
+
+    paramtype cFileName as character
+    DEFAULT lHashMapList:=.T.
+    paramtype lHashMapList as logical optional
+    paramtype lClean as logical optional
+    paramtype lHtml as logical optional
+    paramtype lTableFormat as logical optional
+
+    begin sequence 
+    
+        lSaveAs:=dirtools():MakeDir(cFileName)
+        if (!lSaveAs)
+            self:lHasError:=.T.
+            self:SetErrorMsg("Could not check or create directory for file :: ["+cFileName+"]")
+            break
+        endif
+
+        if (lHashMapList)
+            lHashMapList:=(!(GetClassName(self)=="THASH"))
+        endif
+
+        if (lHashMapList)
+            if (self:GetAT("JSONArray")>0)
+                aArray:=self:Get("JSONArray")
+                aArray:=self:GetHashMapList(aArray)
+            else
+                aArray:=self:GetHashMapList()
+            endif
+            cVarName:="HashMapList"
+        else
+            aArray:=self:GetHashArray()
+            cVarName:="HashArray"
+        endif
+
+        oTVarInfo:=TVarInfo():New()
+        oTVarInfo:lEcho:=.T.
+        oTVarInfo:lEchoClean:=lClean
+        oTVarInfo:ReSet(aArray,cVarName)
+        lSaveAs:=oTVarInfo:Show(0,lHtml,lTableFormat)
+        if ((lHashMapList).and.(lClean))
+            cTmpFile:=oTVarInfo:cSRVFile()
+            oTVarInfo:Close(.F.,.T.)
+        else
+            cTmpFile:=oTVarInfo:cLocalFile()
+            oTVarInfo:Close(.T.,.F.)
+            lSaveAs:=(file(cTmpFile))
+            if (file(cFileName))
+                fErase(cFileName)
+            endif
+            lSaveAs:=fReName(cTmpFile,cFileName)
+        endif
+        oTVarInfo:=oTVarInfo:FreeObj()
+
+        begin sequence
+
+            if (!lSaveAs)
+                break
+            endif
+
+            if (!lHashMapList)
+                break
+            endif
+            
+            if (!lClean)
+                break
+            endif
+
+            oftDB:=fTdb():New()
+            
+            lSaveAs:=oftDB:ft_fUse(cTmpFile)
+            if (!lSaveAs)
+                break
+            endif
+            
+            oftDB:ft_fGoTop()
+
+            nLine:=0
+            cCRLF:=CRLF
+            lSection:=self:HasSectionEnabled()
+            cMemoRead:=""
+
+            while (!oftDB:ft_fEof())
+                nLine++
+                cLine:=oftDB:ft_fReadLine()
+                if ((nLine%if(lSection,3,2))==0)
+                    if ((nLine%2)==0)
+                        cMemoRead+=":"
+                        cMemoRead+=cLine
+                    else
+                        cMemoRead:=(cLine+":"+cMemoRead)
+                    endif
+                    cMemoRead+=cCRLF
+                else
+                    cMemoRead+=cLine
+                endif
+                oftDB:ft_fSkip()
+            end while
+
+            oftDB:ft_fClose()
+            oftDB:=FreeObj(oftDB)
+
+            if (file(cTmpFile))
+                fErase(cTmpFile)
+            endif
+
+            if (file(cFileName))
+                fErase(cFileName)
+            endif
+
+            lSaveAs:=MemoWrite(cFileName,cMemoRead)
+
+        end sequence
+
+        if (!lSaveAs)
+            self:lHasError:=.T.
+            self:SetErrorMsg("Unable to save the file :: ["+cFileName+"]")
+            nfError:=fError()
+            if (!empty(nfError))
+                self:SetErrorMsg("fError :: ["+NToS(nfError)+"]")
+            endif
+            break
+        endif
+
+    end sequence
+    
+    return(lSaveAs)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:SaveAsXML()
+        Autor:Marinaldo de Jesus [BlackTDN:(http://www.blacktdn.com.br/)]
+        Data:04/12/2011
+        Descricao:Salvar THash
+        Sintaxe:THash():SaveAsXML()->lSaveAsXML
+    /*/
+//------------------------------------------------------------------------------------------------
+method SaveAsXML(cXMLFile,cRoot,cEncode) class THASH
+
+    local cXML          as character
+
+    local lSaveAsXML    as logical
+
+    local nfError       as numeric
+
+    local oJSONArray    as object
+
+    paramtype cXMLFile as character
+    DEFAULT cXMLRoot:="xml"
+    paramtype cRoot as character optional
+    DEFAULT cEncode:="UTF-8"
+    paramtype cEncode as character optional
+
+    begin sequence 
+    
+        lSaveAsXML:=dirtools():MakeDir(cXMLFile)
+        if (!lSaveAsXML)
+            self:lHasError:=.T.
+            self:SetErrorMsg("Could not check or create directory for file :: ["+cXMLFile+"]")
+            break
+        endif
+
+        if (GetClassName(self)=="THASH")
+
+            lSaveAsXML:=self:SaveAs(cXMLFile,.F.)
+
+        else
+
+            oJSONArray:=Array(#)
+            oJSONArray:SetFromObject(self)
+            oJSONArray:lUTF8:=upper(allTrim(cEncode))=="UTF-8"
+
+            cXML:=oJSONArray:ToXML(cRoot)
+
+            if (oJSONArray:lHasError)
+                lSaveAsXML:=.F.
+                self:lHasError:=.T.
+                self:SetErrorMsg(oJSONArray:GetErrorMsg(.T.))
+                break
+            endif
+
+            lSaveAsXML:=MemoWrite(cXMLFile,cXML)
+            if (!lSaveAsXML)
+                self:lHasError:=.T.
+                self:SetErrorMsg("Could not check or create directory for file :: ["+cXMLFile+"]")
+                nfError:=fError()
+                if (!empty(nfError))
+                    self:SetErrorMsg("fError :: ["+NToS(nfError)+"]")
+                endif
+                break
+            endif
+
+        endif 
+
+    end sequence
+    
+    if (valType(oJSONArray)=="O")
+        oJSONArray:=oJSONArray:FreeObj()
+    endif
+
+    return(lSaveAsXML)
+
+//------------------------------------------------------------------------------------------------
+    /*/
+        METHOD:SaveAsJSON()
+        Autor:Marinaldo de Jesus [BlackTDN:(http://www.blacktdn.com.br/)]
+        Data:04/12/2011
+        Descricao:Salvar THash
+        Sintaxe:THash():SaveAsJSON()->lSaveAsJSON
+    /*/
+//------------------------------------------------------------------------------------------------
+method SaveAsJSON(cJSONFile) class THASH
+
+    local lSaveAsJSON   as logical
+
+    local nfError       as numeric
+
+    local oJSONArray    as object
+
+    paramtype cJSONFile as character
+
+    begin sequence 
+    
+        lSaveAsJSON:=dirtools():MakeDir(cJSONFile)
+        if (!lSaveAsJSON)
+            self:lHasError:=.T.
+            self:SetErrorMsg("Could not check or create directory for file :: ["+cJSONFile+"]")
+            break
+        endif
+
+        if (GetClassName(self)=="THASH")
+
+            lSaveAsJSON:=self:SaveAs(cJSONFile,.F.)
+
+        else
+
+            oJSONArray:=Array(#)
+            oJSONArray:SetFromObject(self)
+
+            lSaveAsJSON:=oJSONArray:ToJSONFile(oJSONArray,cJSONFile)
+
+            if (oJSONArray:lHasError)
+                lSaveAsJSON:=.F.
+                self:lHasError:=.T.
+                self:SetErrorMsg(oJSONArray:GetErrorMsg(.T.))
+                break
+            endif
+
+            if (!lSaveAsJSON)
+                self:lHasError:=.T.
+                self:SetErrorMsg("Could not check or create directory for file :: ["+cJSONFile+"]")
+                nfError:=fError()
+                if (!empty(nfError))
+                    self:SetErrorMsg("fError :: ["+NToS(nfError)+"]")
+                endif
+                break
+            endif
+
+        endif
+
+    end sequence
+
+    if (valType(oJSONArray)=="O")
+        oJSONArray:=oJSONArray:FreeObj()
+    endif
+
+    return(lSaveAsJSON)
