@@ -14,19 +14,18 @@
 //------------------------------------------------------------------------------------------------
 class ufT FROM LongclassName
 
-    data aLines as array
+    public data aLines      as array
 
-    data cCRLF          as character
-    data cFile          as character
-    data cLine          as character
+    public data cCRLF       as character
+    public data cFile       as character
+    public data cLine       as character
+    public data cClassName  as character
 
-    data nRecno         as numeric
-    data nfHandle       as numeric
-    data nFileSize      as numeric
-    data nLastRecno     as numeric
-    data nBufferSize    as numeric
-
-    data cClassName as character
+    public data nRecno      as numeric
+    public data nfHandle    as numeric
+    public data nFileSize   as numeric
+    public data nLastRecno  as numeric
+    public data nBufferSize as numeric
 
     public method New() as object /*/\constructor/\*/
     public method FreeObj()       /*\/destructor\/*/
@@ -163,7 +162,7 @@ method ft_fOpen(cFile) class ufT
 
     self:ft_fClose()
 
-    TRYEXCEPTION
+    begin sequence
 
         if (!(self:ft_fExists(cFile)))
             break
@@ -184,11 +183,11 @@ method ft_fOpen(cFile) class ufT
 
         self:ft_fGoTop()
 
-    CATCHEXCEPTION
+    recover
 
         self:nfHandle:=-1
 
-    ENDEXCEPTION
+    end sequence
 
     return(self:nfHandle)
 
@@ -306,7 +305,7 @@ method ft_fExists(cFile) class ufT
 
     lExists:=.F.
 
-    TRYEXCEPTION
+    begin sequence
 
         if (empty(cFile))
             break
@@ -314,11 +313,11 @@ method ft_fExists(cFile) class ufT
 
         lExists:=File(cFile)
 
-    CATCHEXCEPTION
+    recover
 
         lExists:=.F.
 
-    ENDEXCEPTION
+    end sequence
 
     return(lExists)
 
@@ -452,16 +451,16 @@ method ft_fBof() class ufT
 //------------------------------------------------------------------------------------------------
 method ft_fReadLine() class ufT
 
-    TRYEXCEPTION
+    begin sequence
 
         self:nLastRecno:=self:nRecno
         self:cLine:=self:aLines[self:nRecno]
 
-    CATCHEXCEPTION
+    recover
 
         self:cLine:=""
 
-    ENDEXCEPTION
+    end sequence
 
     return(self:cLine)
 
@@ -534,5 +533,3 @@ method ft_fSetCRLF(cCRLF) class ufT
     self:cCRLF:=cCRLF
 
     return(cLastCRLF)
-
-#include "tryexception.ch"

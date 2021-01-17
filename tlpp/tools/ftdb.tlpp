@@ -149,9 +149,14 @@ method ft_fOpen(cFile) class fTdb
 
     paramtype cFile as character
 
-    self:ft_fClose()
+    if (!empty(self:cDbAlias).and.(select(self:cDbAlias)>0))
+        if (self:ft_fRecCount())
+            self:ft_fClose()
+            self:New()
+        endif
+    endif
 
-    TRYEXCEPTION
+    begin sequence
 
         if (!(self:ft_fExists(cFile)))
             break
@@ -172,11 +177,11 @@ method ft_fOpen(cFile) class fTdb
 
         self:ft_fGoTop()
 
-    CATCHEXCEPTION
+    recover
 
         self:ft_fClose()
 
-    ENDEXCEPTION
+    end sequence
 
     return(self:nfHandle)
 
@@ -418,16 +423,16 @@ method ft_fBof() class fTdb
 //------------------------------------------------------------------------------------------------
 method ft_fReadLine() class fTdb
 
-    TRYEXCEPTION
+    begin sequence
 
         self:nLastRecNo:=self:nRecNo
         self:cLine:=(self:cDbAlias)->(FieldGet(1))
 
-    CATCHEXCEPTION
+    recover
 
         self:cLine:=""
 
-    ENDEXCEPTION
+    end sequence
 
     return(self:cLine)
 
@@ -501,10 +506,10 @@ method ft_fAppend(cValue) class fTdb
     DEFAULT cValue:=""
     paramtype cValue as character optional
     nRecNo:=self:ft_fRecNo()
-    lAppend:=(select(sef:cDbAlias)>0)
+    lAppend:=(select(self:cDbAlias)>0)
     if (lAppend)
         (self:cDbAlias)->(dbAppend(.T.))
-        lAppend:=((sef:cDbAlias)->(!netErr()))
+        lAppend:=((self:cDbAlias)->(!netErr()))
         if (lAppend)
             (self:cDbAlias)->(FieldPut(1,cValue))
             nRecNo:=self:ft_fRecNo()
@@ -528,7 +533,7 @@ method ft_fUpdate(cValue) class fTdb
     DEFAULT cValue:=""
     paramtype cValue as character optional
     nRecNo:=self:ft_fRecNo()
-    lUpdate:=((select(sef:cDbAlias)>0).and.(self:cDbAlias)->(dbrLock(nRecNo)))
+    lUpdate:=((select(self:cDbAlias)>0).and.(self:cDbAlias)->(dbrLock(nRecNo)))
     if (lUpdate)
         (self:cDbAlias)->(FieldPut(1,cValue))
         (self:cDbAlias)->(dbrUnLock(nRecNo))
@@ -549,7 +554,7 @@ method ft_fDelete() class fTdb
     local lDelete as logical
     local nRecNo  as numeric
     nRecNo:=self:ft_fRecNo()
-    lLock:=((select(sef:cDbAlias)>0).and.((sef:cDbAlias)->(dbrLock(nRecNo))))
+    lLock:=((select(self:cDbAlias)>0).and.((self:cDbAlias)->(dbrLock(nRecNo))))
     if (lLock)
         (self:cDbAlias)->(dbDelete())
         (self:cDbAlias)->(dbrUnLock(nRecNo))
@@ -571,7 +576,7 @@ method ft_fReCall() class fTdb
     local lReCall as logical
     local nRecNo  as numeric
     nRecNo:=self:ft_fRecNo()
-    lLock:=((select(sef:cDbAlias)>0).and.((self:cDbAlias)->(dbrLock(nRecNo))))
+    lLock:=((select(self:cDbAlias)>0).and.((self:cDbAlias)->(dbrLock(nRecNo))))
     if (lLock)
         (self:cDbAlias)->(dbReCall())
         (self:cDbAlias)->(dbrUnLock(nRecNo))
@@ -592,5 +597,3 @@ method ft_fDeleted() class fTdb
     local lDeleted as logical
     lDeleted:=((select(self:cDbAlias)>0).and.((self:cDbAlias)->(Deleted())))
     return(lDeleted)
-
-#include "tryexception.ch"

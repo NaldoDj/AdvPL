@@ -1,0 +1,55 @@
+Operadores ADVPL
+
+Operamoders Matemáticos
+
+     +   (soma)
+     -   (subtração)
+     *   (multiplicação)
+     /  (divisão)
+     += (soma e atribuição)
+     -= (subtração e atribuição)
+     *= (multiplicação e atribuição)
+     /= (divisão e atribuição)
+     ^  (Exponenciação)
+     ** (Exponenciação)
+     ^= (Exponenciação com atribuição)
+     %  ((Módulo : Resto da Divisão)
+ 
+ funções Matemáticas
+ 
+     Mod() (Módulo : Resto da Divisão)
+     SQRT() (Raiz Quadrada)
+     Exp()  (Exponenciação base e)
+ 
+ Operadores Lógicos
+ 
+     == (comparação: utilizar, preferencialmente este) 
+     = (Comparação: existe por retrocompatibilidade, evitar utilizar)
+     > (Maior Que)
+     < (Menor Que)
+     <> (Diferente)
+     # (Diferente)
+     != (Não igual => Diferente)
+     ! (Negação)
+     $ (Contém)
+     
+     .and. (e)
+     .or. (ou)
+     
+     .T. (Verdadeiro)
+     .F. (Falso) 
+ 
+ Operadores de Atribuição
+ 
+     := (Atribuição: utilizar preferencialmente este)
+     = (Atribuição: : existe por retrocompatibilidade, evitar utilizar)
+     += (soma e atribuição)
+     -= (subtração e atribuição)
+     *= (multiplicação e atribuição)
+     /= (divisão e atribuição)
+     ^= (Exponenciação com atribuição)
+     
+ Operadores de Incremento e Decremento
+    
+    ++
+    --

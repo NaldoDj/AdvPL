@@ -1,0 +1,118 @@
+Estruturas de Controle
+
+if else endif
+if elseif endif
+
+if (condicao)
+    <Faz alguma coisa>
+endif
+
+if (condicao)
+    <Faz alguma coisa>
+else
+    <Faz alguma outra coisa>
+endif
+
+if (condicao)
+    <Faz alguma coisa>
+elseif
+    <Faz alguma outra coisa>
+elseif
+    <Faz alguma outra coisa>
+else
+    <Faz alguma outra coisa>
+endif
+
+----------------------------------------------------   
+
+do case case end case
+
+do case
+    case nVar==1
+        <faça alguma coisa>
+    case nVar==2
+        <faça alguma outra coisa >
+    case nVar==3
+        <faça alguma outra coisa >
+    case nVar==...
+        <faça alguma outra coisa >
+    otherwise
+        <faça alguma outra coisa >
+end case
+
+----------------------------------------------------
+A estrutua For/Next, em AdvPL, opera apenas com valores numéricos. E é obrigatorio que a variável de controle do loop seja uma variável de escopo local
+
+Local nD
+
+for next
+
+For nD:=1 To 100
+
+Next nD
+
+----------------------------------------------------
+
+while end 
+
+while <Condicao>
+
+end 
+
+do while <Condicao>
+
+end do 
+
+while <Condicao>
+
+end while
+
+----------------------------------------------------
+
+begin sequence end sequence
+
+Para simplificar estrutura de controle
+begin sequence
+
+    if (<condicao>)
+        break
+    endif
+
+    if !(<condicao>)
+        break
+    endif
+
+    if !(<condicao>)
+        break
+    endif
+
+    if !(<condicao>)
+        break
+    endif
+
+end sequence
+->Break salta para ca
+
+Para Tratamento de Erro
+bError:={|oError| __Break(oError)  }
+bErrorBlock:=ErrorBlock(bError)
+begin sequence
+    UserExeption("Vai dar erro")
+recover
+->Break salta para ca
+end sequence
+ErrorBlock(bErrorBlock)
+
+static function __Break(oError)
+    if valType(oError)
+        ? oError:Description
+    endif
+    break
+
+Para Tratamento de Erro
+bErrorBlock:=ErrorBlock(bError)
+begin sequence
+    UserExeption()
+end sequence
+->Break salta para ca
+ErrorBlock(bErrorBlock)

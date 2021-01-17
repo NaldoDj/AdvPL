@@ -248,6 +248,7 @@ static function __UTF8(s as character,lUTF8 as logical) as character
 
 static method ReadMemo(cFile) class ctools
 
+    local cCRLF		as character
     local cPath     as character
     local cSPExt    as character
     local cSPFile   as character
@@ -292,11 +293,13 @@ static method ReadMemo(cFile) class ctools
 	oftDB:ft_fUse(cFile)
 	oftDB:ft_fGoTop()
 
+	cCRLF:=CRLF
 	cMemoRead:=""
 
 	while (!oftDB:ft_fEof())
 		cMemoRead+=oftDB:ft_fReadLine()
-		oftDB:ft_fSkip()
+		cMemoRead+=cCRLF
+        oftDB:ft_fSkip()
 	end while
 
 	oftDB:ft_fClose()

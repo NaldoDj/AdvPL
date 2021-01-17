@@ -1,0 +1,17 @@
+Tipos e Escopo de Funções em AdvPL
+Para maiores informações cosulte: http://www.blacktdn.com.br/2010/09/protheus-static-function-fim-da.html
+
+Static Function/Procedure
+
+Funções estaticas tem sua visibulidade apenas no módulo/programa que a declarou exceto quando referenciada via StaticCall
+
+Function/Procedure
+
+Function tem escopo Global e podem ser referenciadas a partir de qualquer ponto do Sistema.
+
+No AdvPL não existe diferença entre Function e Procedure e, por isso, sempre utilizar a declaração Function em Detrimento da Procedure.
+
+Teoricamente Function sempre irá retornar um Valor e Procedure não. Mas no AdvPL esta regra não se aplica. Sempre haverá um retorno mesmo que "NIL"
+
+
+
