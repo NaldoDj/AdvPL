@@ -159,11 +159,6 @@ method New(lSection,lHashAsFile) class JSONArray
 	DEFAULT CHR_Quot:=chr(34)
 	DEFAULT CHR_PTeV:=chr(59)
 
-	cTools()
-	dirtools()
-	StackTools()
-	ArrayUtils()
-
     return(self)
 
 method ClassName() class JSONArray
