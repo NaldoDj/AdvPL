@@ -29,7 +29,7 @@
 #include "parmtype.ch"
 
 function U_JSONHash(lSection as logical,lHashAsFile as logical) as object
-	return(JSONHash():New(lSection,lHashAsFile))
+    return(JSONHash():New(lSection,lHashAsFile))
 
 /*/
     class:JSONHash
@@ -40,7 +40,7 @@ function U_JSONHash(lSection as logical,lHashAsFile as logical) as object
 /*/
 class JSONHash from THASH
 
-    data cClassName	as character
+    data cClassName    as character
 
     public method New(lSection,lHashAsFile) as object
 
@@ -72,5 +72,5 @@ method New(lSection,lHashAsFile) class JSONHash
     Sintaxe:JSONHash():className() -> cClassName
 /*/
 method ClassName() class JSONHash
-	self:cClassName:="JSONHASH"
-	return(self:cClassName)
+    self:cClassName:="JSONHASH"
+    return(self:cClassName)
