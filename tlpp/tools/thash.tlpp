@@ -9,10 +9,6 @@ static __aTHashFiles    as array
 static __cThreadID      as character
 
 static __nID	        as numeric
-static __nLastID	    as numeric
-static __nSection       as numeric
-
-static __uSection
 
 //------------------------------------------------------------------------------------------------
     /*/
@@ -61,9 +57,6 @@ class THASH FROM LongclassName
     public method lSection(lSection) as logical
 
     public method lHashAsFile(lHashAsFile) as logical
-
-    public method __nLastID() as numeric
-    public method __nSection() as numeric
 
     public method Del(uPropertyKey) as logical
     public method Remove(uPropertyKey) as logical
@@ -157,8 +150,6 @@ method New(lSection,lHashAsFile) class THASH
     DEFAULT __cThreadID:=NTos(ThreadID())
 
     DEFAULT __nID:=0
-    DEFAULT __nLastID:=0
-    DEFAULT __nSection:=0
 
     self:nThashHandle:=(-1)
 
@@ -234,7 +225,6 @@ method Clear() class THASH
     lFreeObj:=(StackTools():IsInCallStack("FreeObj"))
     if (!lFreeObj)
         self:nID:=(++__nID)
-        __nLastID:=self:nID
     else
         nFile:=aScan(__aHashTFile,{|ID|ID[1]==self:nID})
         if (nFile>0)
@@ -599,30 +589,6 @@ method ArrayToHashObject(aArray) class THASH
         endif
     endif
     return(oObjRet)
-
-//------------------------------------------------------------------------------------------------
-    /*/
-        METHOD:__nLastID()
-        Autor:Marinaldo de Jesus [BlackTDN:(http://www.blacktdn.com.br/)]
-        Data:04/12/2011
-        Descricao:Retornar o ID corrente
-        Sintaxe:THash():__nLastID()->__nLastID
-    /*/
-//------------------------------------------------------------------------------------------------
-method __nLastID() class THASH
-    return(__nLastID)
-
-//------------------------------------------------------------------------------------------------
-    /*/
-        METHOD:__nSection()
-        Autor:Marinaldo de Jesus [BlackTDN:(http://www.blacktdn.com.br/)]
-        Data:04/12/2011
-        Descricao:Retornar o ID da Section corrente
-        Sintaxe:THash():__nSection()->__nSection
-    /*/
-//------------------------------------------------------------------------------------------------
-method __nSection() class THASH    
-    return(__nSection)
 
 //------------------------------------------------------------------------------------------------
     /*/
@@ -2624,10 +2590,6 @@ method AddNewSection(uSection) class THASH
 
         aAdd(self:aTHash,{uSection,Array(0)})
 
-        __uSection:=uSection
-        __nSection:=len(self:aTHash)
-        __nLastID:=self:nID
-
         (self:nNodes++)
 
         lSuccess:=.T.
@@ -2666,10 +2628,6 @@ method RemoveSection(uSection) class THASH
 
         aDel(self:aTHash,nSection)
         aSize(self:aTHash,(--self:nNodes))
-
-        __uSection:=nil
-        __nSection:=0
-        __nLastID:=0
 
         lSuccess:=.T.
 
@@ -2823,17 +2781,8 @@ method ExistSection(uSection,nSection) class THASH
 
     if (self:lSection)
     
-        lExistSection:=((__nLastID==self:nID).and.(__nSection>0).and.__ArrayUtils():Compare(__uSection,uSection))
-
-        if (lExistSection)
-            nSection:=__nSection
-        else
-            nSection:=aScan(self:aTHash,{|aFindSection|(__ArrayUtils():Compare(aFindSection[HASH_SECTION_POSITION],uSection))})
-            __nSection:=nSection
-            __uSection:=uSection
-            __nLastID:=self:nID
-            lExistSection:=(nSection>0)
-        endif
+        nSection:=aScan(self:aTHash,{|aFindSection|(__ArrayUtils():Compare(aFindSection[HASH_SECTION_POSITION],uSection))})
+        lExistSection:=(nSection>0)
 
     else
         

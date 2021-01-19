@@ -171,3 +171,5 @@ static function GetOctlFocus(oWnd)
     ENDEXCEPTION
 
     return(oCtlFocus)
+
+#include "tryexception.ch"
