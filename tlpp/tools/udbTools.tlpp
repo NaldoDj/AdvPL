@@ -1,9 +1,16 @@
 #include "totvs.ch"
 #include "parmtype.ch"
 
-/*namespace dna.udbTools*/
+class cdbTools
+    
+    static method dbToSDF(cQuery as character,cFile as character,lShow as logical) as logical
+    static method dbToXML(cQuery as character,cFile as character,lPicture as logical,lX3Titulo as logical,lShow as logical) as logical
+    static method dbToJSON(cQuery as character,cFile as character,cJSONMain as character,lX3Titulo as logical,lShow as logical,lIEmptyFields as logical,lHeader as logical,lRowNumber as logical) as logical
+    static method dbToDelim(cQuery as character,cFile as character,cDelim as character,cDelimRepl as character,lPicture as logical,lX3Titulo as logical,lShow as logical) as logical
 
-function u_dbToSDF(cQuery as character,cFile as character,lShow as logical) as logical
+end class
+
+static method dbToSDF(cQuery,cFile,lShow) class cdbTools
 
     local cMsg          as character
     local cMask         as character
@@ -15,6 +22,10 @@ function u_dbToSDF(cQuery as character,cFile as character,lShow as logical) as l
     local lRet          as logical
 
     local oudbToSDF		as object
+
+    paramtype cQuery as character optional
+    paramtype cFile as character optional
+    paramtype lShow as logical optional
 
     if (empty(cQuery))
         cMask:="Query(s) File | *.sql"
@@ -71,7 +82,7 @@ function u_dbToSDF(cQuery as character,cFile as character,lShow as logical) as l
 
     return(lRet)
 
-function u_dbToXML(cQuery as character,cFile as character,lPicture as logical,lX3Titulo as logical,lShow as logical) as logical
+static method dbToXML(cQuery,cFile,lPicture,lX3Titulo,lShow) class cdbTools
 
     local cMsg          as character
     local cMask         as character
@@ -83,6 +94,12 @@ function u_dbToXML(cQuery as character,cFile as character,lPicture as logical,lX
     local lRet          as logical
 
     local oudbToXML		as object
+
+    paramtype cQuery    as character    optional
+    paramtype cFile     as character    optional
+    paramtype lPicture  as logical      optional
+    paramtype lX3Titulo as logical      optional
+    paramtype lShow     as logical      optional
 
     if (empty(cQuery))
         cMask:="Query(s) File | *.sql"
@@ -139,7 +156,7 @@ function u_dbToXML(cQuery as character,cFile as character,lPicture as logical,lX
 
     return(lRet)
 
-function u_dbToJSON(cQuery as character,cFile as character,cJSONMain as character,lX3Titulo as logical,lShow as logical,lIEmptyFields as logical,lHeader as logical,lRowNumber as logical) as logical
+static method dbToJSON(cQuery,cFile,cJSONMain,lX3Titulo,lShow,lIEmptyFields,lHeader,lRowNumber) class cdbTools
 
     local cMsg          as character
     local cMask         as character
@@ -151,6 +168,15 @@ function u_dbToJSON(cQuery as character,cFile as character,cJSONMain as characte
     local lRet          as logical
 
     local oudbToJSON	as object
+
+    paramtype cQuery        as character    optional
+    paramtype cFile         as character    optional
+    paramtype cJSONMain     as character    optional
+    paramtype lX3Titulo     as logical      optional
+    paramtype lShow         as logical      optional
+    paramtype lIEmptyFields as logical      optional
+    paramtype lHeader       as logical      optional
+    paramtype lRowNumber    as logical      optional
 
     if (empty(cQuery))
         cMask:="Query(s) File | *.sql"
@@ -207,7 +233,7 @@ function u_dbToJSON(cQuery as character,cFile as character,cJSONMain as characte
 
     return(lRet)
 
-function u_dbToDelim(cQuery as character,cFile as character,cDelim as character,cDelimRepl as character,lPicture as logical,lX3Titulo as logical,lShow as logical) as logical
+static method dbToDelim(cQuery,cFile,cDelim,cDelimRepl,lPicture,lX3Titulo,lShow) class cdbTools
 
     local cMsg          as character
     local cMask         as character
@@ -219,6 +245,14 @@ function u_dbToDelim(cQuery as character,cFile as character,cDelim as character,
     local lRet          as logical
 
     local oudbToDelim	as object
+
+    paramtype cQuery        as character    optional
+    paramtype cFile         as character    optional
+    paramtype cDelim        as character    optional
+    paramtype cDelimRepl    as character    optional
+    paramtype lPicture      as logical      optional
+    paramtype lX3Titulo     as logical      optional
+    paramtype lShow         as logical      optional
 
     if (empty(cQuery))
         cMask:="Query(s) File | *.sql"

@@ -408,8 +408,6 @@ static function ToDelim(cQuery as character,cFile as character,cDelim as charact
     DEFAULT lPicture:=.T.
     DEFAULT lX3Titulo:=.F.
 
-    cAlias:=getNextAlias()
-
     begin sequence
 
         if (empty(cQuery))
@@ -424,6 +422,7 @@ static function ToDelim(cQuery as character,cFile as character,cDelim as charact
         endif
 
         if (select(cQuery)==0)
+            cAlias:=getNextAlias()
             MsAguarde({||lMsOpenDB:=MsOpenDBF(.T.,"TOPCONN",TCGenQry(nil,nil,cQuery),cAlias,.T.,.T.,.F.,.F.)},"Selecionando dados no SGBD")
         else
             cAlias:=cQuery
@@ -605,8 +604,6 @@ static function ToSDF(cQuery as character,cFile as character) as logical
 
     aArea:=getArea()
 
-    cAlias:=getNextAlias()
-
     DEFAULT cFile:=(getFileTmp("")+".csv")
 
     begin sequence
@@ -623,6 +620,7 @@ static function ToSDF(cQuery as character,cFile as character) as logical
         endif
 
         if (select(cQuery)==0)
+            cAlias:=getNextAlias()
             MsAguarde({||lMsOpenDB:=MsOpenDBF(.T.,"TOPCONN",TCGenQry(nil,nil,cQuery),cAlias,.T.,.T.,.F.,.F.)},"Selecionando dados no SGBD")
         else
             cAlias:=cQuery
@@ -664,8 +662,6 @@ static function ToXML(cQuery as character,cFile as character,lPicture as logical
 
     aArea:=getArea()
 
-    cAlias:=getNextAlias()
-
     DEFAULT cFile:=(getFileTmp("")+".xml")
 
     begin sequence
@@ -682,6 +678,7 @@ static function ToXML(cQuery as character,cFile as character,lPicture as logical
         endif
 
         if (select(cQuery)==0)
+            cAlias:=getNextAlias()
             MsAguarde({||lMsOpenDB:=MsOpenDBF(.T.,"TOPCONN",TCGenQry(nil,nil,cQuery),cAlias,.T.,.T.,.F.,.F.)},"Selecionando dados no SGBD")
         else
             cAlias:=cQuery
@@ -823,8 +820,6 @@ static function ToJSON(cQuery as character,cFile as character,cJSONMain as chara
 
     aArea:=getArea()
 
-    cAlias:=getNextAlias()
-
     DEFAULT cFile:=(getFileTmp("")+".json")
 
     begin sequence
@@ -841,6 +836,8 @@ static function ToJSON(cQuery as character,cFile as character,cJSONMain as chara
         endif
 
         if (select(cQuery)==0)
+            cAlias:=getNextAlias()
+
             MsAguarde({||lMsOpenDB:=MsOpenDBF(.T.,"TOPCONN",TCGenQry(nil,nil,cQuery),cAlias,.T.,.T.,.F.,.F.)},"Selecionando dados no SGBD")
         else
             cAlias:=cQuery

@@ -1,6 +1,7 @@
 #include "totvs.ch"
 #include "shell.ch"
 #include "dbstruct.ch"
+#include "parmtype.ch"
 
 /*/{Protheus.doc} utoXML
 @author Marinaldo de Jesus (Facile)
@@ -11,7 +12,11 @@
 @type function
 /*/
 
-function u_QryToXML(cQuery,cFile,cExcelTitle,lPicture,lX3Titulo,leecView) as logical
+class utoXML
+    static method QryToXML(cQuery as character,cFile as character,cExcelTitle as character,lPicture as logical,lX3Titulo as logical,leecView as logical) as logical
+end class
+
+static method QryToXML(cQuery,cFile,cExcelTitle,lPicture,lX3Titulo,leecView) class utoXML
 
     local cMask         as character
     local cTitle        as character
