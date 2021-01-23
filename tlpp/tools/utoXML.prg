@@ -112,8 +112,6 @@ static function ToXML(cQuery as character,cFile as character,cExcelTitle as char
 
     aArea:=getArea()
 
-    cAlias:=getNextAlias()
-
     DEFAULT cFile:=(getFileTmp("")+".xml")
 
     begin sequence
@@ -132,6 +130,7 @@ static function ToXML(cQuery as character,cFile as character,cExcelTitle as char
         lMsOpenDB:=(select(cQuery)>0)
         
         if (!lMsOpenDB)
+            cAlias:=getNextAlias()
             MsAguarde({||lMsOpenDB:=MsOpenDBF(.T.,"TOPCONN",TCGenQry(nil,nil,cQuery),cAlias,.T.,.T.,.F.,.F.)},"Selecionando dados no SGBD","Aguarde...")
         else
             cAlias:=cQuery

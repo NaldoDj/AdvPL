@@ -1,12 +1,18 @@
 #include "totvs.ch"
 #include "fileio.ch"
+#include "parmtype.ch"
 
 class evalBlock
-    static method EvalBlock(bEval,xParameter,lShowHelp,cHelp,cMsgHelp) as logical
-    static method Execute(uExec,lShowHelp,cHelp,cMsgHelp) as logical
+    static method EvalBlock(bEval as block,xParameter,lShowHelp as logical,cHelp as character,cMsgHelp as character) as logical
+    static method Execute(uExec,lShowHelp as logical,cHelp as character,cMsgHelp as character) as logical
+    static method BreakError(oError as object,lHasError as logical,lShowHelp as logical,cHelp as character,cMsgHelp as character) as logical
 end class
 
 static method EvalBlock(bEval,xParameter,lShowHelp,cHelp,cMsgHelp) class evalBlock
+    paramtype bEval as block 
+    paramtype lShowHelp as logical optional
+    paramtype cHelp as character optional
+    paramtype cMsgHelp as character optional
     return(EvalBlock(@bEval,@xParameter,@lShowHelp,@cHelp,@cMsgHelp))
 static function EvalBlock(bEval as block,xParameter,lShowHelp as logical,cHelp as character,cMsgHelp as character) as logical
     local bExec     as block
@@ -19,6 +25,9 @@ static function EvalBlock(bEval as block,xParameter,lShowHelp as logical,cHelp a
     return(lReturn)
 
 static method Execute(uExec,lShowHelp,cHelp,cMsgHelp) class evalBlock
+    paramtype lShowHelp as logical optional
+    paramtype cHelp as character optional
+    paramtype cMsgHelp as character optional
     return(Execute(@uExec,@lShowHelp,@cHelp,@cMsgHelp))
 static function Execute(uExec,lShowHelp as logical,cHelp as character,cMsgHelp as character) as logical
 
@@ -47,7 +56,14 @@ static function Execute(uExec,lShowHelp as logical,cHelp as character,cMsgHelp a
 
     return(lExecOk)
 
-static procedure ErrorMessage(oError as object,lHasError as logical,lShowHelp as logical,cHelp as character,cMsgHelp as character)
+static method BreakError(oError,lHasError,lShowHelp,cHelp,cMsgHelp) class evalBlock
+    paramtype oError as object
+    paramtype lHasError as logical optional
+    paramtype lShowHelp as logical optional
+    paramtype cHelp as character optional
+    paramtype cMsgHelp as character optional
+    return(ErrorMessage(@oError,@lHasError,@lShowHelp,@cHelp,@cMsgHelp))
+static procedure ErrorMessage(oError as object,lHasError as logical,lShowHelp as logical,cHelp as character,cMsgHelp as character) as logical
 
     local aErros	as array
 
@@ -69,7 +85,7 @@ static procedure ErrorMessage(oError as object,lHasError as logical,lShowHelp as
 
     DEFAULT lShowHelp:=.F.
 
-    lHasError:=(oError:genCode>0)
+    lHasError:=((valtype(oError)=="O").and.(oError:genCode>0))
 
     if (lHasError)
 
@@ -122,7 +138,7 @@ static procedure ErrorMessage(oError as object,lHasError as logical,lShowHelp as
             cLogPath+="\"
         endif
 
-        if (direvalBlock():makeDir(cLogPath))
+        if (dirtools():makeDir(cLogPath))
             cfhLog:=cLogPath
             cfhLog+=DtoS(Date())
             cfhLog+="-"
@@ -182,8 +198,8 @@ static procedure ErrorMessage(oError as object,lHasError as logical,lShowHelp as
         	endif
         endif
 
+        break(oError)
+
     endif
 
-    break(oError)
-
-    return
+    return(lHasError)
