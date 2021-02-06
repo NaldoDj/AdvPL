@@ -183,7 +183,7 @@ static procedure ErrorMessage(oError as object,lHasError as logical,lShowHelp as
             if (IsBlind().or.(GetRemoteType()==(-1)))
                 MsgLogGrid(cEnvError,.F.)
             else
-                EECView(cEnvError,cHelp)
+                txtEditMemo():txtFileEdit(cEnvError,cHelp)
             endif
         endif
 

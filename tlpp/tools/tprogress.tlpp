@@ -1,29 +1,30 @@
 #include "totvs.ch"
+#include "parmtype.ch"
 
 //------------------------------------------------------------------------------------------------
     /*/
-        CLASS:tNDJProgress
+        CLASS:txtProgress
         Autor:Marinaldo de Jesus [BlackTDN:(http://www.blacktdn.com.br/)]
         Data:23/12/2013
         Descricao:Progresso em ASCII
-        Sintaxe:tNDJProgress():New()->Objeto do Tipo Progress
+        Sintaxe:txtProgress():New()->Objeto do Tipo Progress
     /*/
 //------------------------------------------------------------------------------------------------
-Class tNDJProgress From LongClassName
+Class txtProgress From LongClassName
 
-    data cClassName  AS CHARACTER
+    data cClassName  as character
 
-    private data aMethods   AS ARRAY
-    private data aProgress  AS ARRAY
+    private data aMethods   as array
+    private data aProgress  as array
 
-    private data lRandom    AS LOGICAL
+    private data lRandom    as logical
 
-    private data nMax       AS NUMERIC
-    private data nMethod    AS NUMERIC
-    private data nMethods   AS NUMERIC
-    private data nProgress  AS NUMERIC
+    private data nMax       as numeric
+    private data nMethod    as numeric
+    private data nMethods   as numeric
+    private data nProgress  as numeric
 
-    private data lShuttle   AS LOGICAL
+    private data lShuttle   as logical
 
     public method New(cProgress,cToken)  CONSTRUCTOR
 
@@ -31,29 +32,34 @@ Class tNDJProgress From LongClassName
 
     public method SetProgress(cProgress,cToken)
 
-    public method Eval(cMethod,cAlign)
-    public method Progress()
-    public method Increment(cAlign)
-    public method Decrement(cAlign)
-    public method Shuttle(cAlign)
-    public method Junction(cAlign)
-    public method Dispersion(cAlign)
-    public method Disjunction(cAlign)
-    public method Union(cAlign)
-    public method Occult(cAlign)
-    public method Random(cAlign)
+    public method Eval(cMethod,cAlign) as character
+    public method Progress() as character
+    public method Increment(cAlign) as character
+    public method Decrement(cAlign) as character
+    public method Shuttle(cAlign) as character
+    public method Junction(cAlign) as character
+    public method Dispersion(cAlign) as character
+    public method Disjunction(cAlign) as character
+    public method Union(cAlign) as character
+    public method Occult(cAlign) as character
+    public method Random(cAlign) as character
 
-    public method GetnMax()
-    public method GetnProgress()
+    public method GetnMax() as numeric
+    public method GetnProgress() as numeric
 
-    public method SetRandom(lSet)
+    public method SetRandom(lSet)   as logical
+    public method GetRandom()       as logical
 
 endclass
 
-function u_tNDJProgress(cProgress,cToken)
-    return(tNDJProgress():New(@cProgress,@cToken))
+function u_txtProgress(cProgress as character,cToken as character)
+    return(txtProgress():New(@cProgress,@cToken))
 
-method New(cProgress,cToken) Class tNDJProgress
+method New(cProgress,cToken) Class txtProgress
+
+    paramtype cProgress as character optional
+    paramtype cToken    as character optional
+
     self:ClassName()
     self:aMethods:=Array(0)
     self:aProgress:= Array(0)
@@ -66,14 +72,16 @@ method New(cProgress,cToken) Class tNDJProgress
     self:SetProgress(@cProgress,@cToken)
     return(self)
 
-method ClassName() Class tNDJProgress
-    self:cClassName:="TNDJPROGRESS"
+method ClassName() Class txtProgress
+    self:cClassName:="txtProgress"
     return(self:cClassName)
 
-method SetProgress(cProgress,cToken) Class tNDJProgress
+method SetProgress(cProgress,cToken) Class txtProgress
     local lMacro    as logical
     DEFAULT cProgress:="-;\;|;/"
+    paramtype cProgress as character optional
     DEFAULT cToken:=";"
+    paramtype cToken    as character optional
     lMacro:=(SubStr(cProgress,1,1)=="&")
     if (lMacro)
         cProgress:=SubStr(cProgress,2)
@@ -102,10 +110,12 @@ method SetProgress(cProgress,cToken) Class tNDJProgress
     self:nProgress:=0
     return(self)
 
-method Eval(cMethod,cAlign) Class tNDJProgress
+method Eval(cMethod,cAlign) Class txtProgress
     local cEval     as character
     local nMethod   as numeric
     DEFAULT cMethod:="PROGRESS"
+    paramtype cMethod as character optional
+    paramtype cAlign  as character optional
     cMethod:=Upper(AllTrim(cMethod))
     nMethod:=Max(aScan(self:aMethods,{|m|m==cMethod}),1)
     cMethod:=self:aMethods[nMethod]
@@ -135,15 +145,17 @@ method Eval(cMethod,cAlign) Class tNDJProgress
     endcase
     return(cEval)
 
-method Progress() Class tNDJProgress
+method Progress() Class txtProgress
     return(self:aProgress[IF(++self:nProgress>self:nMax,self:nProgress:=1,self:nProgress)])
 
-method Increment(cAlign) Class tNDJProgress
+method Increment(cAlign) Class txtProgress
     
     local cPADFunc      as character
     local cProgress     as character
     local nProgress     as numeric
     local nsProgress    as numeric
+
+    paramtype cAlign  as character optional
 
     cPADFunc:="PAD"
     cProgress:=""
@@ -178,12 +190,14 @@ method Increment(cAlign) Class tNDJProgress
 
     return(&cPADFunc.(cProgress,self:nMax))
 
-method Decrement(cAlign) Class tNDJProgress
+method Decrement(cAlign) Class txtProgress
     DEFAULT cAlign:="L"
+    paramtype cAlign  as character optional
     return(self:Increment(cAlign))
 
-method Shuttle(cAlign) Class tNDJProgress
+method Shuttle(cAlign) Class txtProgress
     local cEval as character
+    paramtype cAlign  as character optional
     if (.NOT.(self:lShuttle).and.(self:nProgress>=self:nMax))
         self:lShuttle:=.T.
     elseif (self:lShuttle.and.(self:nProgress>=self:nMax))
@@ -198,13 +212,15 @@ method Shuttle(cAlign) Class tNDJProgress
     endif
     return(self:Eval(cEval,@cAlign))
 
-method Junction(cAlign) Class tNDJProgress
+method Junction(cAlign) Class txtProgress
 
     local cLToR         as character
     local cRToL         as character
     local cProgress     as character
     local cPADFunc      as character
     local nProgress     as numeric
+
+    paramtype cAlign  as character optional
 
     cLToR:=""
     cRToL:=""
@@ -246,9 +262,10 @@ method Junction(cAlign) Class tNDJProgress
 
     return(&cPADFunc.(cProgress,self:nMax))
 
-method Dispersion(cAlign) Class tNDJProgress
+method Dispersion(cAlign) Class txtProgress
     local cEval as character
     DEFAULT cAlign:="R" //L,C,R
+    paramtype cAlign  as character optional
     if (Empty(cAlign))
         cAlign:="R"
     endif
@@ -259,20 +276,21 @@ method Dispersion(cAlign) Class tNDJProgress
     endif
     return(self:Eval(cEval,"C"))
 
-method Disjunction(cAlign) Class tNDJProgress
+method Disjunction(cAlign) Class txtProgress
     local cPADFunc  as character
     local cProgress as character
     local nAT       as numeric
     cPADFunc:="PAD"
     cProgress:=""
     DEFAULT cAlign:="C" //L,C,R
+    paramtype cAlign  as character optional
     if (Empty(cAlign))
         cAlign:="C"
     endif
     if (++self:nProgress>self:nMax)
         self:nProgress:=1
     endif
-    aEval(self:aProgress,{|p,n|cProgress+=IF(self:lRandom.and.((__Random(n,self:nMax)%__Random(1,5))==0),Space(Len(p)),p)})
+    aEval(self:aProgress,{|p,n|cProgress+=IF(self:GetRandom().and.((__Random(n,self:nMax)%__Random(1,5))==0),Space(Len(p)),p)})
     if (self:nProgress>1)
         nAT:=Int(self:nMax/self:nProgress)
         cProgress:=SubStr(cProgress,1,nAT)
@@ -281,7 +299,7 @@ method Disjunction(cAlign) Class tNDJProgress
     cPADFunc+=cAlign
     return(&cPADFunc.(cProgress,self:nMax))
 
-method Union(cAlign) Class tNDJProgress
+method Union(cAlign) Class txtProgress
     local cPADFunc  as character
     local cProgress as character
     local nAT       as numeric
@@ -289,13 +307,14 @@ method Union(cAlign) Class tNDJProgress
     cPADFunc:="PAD"
     cProgress:=""
     DEFAULT cAlign:="C" //L,C,R
+    paramtype cAlign  as character optional
     IF (Empty(cAlign))
         cAlign:="C"
     endif
     if (++self:nProgress>self:nMax)
         self:nProgress:=1
     endif
-    aEval(self:aProgress,{|p,n|cProgress+=IF(self:lRandom.and.((__Random(n,self:nMax)%__Random(1,5))==0),Space(Len(p)),p)})
+    aEval(self:aProgress,{|p,n|cProgress+=IF(self:GetRandom().and.((__Random(n,self:nMax)%__Random(1,5))==0),Space(Len(p)),p)})
     if (self:nProgress>1)
         nAT:=Round(self:nMax/self:nProgress,0)
         if (Mod(self:nMax,2)==0)
@@ -308,7 +327,7 @@ method Union(cAlign) Class tNDJProgress
     cPADFunc+=cAlign
     return(&cPADFunc.(cProgress,self:nMax))
 
-method Occult(cAlign) Class tNDJProgress
+method Occult(cAlign) Class txtProgress
     local cPADFunc      as character
     local cProgress     as character
     local nProgress     as numeric
@@ -316,6 +335,7 @@ method Occult(cAlign) Class tNDJProgress
     cPADFunc:="PAD"
     cProgress:=""
     DEFAULT cAlign:="L" //L,C,R
+    paramtype cAlign  as character optional
     IF Empty(cAlign)
         cAlign:="L"
     endif
@@ -339,7 +359,8 @@ method Occult(cAlign) Class tNDJProgress
     cPADFunc+=cAlign
     return(&cPADFunc.(cProgress,self:nMax))
 
-method Random(cAlign) Class tNDJProgress
+method Random(cAlign) Class txtProgress
+    paramtype cAlign  as character optional
     if ((self:nMethod==0).or.(self:nProgress>=self:nMax))
         self:nMethod:=Min(__Random(1,self:nMethods+1),self:nMethods)
         while (("RANDOM"$self:aMethods[self:nMethod]).or.("PROGRESS"$self:aMethods[self:nMethod]))
@@ -348,17 +369,21 @@ method Random(cAlign) Class tNDJProgress
     endif
     return(self:Eval(self:aMethods[self:nMethod],@cAlign))
 
-method SetRandom(lSet) Class tNDJProgress
+method SetRandom(lSet) Class txtProgress
     local lRandom   as logical
     lRandom:=self:lRandom
     DEFAULT lSet:=.T.
+    paramtype lSet  as logical optional
     self:lRandom:=lSet
     return(lRandom)
 
-method GetnMax() Class tNDJProgress
+method GetRandom()  Class txtProgress
+    return(self:lRandom)    
+
+method GetnMax() Class txtProgress
     return(self:nMax)
 
-method GetnProgress() Class tNDJProgress
+method GetnProgress() Class txtProgress
     return(self:nProgress)
 
 static Function _StrTokArr(cStr,cToken)

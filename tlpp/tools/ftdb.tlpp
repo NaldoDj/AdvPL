@@ -212,34 +212,38 @@ static function ReadFile(self as object) as numeric
 
     fSeek(self:nfHandle,0)
 
-    cBuffer:=""
-    while (nBytesRead<=self:nFileSize)
-        cBuffer+=fReadStr(@self:nfHandle,@self:nBufferSize)
-        nBytesRead+=self:nBufferSize
-        lCRLF:=(self:cCRLF$cBuffer)
-        if (lCRLF)
-            while (lCRLF)
+    begin transaction
+
+        cBuffer:=""
+        while (nBytesRead<=self:nFileSize)
+            cBuffer+=fReadStr(@self:nfHandle,@self:nBufferSize)
+            nBytesRead+=self:nBufferSize
+            lCRLF:=(self:cCRLF$cBuffer)
+            if (lCRLF)
+                while (lCRLF)
+                    nLines++
+                    nATCRLF:=AT(self:cCRLF,cBuffer)
+                    cLine:=subStr(cBuffer,1,(nATCRLF+nATPlus))
+                    cBuffer:=subStr(cBuffer,len(cLine)+1)
+                    cLine:=strTran(cLine,self:cCRLF,"")
+                    self:ft_fAppend(cLine)
+                    cLine:=""
+                    lCRLF:=(self:cCRLF$cBuffer)
+                end while
+            else
                 nLines++
-                nATCRLF:=AT(self:cCRLF,cBuffer)
-                cLine:=subStr(cBuffer,1,(nATCRLF+nATPlus))
-                cBuffer:=subStr(cBuffer,len(cLine)+1)
-                cLine:=strTran(cLine,self:cCRLF,"")
-                self:ft_fAppend(cLine)
-                cLine:=""
-                lCRLF:=(self:cCRLF$cBuffer)
-            end while
-        else
+                self:ft_fAppend(cBuffer)
+                cBuffer:=""
+            endif
+        end while
+
+        if (!(empty(cBuffer)))
             nLines++
             self:ft_fAppend(cBuffer)
             cBuffer:=""
         endif
-    end while
 
-    if (!(empty(cBuffer)))
-        nLines++
-        self:ft_fAppend(cBuffer)
-        cBuffer:=""
-    endif
+    end transaction
 
     return(nLines)
 

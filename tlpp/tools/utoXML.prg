@@ -13,10 +13,10 @@
 /*/
 
 class utoXML
-    static method QryToXML(cQuery as character,cFile as character,cExcelTitle as character,lPicture as logical,lX3Titulo as logical,leecView as logical) as logical
+    static method QryToXML(cQuery as character,cFile as character,cExcelTitle as character,lPicture as logical,lX3Titulo as logical,ltxtEditMemo as logical) as logical
 end class
 
-static method QryToXML(cQuery,cFile,cExcelTitle,lPicture,lX3Titulo,leecView) class utoXML
+static method QryToXML(cQuery,cFile,cExcelTitle,lPicture,lX3Titulo,ltxtEditMemo) class utoXML
 
     local cMask         as character
     local cTitle        as character
@@ -46,25 +46,25 @@ static method QryToXML(cQuery,cFile,cExcelTitle,lPicture,lX3Titulo,leecView) cla
         endif
     endif
 
-    DEFAULT leecView:=.F.
-    if (leecView)
-        leecView:=(!isBlind())
+    DEFAULT ltxtEditMemo:=.F.
+    if (ltxtEditMemo)
+        ltxtEditMemo:=(!isBlind())
     endif
 
     if (!empty(cQuery) )
         lRet:=qToXML(@cQuery,@cFile,@cExcelTitle,@lPicture,@lX3Titulo)
-        if (leecView)
+        if (ltxtEditMemo)
             if (lRet)
-                eeCView("Query File :: "+cQuery+CRLF+"Arquivo Excel :: "+cFile+CRLF,"Arquivo Gerado com Sucesso")
+                txtEditMemo():txtFileEdit("Query File :: "+cQuery+CRLF+"Arquivo Excel :: "+cFile+CRLF,"Arquivo Gerado com Sucesso")
             else
-                eeCView("Query File :: "+cQuery+CRLF+"Arquivo Excel :: "+cFile+CRLF,"Problema na Geração do Arquivo")
+                txtEditMemo():txtFileEdit("Query File :: "+cQuery+CRLF+"Arquivo Excel :: "+cFile+CRLF,"Problema na Geração do Arquivo")
             endif
         endif
     else
         lRet:=.F.
         DEFAULT cFile:=""
-        if (leecView)
-            eeCView("Query File :: "+cQuery+CRLF+"Arquivo Excel :: "+cFile+CRLF,"Arquvo(s) não Encontrado(s)")
+        if (ltxtEditMemo)
+            txtEditMemo():txtFileEdit("Query File :: "+cQuery+CRLF+"Arquivo Excel :: "+cFile+CRLF,"Arquvo(s) não Encontrado(s)")
         endif
     endif
 

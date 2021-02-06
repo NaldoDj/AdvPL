@@ -55,7 +55,7 @@ static method dbToSDF(cQuery,cFile,lShow) class cdbTools
             cMsg:="Query File :: "+cQuery+CRLF+"TXT File :: "+cFile+CRLF
             cTitle:="Arquivo Gerado com Sucesso"
             if (lShow)
-                eeCView(cMsg,cTitle)
+                txtEditMemo():txtFileEdit(cMsg,cTitle)
             else
                 FWLogMsg("INFO"/*<cSeverity>*/,/*[cTransactionId]*/,"UDBTOOLS"/*<cGroup>*/,cTitle/*<cCategory>*/,ProcName()/*<cStep >*/,ProcName()/*<cMsgId>*/,cMsg/*<cMessage>*/,0/*<nMensure>*/,0/*<nElapseTime>*/,array(0)/*<aMessage>*/)
             endif
@@ -63,7 +63,7 @@ static method dbToSDF(cQuery,cFile,lShow) class cdbTools
             cMsg:="Query File :: "+cQuery+CRLF+"TXT File :: "+cFile+CRLF
             cTitle:="Problema na Geração do Arquivo"
             if (lShow)
-                eeCView(cMsg,cTitle)
+                txtEditMemo():txtFileEdit(cMsg,cTitle)
             else
                 FWLogMsg("ERROR"/*<cSeverity>*/,/*[cTransactionId]*/,"UDBTOOLS"/*<cGroup>*/,cTitle/*<cCategory>*/,ProcName()/*<cStep >*/,ProcName()/*<cMsgId>*/,cMsg/*<cMessage>*/,0/*<nMensure>*/,0/*<nElapseTime>*/,array(0)/*<aMessage>*/)
             endif
@@ -74,7 +74,7 @@ static method dbToSDF(cQuery,cFile,lShow) class cdbTools
         cMsg:="Query File :: "+cQuery+CRLF+"TXT File :: "+cFile+CRLF
         cTitle:="Arquvo(s) não Encontrado(s)"
         if (lShow)
-            eeCView(cMsg,cTitle)
+            txtEditMemo():txtFileEdit(cMsg,cTitle)
         else
             FWLogMsg("ERROR"/*<cSeverity>*/,/*[cTransactionId]*/,"UDBTOOLS"/*<cGroup>*/,cTitle/*<cCategory>*/,ProcName()/*<cStep >*/,ProcName()/*<cMsgId>*/,cMsg/*<cMessage>*/,0/*<nMensure>*/,0/*<nElapseTime>*/,array(0)/*<aMessage>*/)
         endif
@@ -129,7 +129,7 @@ static method dbToXML(cQuery,cFile,lPicture,lX3Titulo,lShow) class cdbTools
             cMsg:="Query File :: "+cQuery+CRLF+"XML File :: "+cFile+CRLF
             cTitle:="Arquivo Gerado com Sucesso"
             if (lShow)
-                eeCView(cMsg,cTitle)
+                txtEditMemo():txtFileEdit(cMsg,cTitle)
             else
                 FWLogMsg("INFO"/*<cSeverity>*/,/*[cTransactionId]*/,"UDBTOOLS"/*<cGroup>*/,cTitle/*<cCategory>*/,ProcName()/*<cStep >*/,ProcName()/*<cMsgId>*/,cMsg/*<cMessage>*/,0/*<nMensure>*/,0/*<nElapseTime>*/,array(0)/*<aMessage>*/)
             endif
@@ -137,7 +137,7 @@ static method dbToXML(cQuery,cFile,lPicture,lX3Titulo,lShow) class cdbTools
             cMsg:="Query File :: "+cQuery+CRLF+"XML File :: "+cFile+CRLF
             cTitle:="Problema na Geração do Arquivo"
             if (lShow)
-                eeCView(cMsg,cTitle)
+                txtEditMemo():txtFileEdit(cMsg,cTitle)
             else
                 FWLogMsg("ERROR"/*<cSeverity>*/,/*[cTransactionId]*/,"UDBTOOLS"/*<cGroup>*/,cTitle/*<cCategory>*/,ProcName()/*<cStep >*/,ProcName()/*<cMsgId>*/,cMsg/*<cMessage>*/,0/*<nMensure>*/,0/*<nElapseTime>*/,array(0)/*<aMessage>*/)
             endif
@@ -148,7 +148,7 @@ static method dbToXML(cQuery,cFile,lPicture,lX3Titulo,lShow) class cdbTools
         cMsg:="Query File :: "+cQuery+CRLF+"XML File :: "+cFile+CRLF
         cTitle:="Arquvo(s) não Encontrado(s)"
         if (lShow)
-            eeCView(cMsg,cTitle)
+            txtEditMemo():txtFileEdit(cMsg,cTitle)
         else
             FWLogMsg("ERROR"/*<cSeverity>*/,/*[cTransactionId]*/,"UDBTOOLS"/*<cGroup>*/,cTitle/*<cCategory>*/,ProcName()/*<cStep >*/,ProcName()/*<cMsgId>*/,cMsg/*<cMessage>*/,0/*<nMensure>*/,0/*<nElapseTime>*/,array(0)/*<aMessage>*/)
         endif
@@ -206,7 +206,7 @@ static method dbToJSON(cQuery,cFile,cJSONMain,lX3Titulo,lShow,lIEmptyFields,lHea
         cTitle:="Arquivo Gerado com Sucesso"
         if (lRet)
             if (lShow)
-                eeCView(cMsg,cTitle)
+                txtEditMemo():txtFileEdit(cMsg,cTitle)
             else
                 FWLogMsg("INFO"/*<cSeverity>*/,/*[cTransactionId]*/,"UDBTOOLS"/*<cGroup>*/,cTitle/*<cCategory>*/,ProcName()/*<cStep >*/,ProcName()/*<cMsgId>*/,cMsg/*<cMessage>*/,0/*<nMensure>*/,0/*<nElapseTime>*/,array(0)/*<aMessage>*/)
             endif
@@ -214,7 +214,7 @@ static method dbToJSON(cQuery,cFile,cJSONMain,lX3Titulo,lShow,lIEmptyFields,lHea
             cMsg:="Query File :: "+cQuery+CRLF+"JSON File :: "+cFile+CRLF
             cTitle:="Problema na Geração do Arquivo"
             if (lShow)
-                eeCView(cMsg,cTitle)
+                txtEditMemo():txtFileEdit(cMsg,cTitle)
             else
                 FWLogMsg("ERROR"/*<cSeverity>*/,/*[cTransactionId]*/,"UDBTOOLS"/*<cGroup>*/,cTitle/*<cCategory>*/,ProcName()/*<cStep >*/,ProcName()/*<cMsgId>*/,cMsg/*<cMessage>*/,0/*<nMensure>*/,0/*<nElapseTime>*/,array(0)/*<aMessage>*/)
             endif
@@ -225,7 +225,7 @@ static method dbToJSON(cQuery,cFile,cJSONMain,lX3Titulo,lShow,lIEmptyFields,lHea
         cMsg:="Query File :: "+cQuery+CRLF+"JSON File :: "+cFile+CRLF
         cTitle:="Arquvo(s) não Encontrado(s)"
         if (lShow)
-            eeCView(cMsg,cTitle)
+            txtEditMemo():txtFileEdit(cMsg,cTitle)
         else
             FWLogMsg("ERROR"/*<cSeverity>*/,/*[cTransactionId]*/,"UDBTOOLS"/*<cGroup>*/,cTitle/*<cCategory>*/,ProcName()/*<cStep >*/,ProcName()/*<cMsgId>*/,cMsg/*<cMessage>*/,0/*<nMensure>*/,0/*<nElapseTime>*/,array(0)/*<aMessage>*/)
         endif
@@ -282,7 +282,7 @@ static method dbToDelim(cQuery,cFile,cDelim,cDelimRepl,lPicture,lX3Titulo,lShow)
             cMsg:="Query File :: "+cQuery+CRLF+"CSV File :: "+cFile+CRLF
             cTitle:="Arquivo Gerado com Sucesso"
             if (lShow)
-                eeCView(cMsg,cTitle)
+                txtEditMemo():txtFileEdit(cMsg,cTitle)
             else
                 FWLogMsg("INFO"/*<cSeverity>*/,/*[cTransactionId]*/,"UDBTOOLS"/*<cGroup>*/,cTitle/*<cCategory>*/,ProcName()/*<cStep >*/,ProcName()/*<cMsgId>*/,cMsg/*<cMessage>*/,0/*<nMensure>*/,0/*<nElapseTime>*/,array(0)/*<aMessage>*/)
             endif
@@ -290,7 +290,7 @@ static method dbToDelim(cQuery,cFile,cDelim,cDelimRepl,lPicture,lX3Titulo,lShow)
             cMsg:="Query File :: "+cQuery+CRLF+"CSV File :: "+cFile+CRLF
             cTitle:="Problema na Geração do Arquivo"
             if (lShow)
-                eeCView(cMsg,cTitle)
+                txtEditMemo():txtFileEdit(cMsg,cTitle)
             else
                 FWLogMsg("ERROR"/*<cSeverity>*/,/*[cTransactionId]*/,"UDBTOOLS"/*<cGroup>*/,cTitle/*<cCategory>*/,ProcName()/*<cStep >*/,ProcName()/*<cMsgId>*/,cMsg/*<cMessage>*/,0/*<nMensure>*/,0/*<nElapseTime>*/,array(0)/*<aMessage>*/)
             endif
@@ -300,7 +300,7 @@ static method dbToDelim(cQuery,cFile,cDelim,cDelimRepl,lPicture,lX3Titulo,lShow)
         cMsg:="Query File :: "+cQuery+CRLF+"CSV File :: "+cFile+CRLF
         cTitle:="Arquvo(s) não Encontrado(s)"
         if (lShow)
-            eeCView(cMsg,cTitle)
+            txtEditMemo():txtFileEdit(cMsg,cTitle)
         else
             FWLogMsg("ERROR"/*<cSeverity>*/,/*[cTransactionId]*/,"UDBTOOLS"/*<cGroup>*/,cTitle/*<cCategory>*/,ProcName()/*<cStep >*/,ProcName()/*<cMsgId>*/,cMsg/*<cMessage>*/,0/*<nMensure>*/,0/*<nElapseTime>*/,array(0)/*<aMessage>*/)
         endif

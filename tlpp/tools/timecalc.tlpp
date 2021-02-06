@@ -2,41 +2,29 @@
 
 //------------------------------------------------------------------------------------------------
     /*/
-        CLASS:tNDJTimeCalc
+        class:timeCalc
         Autor:Marinaldo de Jesus [BlackTDN:(http://www.blacktdn.com.br/)]
         Data:23/12/2013
         Descricao:Calculo de Horas
-        Sintaxe:tNDJTimeCalc():New()->Objeto do Tipo TimeCalc
     /*/
 //------------------------------------------------------------------------------------------------
-Class tNDJTimeCalc From LongClassName
-    data cClassName
-    public Method New() CONSTRUCTOR
-    public Method ClassName()
-    public Method HMSToTime(nHours,nMinuts,nSeconds)
-    public Method SecsToHMS(nSecsToHMS,nHours,nMinuts,nSeconds,cRet)
-    public Method SecsToTime(nSecs)
-    public Method TimeToSecs(cTime)
-    public Method SecsToHrs(nSeconds)
-    public Method HrsToSecs(nHours)
-    public Method SecsToMin(nSeconds)
-    public Method MinToSecs(nMinuts)
-    public Method IncTime(cTime,nIncHours,nIncMinuts,nIncSeconds)
-    public Method DecTime(cTime,nDecHours,nDecMinuts,nDecSeconds)
-    public Method Time2NextDay(cTime,dDate)
-    public Method ExtractTime(cTime,nHours,nMinutes,nSeconds,cRet)
-    public Method AverageTime(cTime,nDividendo,lMiliSecs)
-EndClass
+class timeCalc
+    static method HMSToTime(nHours as numeric,nMinuts as numeric,nSeconds as numeric) as character
+    static method SecsToHMS(nSecsToHMS as numeric,nHours as numeric,nMinuts as numeric,nSeconds as numeric,cRet as character) as character
+    static method SecsToTime(nSecs as numeric) as character
+    static method TimeToSecs(cTime as character) as numeric
+    static method SecsToHrs(nSeconds as numeric) as numeric
+    static method HrsToSecs(nHours as numeric) as numeric
+    static method SecsToMin(nSeconds as numeric) as numeric
+    static method MinToSecs(nMinuts as numeric) as numeric
+    static method IncTime(cTime as character,nIncHours as numeric,nIncMinuts as numeric,nIncSeconds as numeric) as character
+    static method DecTime(cTime as character,nDecHours as numeric,nDecMinuts as numeric,nDecSeconds as numeric) as character
+    static method Time2NextDay(cTime as character,dDate as date) as array
+    static method ExtractTime(cTime as character,nHours as numeric,nMinutes as numeric,nSeconds as numeric,cRet as character) as numeric
+    static method AverageTime(cTime as character,nDividendo as numeric,lMiliSecs as logical) as character
+end class
 
-Method New() Class tNDJTimeCalc
-    self:ClassName()
-return(self)
-
-Method ClassName() Class tNDJTimeCalc
-    self:cClassName:="TNDJTIMECALC"
-return(self:cClassName)
-
-Method HMSToTime(nHours,nMinuts,nSeconds) Class tNDJTimeCalc
+static method HMSToTime(nHours,nMinuts,nSeconds) class timeCalc
 
     local cTime as character
 
@@ -51,9 +39,9 @@ Method HMSToTime(nHours,nMinuts,nSeconds) Class tNDJTimeCalc
     cTime+=":"
     cTime+=StrZero(Val(AllTrim(Str(nSeconds))),2)
 
-return(cTime)
+    return(cTime)
 
-Method SecsToHMS(nSecsToHMS,nHours,nMinuts,nSeconds,cRet) Class tNDJTimeCalc
+static method SecsToHMS(nSecsToHMS,nHours,nMinuts,nSeconds,cRet) class timeCalc
 
     local nRet  as numeric
     
@@ -62,9 +50,9 @@ Method SecsToHMS(nSecsToHMS,nHours,nMinuts,nSeconds,cRet) Class tNDJTimeCalc
     DEFAULT nSecsToHMS:=0
     DEFAULT cRet:="H"
 
-    nHours:=self:SecsToHrs(nSecsToHMS)
-    nMinuts:=self:SecsToMin(nSecsToHMS)
-    nSeconds:=(self:HrsToSecs(nHours)+self:MinToSecs(nMinuts))
+    nHours:=timeCalc():SecsToHrs(nSecsToHMS)
+    nMinuts:=timeCalc():SecsToMin(nSecsToHMS)
+    nSeconds:=(timeCalc():HrsToSecs(nHours)+timeCalc():MinToSecs(nMinuts))
     nSeconds:=(nSecsToHMS-nSeconds)
     nSeconds:=Int(nSeconds)
     nSeconds:=Mod(nSeconds,60)
@@ -77,9 +65,9 @@ Method SecsToHMS(nSecsToHMS,nHours,nMinuts,nSeconds,cRet) Class tNDJTimeCalc
         nRet:=nSeconds
     endif
 
-return(nRet)
+    return(nRet)
 
-Method SecsToTime(nSecs) Class tNDJTimeCalc
+static method SecsToTime(nSecs) class timeCalc
     
     local cTime     as character
     
@@ -87,13 +75,13 @@ Method SecsToTime(nSecs) Class tNDJTimeCalc
     local nMinuts   as numeric
     local nSeconds  as numeric
     
-    self:SecsToHMS(nSecs,@nHours,@nMinuts,@nSeconds)
+    timeCalc():SecsToHMS(nSecs,@nHours,@nMinuts,@nSeconds)
 
-    cTime:=self:HMSToTime(nHours,nMinuts,nSeconds)
+    cTime:=timeCalc():HMSToTime(nHours,nMinuts,nSeconds)
 
-return(cTime)
+    return(cTime)
 
-Method TimeToSecs(cTime) Class tNDJTimeCalc
+static method TimeToSecs(cTime) class timeCalc
 
     local nHours    as numeric
     local nMinuts   as numeric
@@ -101,37 +89,37 @@ Method TimeToSecs(cTime) Class tNDJTimeCalc
 
     DEFAULT cTime:="00:00:00"
 
-    self:ExtractTime(cTime,@nHours,@nMinuts,@nSeconds)
+    timeCalc():ExtractTime(cTime,@nHours,@nMinuts,@nSeconds)
 
     nMinuts+=__Hrs2Min(nHours)
     nSeconds+=(nMinuts*60)
 
-return(nSeconds)
+    return(nSeconds)
 
-Method SecsToHrs(nSeconds) Class tNDJTimeCalc
+static method SecsToHrs(nSeconds) class timeCalc
     local nHours as numeric
     nHours:=(nSeconds/3600)
     nHours:=Int(nHours)
-return(nHours)
+    return(nHours)
 
-Method HrsToSecs(nHours) Class tNDJTimeCalc
+static method HrsToSecs(nHours) class timeCalc
     local nSeconds as numeric
     nSeconds:=(nHours*3600)
-return(nSeconds)
+    return(nSeconds)
 
-Method SecsToMin(nSeconds) Class tNDJTimeCalc
+static method SecsToMin(nSeconds) class timeCalc
     local nMinuts as numeric
     nMinuts:=(nSeconds/60)
     nMinuts:=Int(nMinuts)
     nMinuts:=Mod(nMinuts,60)
-return(nMinuts)
+    return(nMinuts)
 
-Method MinToSecs(nMinuts) Class tNDJTimeCalc
+static method MinToSecs(nMinuts) class timeCalc
     local nSeconds as numeric
     nSeconds:=(nMinuts*60)
-return(nSeconds)
+    return(nSeconds)
 
-Method IncTime(cTime,nIncHours,nIncMinuts,nIncSeconds) Class tNDJTimeCalc
+static method IncTime(cTime,nIncHours,nIncMinuts,nIncSeconds) class timeCalc
 
     local nSeconds  as numeric
     local nMinuts   as numeric
@@ -141,16 +129,16 @@ Method IncTime(cTime,nIncHours,nIncMinuts,nIncSeconds) Class tNDJTimeCalc
     DEFAULT nIncMinuts:=0
     DEFAULT nIncSeconds:=0
 
-    self:ExtractTime(cTime,@nHours,@nMinuts,@nSeconds)
+    timeCalc():ExtractTime(cTime,@nHours,@nMinuts,@nSeconds)
 
     nHours+=nIncHours
     nMinuts+=nIncMinuts
     nSeconds+=nIncSeconds
-    nSeconds:=(self:HrsToSecs(nHours)+self:MinToSecs(nMinuts)+nSeconds)
+    nSeconds:=(timeCalc():HrsToSecs(nHours)+timeCalc():MinToSecs(nMinuts)+nSeconds)
 
-return(self:SecsToTime(nSeconds))
+    return(timeCalc():SecsToTime(nSeconds))
 
-Method DecTime(cTime,nDecHours,nDecMinuts,nDecSeconds) Class tNDJTimeCalc
+static method DecTime(cTime,nDecHours,nDecMinuts,nDecSeconds) class timeCalc
 
     local cTime     as character
     
@@ -162,27 +150,27 @@ Method DecTime(cTime,nDecHours,nDecMinuts,nDecSeconds) Class tNDJTimeCalc
     DEFAULT nDecMinuts:=0
     DEFAULT nDecSeconds:=0
 
-    self:ExtractTime(cTime,@nHours,@nMinuts,@nSeconds)
+    timeCalc():ExtractTime(cTime,@nHours,@nMinuts,@nSeconds)
 
     nHours-=nDecHours
     nMinuts-=nDecMinuts
     nSeconds-=nDecSeconds
-    nSeconds:=(self:HrsToSecs(nHours)+self:MinToSecs(nMinuts)+nSeconds)
+    nSeconds:=(timeCalc():HrsToSecs(nHours)+timeCalc():MinToSecs(nMinuts)+nSeconds)
 
-    cTime:=self:SecsToTime(nSeconds)
+    cTime:=timeCalc():SecsToTime(nSeconds)
 
-return(cTime)
+    return(cTime)
 
-Method Time2NextDay(cTime,dDate) Class tNDJTimeCalc
+static method Time2NextDay(cTime,dDate) class timeCalc
     local aNextDay  as array
     while (Val(cTime)>=24)
-        cTime:=self:DecTime(cTime,24)
+        cTime:=timeCalc():DecTime(cTime,24)
         ++dDate
     end while
     aNextDay:={cTime,dDate}
-return(aNextDay)
+    return(aNextDay)
 
-Method ExtractTime(cTime,nHours,nMinutes,nSeconds,cRet) Class tNDJTimeCalc
+static method ExtractTime(cTime,nHours,nMinutes,nSeconds,cRet) class timeCalc
 
     local nRet  as numeric
 
@@ -220,9 +208,9 @@ Method ExtractTime(cTime,nHours,nMinutes,nSeconds,cRet) Class tNDJTimeCalc
         nRet:=nSeconds
     endif
 
-return(nRet)
+    return(nRet)
 
-Method AverageTime(cTime,nDividendo,lMiliSecs) Class tNDJTimeCalc
+static method AverageTime(cTime,nDividendo,lMiliSecs) class timeCalc
 
     local cAverageTime  as character
 
@@ -236,7 +224,7 @@ Method AverageTime(cTime,nDividendo,lMiliSecs) Class tNDJTimeCalc
 
     if (nDividendo>0)
 
-        nSeconds:=self:TimeToSecs(cTime)
+        nSeconds:=timeCalc():TimeToSecs(cTime)
         nSeconds:=(nSeconds/nDividendo)
         nAverageTime:=Int(nSeconds)
 
@@ -244,7 +232,7 @@ Method AverageTime(cTime,nDividendo,lMiliSecs) Class tNDJTimeCalc
         nMiliSecs*=1000
         nMiliSecs:=Int(nMiliSecs)
 
-        cAverageTime:=self:SecsToTime(nAverageTime)
+        cAverageTime:=timeCalc():SecsToTime(nAverageTime)
 
     endif
 
@@ -254,18 +242,18 @@ Method AverageTime(cTime,nDividendo,lMiliSecs) Class tNDJTimeCalc
          cAverageTime+=(":"+StrZero(nMiliSecs,IF(nMiliSecs>999,4,3)))
     endif
 
-return(cAverageTime)
+    return(cAverageTime)
 
 //------------------------------------------------------------------------------------------------
     /*/
-        CLASS:tNDJRemaining
+        class:timeRemaining
         Autor:Marinaldo de Jesus [BlackTDN:(http://www.blacktdn.com.br/)]
         Data:23/12/2013
         Descricao:Calculo de Tempo Remanescente
-        Sintaxe:tNDJRemaining():New()->Objeto do Tipo Remaining
+        Sintaxe:timeRemaining():New()->Objeto do Tipo Remaining
     /*/
 //------------------------------------------------------------------------------------------------
-Class tNDJRemaining From tNDJTimeCalc
+class timeRemaining from timeCalc
 
     public data cAverageTime
     public data cEndTime
@@ -281,48 +269,47 @@ Class tNDJRemaining From tNDJTimeCalc
     //-------------------------------------------------------------------
         // EXPORTED:Instancia um novo objeto
     //-------------------------------------------------------------------
-    public Method New(nTotal) CONSTRUCTOR
+    public method New(nTotal) CONSTRUCTOR
 
     //-------------------------------------------------------------------
-        // EXPORTED:Retorna o Nome da Classe
+        // EXPORTED:Retorna o Nome da classe
     //-------------------------------------------------------------------
-    public Method ClassName()
+    public method className()
 
     //-------------------------------------------------------------------
         // EXPORTED:Seta novo Total para Calcule()
     //-------------------------------------------------------------------
-    public Method SetRemaining(nTotal)
+    public method SetRemaining(nTotal)
 
     //-------------------------------------------------------------------
         // EXPORTED:Para Obter os Tempos utilize o Metodo Calcule
     //-------------------------------------------------------------------
-    public Method Calcule(lProgress)
+    public method Calcule(lProgress)
 
     //-------------------------------------------------------------------
         // EXPORTED:Retorna os Valores das Propriedades
     //-------------------------------------------------------------------
-    public Method GetcAverageTime()
-    public Method GetcEndTime()
-    public Method GetcStartTime()
-    public Method GetcTimeDiff()
-    public Method GetcTRemaining()
-    public Method GetdEndTime()
-    public Method GetdStartTime()
-    public Method GetnProgress()
-    public Method GetnSRemaining()
-    public Method GetnTotal()
+    public method GetcAverageTime()
+    public method GetcEndTime()
+    public method GetcStartTime()
+    public method GetcTimeDiff()
+    public method GetcTRemaining()
+    public method GetdEndTime()
+    public method GetdStartTime()
+    public method GetnProgress()
+    public method GetnSRemaining()
+    public method GetnTotal()
 
-EndClass
+Endclass
 
-Method New(nTotal) Class tNDJRemaining
-    _Super:New()
+method New(nTotal) class timeRemaining
     self:SetRemaining(nTotal)
-return(self)
+    return(self)
 
-Method ClassName() Class tNDJRemaining
-return("TNDJREMAINING")
+method className() class timeRemaining
+    return("timeRemaining")
 
-Method SetRemaining(nTotal) Class tNDJRemaining
+method SetRemaining(nTotal) class timeRemaining
     DEFAULT nTotal:=1
     self:cAverageTime:="00:00:00:000"
     self:cEndTime:="00:00:00"
@@ -334,9 +321,9 @@ Method SetRemaining(nTotal) Class tNDJRemaining
     self:nProgress:=0
     self:nSRemaining:=0
     self:nTotal:=nTotal
-return(self)
+    return(self)
 
-Method Calcule(lProgress) Class tNDJRemaining
+method Calcule(lProgress) class timeRemaining
 
     local aEndTime      as array
 
@@ -362,12 +349,12 @@ Method Calcule(lProgress) Class tNDJRemaining
             nIncTime*=24
         endif
 
-        nTime:=(self:TimeToSecs(cTime)+IF(nIncTime>0,self:HrsToSecs(nIncTime),0))
-        nStartTime:=self:TimeToSecs(self:cStartTime)
+        nTime:=(timeCalc():TimeToSecs(cTime)+IF(nIncTime>0,timeCalc():HrsToSecs(nIncTime),0))
+        nStartTime:=timeCalc():TimeToSecs(self:cStartTime)
 
         nTimeDiff:=abs(nTime-nStartTime)
-        self:cTimeDiff:=self:SecsToTime(nTimeDiff)
-        self:cTRemaining:=self:SecsToTime(abs(nTimeDiff-nStartTime))
+        self:cTimeDiff:=timeCalc():SecsToTime(nTimeDiff)
+        self:cTRemaining:=timeCalc():SecsToTime(abs(nTimeDiff-nStartTime))
         self:nSRemaining:=nTimeDiff
 
         DEFAULT lProgress:=.T.
@@ -375,7 +362,7 @@ Method Calcule(lProgress) Class tNDJRemaining
             ++self:nProgress
         endif
 
-        self:cAverageTime:=self:AverageTime(self:cTimeDiff,self:nProgress,.T.)
+        self:cAverageTime:=timeCalc():AverageTime(self:cTimeDiff,self:nProgress,.T.)
 
         if (self:nTotal<self:nProgress)
             nTimeEnd:=self:nTotal
@@ -383,9 +370,9 @@ Method Calcule(lProgress) Class tNDJRemaining
             self:nProgress:=nTimeEnd
         endif
         nTimeEnd:=(((self:nTotal-self:nProgress)*self:nSRemaining)/self:nProgress)
-        self:cEndTime:=self:SecsToTime(nTimeEnd)
-        self:cEndTime:=self:IncTime(cTime,NIL,NIL,self:TimeToSecs(self:cEndTime))
-        aEndTime:=self:Time2NextDay(self:cEndTime,dDate)
+        self:cEndTime:=timeCalc():SecsToTime(nTimeEnd)
+        self:cEndTime:=timeCalc():IncTime(cTime,NIL,NIL,timeCalc():TimeToSecs(self:cEndTime))
+        aEndTime:=timeCalc():Time2NextDay(self:cEndTime,dDate)
         self:cEndTime:=aEndTime[1]
         self:dEndTime:=aEndTime[2]
 
@@ -393,32 +380,32 @@ Method Calcule(lProgress) Class tNDJRemaining
 
     return(self)
 
-Method GetcAverageTime() Class tNDJRemaining
-return(self:cAverageTime)
+method GetcAverageTime() class timeRemaining
+    return(self:cAverageTime)
 
-Method GetcEndTime() Class tNDJRemaining
-return(self:cEndTime)
+method GetcEndTime() class timeRemaining
+    return(self:cEndTime)
 
-Method GetcStartTime() Class tNDJRemaining
-return(self:cStartTime)
+method GetcStartTime() class timeRemaining
+    return(self:cStartTime)
 
-Method GetcTimeDiff() Class tNDJRemaining
-return(self:cTimeDiff)
+method GetcTimeDiff() class timeRemaining
+    return(self:cTimeDiff)
 
-Method GetcTRemaining() Class tNDJRemaining
-return(self:cTRemaining)
+method GetcTRemaining() class timeRemaining
+    return(self:cTRemaining)
 
-Method GetdEndTime() Class tNDJRemaining
-return(self:dEndTime)
+method GetdEndTime() class timeRemaining
+    return(self:dEndTime)
 
-Method GetdStartTime() Class tNDJRemaining
-return(self:dStartTime)
+method GetdStartTime() class timeRemaining
+    return(self:dStartTime)
 
-Method GetnProgress() Class tNDJRemaining
-return(self:nProgress)
+method GetnProgress() class timeRemaining
+    return(self:nProgress)
 
-Method GetnSRemaining() Class tNDJRemaining
-return(self:nSRemaining)
+method GetnSRemaining() class timeRemaining
+    return(self:nSRemaining)
 
-Method GetnTotal() Class tNDJRemaining
-return(self:nTotal)
+method GetnTotal() class timeRemaining
+    return(self:nTotal)

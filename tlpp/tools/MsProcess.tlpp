@@ -6,6 +6,7 @@ class MsProcess
 end class
 
 static method ProcRedefine(oProcess,oFont,nLeft,nWidth,nCTLFLeft,lODlgF,lODlgW) class MsProcess
+    local lProcRedefine as logical
     paramtype oProcess as object
     DEFAULT oFont:=TFont():New("Lucida Console",nil,18,nil,.T.)
     paramtype oFont as object optional
@@ -19,7 +20,11 @@ static method ProcRedefine(oProcess,oFont,nLeft,nWidth,nCTLFLeft,lODlgF,lODlgW) 
     paramtype lODlgF as logical optional
     DEFAULT lODlgW:=.F.
     paramtype lODlgW as logical optional
-    return(ProcRedefine(@oProcess,@oFont,@nLeft,@nWidth,@nCTLFLeft,@lODlgF,@lODlgW))
+    lProcRedefine:=(!(getClassName(oProcess)=="TMULTPROCESS"))
+    if (lProcRedefine)
+        lProcRedefine:=ProcRedefine(@oProcess,@oFont,@nLeft,@nWidth,@nCTLFLeft,@lODlgF,@lODlgW)
+    endif
+    return(lProcRedefine)
 static function ProcRedefine(oProcess as object,oFont as object,nLeft as numeric,nWidth as numeric,nCTLFLeft as numeric,lODlgF as logical,lODlgW as logical) as logical
     local aSButton      as array
     local aclassData    as array
@@ -81,3 +86,378 @@ static function ProcRedefine(oProcess as object,oFont as object,nLeft as numeric
         MsAguarde({||Sleep(10)},"Aguarde","Atualizando")
     endif
     return(lProcRedefine)
+
+class tMultProcess
+
+    public data aMeters             as array
+
+    public data bAbort              as block
+	public data bAction             as block
+
+	public data cTitle              as character
+
+	public data lEnd                as logical
+	public data lAbort              as logical
+
+    public data nMeters             as numeric
+    
+    public data oDlg                as object
+    
+    private data lActivate          as logical
+    private data lCalcTime          as logical
+    private data ltxtMultProcess    as logical
+
+    private method addMeter() as numeric
+    private method SetMeter(nMeter as numeric,nSet as numeric) as numeric
+	private method IncMeter(nMeter as numeric,nSet as numeric,lRefresh as logical) as numeric
+
+    public method __Break(lbAbort as logical)
+    
+    public method EvalAbort(bAbort as block)
+    public method EvalAction(bAction as block)
+
+	public method New(bAction as block,cTitle as character,cMsg as character,bAbort as block,nMeters as numeric) as object
+
+	public method SetRegua(nMeter as numeric,nSet as numeric,lCalcTime as numeric) as numeric
+	public method IncRegua(nMeter as numeric,cMsg as character,lRefresh as logical,lCalctime as logical) as numeric
+
+	public method Activate(lActivate as logical) as logical
+    public method DeActivate() as logical
+
+    public method Hide() as logical
+    public method Show() as logical
+
+end class
+
+method New(bAction,cTitle,cMsg,bAbort,nMeters) class tMultProcess
+
+    local lAbort    as logical
+
+    local nMeter    as numeric
+
+    DEFAULT bAction:={|lEnd,self| .T. }
+    paramtype bAction as block optional
+
+    DEFAULT cMsg:="Processando..."
+    paramtype cMsg as character optional
+
+    DEFAULT cTitle:="Aguarde..."
+    paramtype cTitle as character optional
+
+    lAbort:=(valType(bAbort)=="B")
+    DEFAULT bAbort:={|lEnd,self| .T. }
+    paramtype bAbort as block optional
+
+    DEFAULT nMeters:=1
+    paramtype nMeters as numeric optional
+
+    self:aMeters:=array(0)
+    for nMeter:=1 to nMeters
+        self:addMeter()
+    next nMeter
+    
+    self:bAbort:={||self:EvalAbort(bAbort)}
+    self:bAction:={||self:EvalAction(bAction)}
+    self:cTitle:=cTitle
+    self:lEnd:=.F.
+    self:lAbort:=lAbort
+    self:lActivate:=.F.
+    self:lCalcTime:=.F.
+
+    self:ltxtMultProcess:=(getClassName(self)=="TXTMULTPROCESS")
+
+    return(self)
+
+method addMeter() class tMultProcess
+    aAdd(self:aMeters,array(8))
+    self:nMeters:=len(self:aMeters)
+    self:aMeters[self:nMeters][2]:=""
+    self:aMeters[self:nMeters][5]:=0
+    return(self:nMeters)
+
+method Activate(lActivate) class tMultProcess
+
+    local aAdvSize      as array
+    local aObjSize      as array
+    local aObjCoords    as array
+    local aInfoAdvSize  as array
+
+    local nCol          as numeric
+    local nRow          as numeric
+    
+    local nTop          as numeric
+    local nLeft         as numeric
+    local nBottom       as numeric
+    local nRight        as numeric
+    local nButton       as numeric     
+
+    local nMeter        as numeric
+    local nMeters       as numeric
+
+    local oTFont        as object
+    local oTPanel       as object
+    local oSButton      as object
+    local oTScroll      as object
+    
+    DEFAULT lActivate:=.T. 
+    paramtype lActivate as logical optional
+
+    if (!self:lActivate)
+
+        aAdvSize:=MsAdvSize(.F.,.F.)
+
+        aAdvSize[3]-=074.25	//Ajusta a Largura do Objeto
+        aAdvSize[5]-=150.00	//Ajusta a Largura do Dialogo
+        aAdvSize[6]+=80.00
+
+        aInfoAdvSize:={aAdvSize[1],aAdvSize[2],aAdvSize[3],aAdvSize[4],0,0}
+        aObjCoords:=array(0)
+        aAdd(aObjCoords,{000,000,.T.,.T.})
+        aObjSize:=MsObjSize(aInfoAdvSize,aObjCoords)
+
+        nMeters:=self:nMeters
+
+        nTop:=aAdvSize[7]
+        nLeft:=0
+        nBottom:=if((nMeters<=2),(aAdvSize[6]/4),if((nMeters<=4),(aAdvSize[6]/2),aAdvSize[6]))
+        nRight:=aAdvSize[5]
+
+        oTFont:=TFont():New("Lucida Console",nil,18,nil,.T.)
+        DEFINE MSDIALOG self:oDlg FROM nTop,nLeft TO nBottom,nRight TITLE OemToAnsi(self:cTitle) STYLE DS_MODALFRAME STATUS PIXEL OF  GetWndDefault() 
+        
+        oTScroll:=TScrollArea():New(self:oDlg,aObjSize[1][1],0,(aObjSize[1][3]-5),aObjSize[1][4])
+        oTScroll:Align:=CONTROL_ALIGN_ALLCLIENT
+
+        @aObjSize[1][1],000 MSPANEL oTPanel OF oTScroll SIZE (aObjSize[1][3]-5),aObjSize[1][4] COLOR CLR_HRED
+        oTScroll:SetFrame(oTPanel)
+
+        if (self:lAbort)
+            nButton:=(aObjSize[1][1]+25)
+        endif
+
+        nCol:=10
+        nRow:=(aObjSize[1][1]+5)
+
+        nBottom:=0
+
+        for nMeter:=1 to nMeters
+            self:aMeters[nMeter][1]:=TSay():New(nRow,nCol,&("{||self:aMeters["+cValToChar(nMeter)+"][2]}"),oTPanel,nil,oTFont,.F.,.F.,.F.,.T.,nil,nil,(aObjSize[1][4]-25),16,.T.,.F.,.T.,.F.,nil,nil)
+            nRow+=11 
+            if (self:ltxtMultProcess)
+                self:aMeters[nMeter][3]:=TGet():New(nRow,nCol,&("{||self:aMeters["+cValToChar(nMeter)+"][4]}"),oTPanel,(aObjSize[1][4]-25),5,"@!",NIL,CLR_WHITE,CLR_BLUE,oTFont,.F.,nil,.T.,nil,.F.,nil,.F.,.F.,nil,.F.,.F.,nil,nil,nil,.F.,nil,.F.)
+                self:aMeters[nMeter][3]:setColor(CLR_BLUE,CLR_WHITE)
+                self:aMeters[nMeter][8]:=txtProgress():New()
+            else
+                self:aMeters[nMeter][3]:=TMeter():New(nRow,nCol,&("{||self:aMeters["+cValToChar(nMeter)+"][4]}"),10,oTPanel,(aObjSize[1][4]-25),5,nil,.T.,nil,nil,nil,nil,nil,nil,nil,nil,nil)
+            endif
+            self:aMeters[nMeter][6]:=txtProgress():New()
+            if (nMeter<nMeters)
+                nRow+=if(self:ltxtMultProcess,15,10)
+                nBottom+=(32.5)
+                if (self:lAbort)
+                    nButton+=if(self:ltxtMultProcess,30,25)
+                endif
+            endif
+        next nMeter
+
+        oTPanel:nBottom:=(self:oDlg:nBottom+nBottom)
+        self:oDlg:nBottom:=Min(self:oDlg:nBottom,aObjSize[1][4])
+
+        if (self:lAbort)
+            DEFINE SBUTTON oSButton FROM nButton,(aObjSize[1][4]-40) TYPE 2 ACTION (eval(self:bAbort)) ENABLE PIXEL OF oTPanel
+            oSButton:SetFocus()
+        endif
+        
+        self:oDlg:bStart:={||Eval(self:bAction,@self:lEnd,@self)}
+        self:oDlg:bValid:={||.T.}
+
+    endif
+
+    if (lActivate)
+        self:lActivate:=lActivate
+        ACTIVATE MSDIALOG self:oDlg CENTERED
+    endif
+
+    return(self:lActivate)
+
+method DeActivate() class tMultProcess
+    self:lActivate:=.F.
+    return(self)
+
+method Hide() class tMultProcess
+    return(self:oDlg:Hide())
+
+method Show() class tMultProcess
+    return(self:oDlg:Show())
+
+method SetMeter(nMeter,nSet) class tMultProcess
+
+    local cName         as character
+    local cProgress     as character
+    
+    local nHeight       as numeric
+    
+    local lBold         as numeric
+    local lItalic       as numeric
+    local lUnderline    as numeric
+
+    paramtype nMeter    as numeric
+    DEFAULT nSet:=10
+    paramtype nSet      as numeric optional
+
+    if (self:ltxtMultProcess)
+        cName:=self:aMeters[nMeter][3]:oFont:Name
+        nHeight:=self:aMeters[nMeter][3]:oFont:nHeight
+        lBold:=self:aMeters[nMeter][3]:oFont:Bold
+        lItalic:=self:aMeters[nMeter][3]:oFont:Italic
+        lUnderline:=self:aMeters[nMeter][3]:oFont:Underline
+        nHeight:=GetStringPixSize("#",cName,nHeight,lBold,lItalic,lUnderline)[2]
+        nHeight:=Int(self:aMeters[nMeter][3]:nWidth/nHeight)
+        cProgress:=Replicate("#;",(nHeight*2))
+        self:aMeters[nMeter][8]:SetProgress(cProgress,";")
+    else
+        self:aMeters[nMeter][3]:Set(0)
+        self:aMeters[nMeter][3]:SetTotal(nSet)
+        self:aMeters[nMeter][3]:Refresh()
+    endif
+
+    if (self:lCalcTime)
+        self:aMeters[nMeter][7]:=timeRemaining():New(nSet)    
+    endif
+
+    SysRefresh()
+
+    Return(nSet)
+
+method SetRegua(nMeter,nSet,lCalcTime) class tMultProcess
+    local nMeters   as numeric
+    paramtype nMeter as numeric
+    DEFAULT nSet:=10
+    paramtype nSet as numeric optional
+    DEFAULT lCalcTime:=.F.
+    paramtype lCalcTime as logical optional
+    self:lCalcTime:=lCalcTime
+    nMeters:=self:nMeters
+    if (nMeters>0)
+        nMeter:=if((nMeter<=0).or.(nMeter>nMeters),nMeters,nMeter)
+        self:SetMeter(@nMeter,@nSet)
+    endif
+    return(nSet)
+
+method IncMeter(nMeter,nSet,lRefresh) class tMultProcess
+
+    paramtype nMeter    as numeric
+    paramtype nSet      as numeric
+    DEFAULT lRefresh:=.T.
+    paramtype lRefresh  as logical
+
+    if (self:lEnd)
+        SysRefresh()
+        self:__Break(.T.)
+    endif
+
+    if (self:ltxtMultProcess)
+        self:aMeters[nMeter][4]:=self:aMeters[nMeter][8]:Eval("INCREMENT")
+    else
+        self:aMeters[nMeter][3]:Set(++nSet)
+    endif
+
+    if (lRefresh)
+        self:aMeters[nMeter][3]:Refresh()
+        SysRefresh()
+    endif
+
+    return(nSet)
+
+method IncRegua(nMeter,cMsg,lRefresh,lCalctime) class tMultProcess
+
+    local nInc      as numeric
+    local nMeters   as numeric
+
+    paramtype nMeter    as numeric
+    paramtype cMsg      as character optional
+    DEFAULT lRefresh:=.T.
+    paramtype lRefresh  as logical optional
+    DEFAULT lCalctime:=if(self:lCalctime,.T.,.F.)
+    paramtype lCalctime as logical optional
+
+    paramtype nMeter as numeric
+
+    nMeters:=self:nMeters
+    if (nMeters>0)
+        nMeter:=if((nMeter<=0).or.(nMeter>nMeters),nMeters,nMeter)
+        if (self:lEnd)
+            cMsg:="Operação Cancelada pelo usuário..."
+            lRefresh:=.T.
+        endif
+        DEFAULT cMsg:=""
+        if (self:lCalcTime)
+            self:aMeters[nMeter][7]:Calcule(lCalcTime)
+            cMsg+="("
+            cMsg+="Final Estimado em"+":["+DtoC(self:aMeters[nMeter][7]:GetdEndTime())+"]["+self:aMeters[nMeter][7]:GetcEndTime()+"]"
+            cMsg+=")"
+        endif
+        cMsg+="["+self:aMeters[nMeter][6]:Eval()+"]"
+        self:aMeters[nMeter][2]:=cMsg
+        if (self:ltxtMultProcess)
+            self:aMeters[nMeter][1]:Refresh()
+        elseif (lRefresh)
+            self:aMeters[nMeter][1]:Refresh()
+        endif
+        self:IncMeter(@nMeter,@self:aMeters[nMeter][5])
+        nInc:=@self:aMeters[nMeter][5]
+    else
+        nInc:=0
+    endif
+
+    return(nInc)
+
+method EvalAbort(bAbort) class tMultProcess
+    paramtype bAction as block
+    if (stackTools():IsInCallStack("EvalAction"))
+        eval(bAbort,@self:lEnd,@self)
+        self:__Break(.F.)
+    else
+        eval(bAbort,@lEnd,@self)
+        self:lEnd:=.T.
+        self:oDlg:End()
+    endif
+    return
+
+method EvalAction(bAction) class tMultProcess
+    local uRet
+    paramtype bAction as block
+    begin sequence
+        uRet:=Eval(bAction,@self:lEnd,@self)
+        if (!self:lEnd)
+            aEval(self:aMeters,{|aMeter|aMeter[1]:Refresh(),aMeter[3]:Refresh()})
+            SysRefresh()
+        endif
+        self:__Break(.F.)
+    end sequence
+    return(uRet)
+
+method __Break(lbAbort) class tMultProcess
+    static lInBreak
+    paramtype lbAbort as logical optional
+    DEFAULT lInBreak:=.F.
+    if (!lInBreak)
+        lInBreak:=.T.
+        self:lEnd:=.T.
+        self:oDlg:End()
+        DEFAULT lbAbort:=.T.
+        if (lbAbort)
+            Eval(self:bAbort)
+        endif
+        lInBreak:=.F.
+        break
+    endif
+    return
+
+class txtMultProcess from tMultProcess
+    public method New(bAction as block,cTitle as character,cMsg as character,bAbort as block,nMeters as numeric) as object
+end class
+
+method New(bAction,cTitle,cMsg,bAbort,nMeters) class txtMultProcess
+    _Super:New(@bAction,@cTitle,@cMsg,@bAbort,@nMeters)
+    return(self)

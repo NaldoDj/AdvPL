@@ -4,7 +4,26 @@
 #include "parmtype.ch"
 #include "set_default.ch"
 
-/*namespace dna.txtTools*/
+class txtEditMemo
+    static method txtFileEdit(cMemoEdit as character,cTitle as character,cFile as character) as logical
+end class
+
+static method txtFileEdit(cMemoEdit,cTitle,cFile) class txtEditMemo
+
+    local lRet  as logical
+
+    local otxtTools as object
+
+    DEFAULT cMemoEdit:=""
+    paramtype cMemoEdit as character optional
+    cTitle:="txtFileEdit"
+    paramtype cTitle    as character optional
+    paramtype cFile     as character optional
+
+    otxtTools:=txtTools():New(@cFile,@cMemoEdit,@cTitle)
+    lRet:=otxtTools:txtFileEdit(@cFile,@cMemoEdit,@cTitle)
+
+    return(lRet)
 
 class txtTools
 
