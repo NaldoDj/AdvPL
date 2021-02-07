@@ -14,39 +14,83 @@ static __cClassName     as character
 
 static oTVarInfo
 
-class __TVarInfo from TVarInfo
-    static method Echo(uVarInfo,cVarName,nClsIntSleep,nClsAddSleep,lHtml,lTableFormat) as character
-    static method Show(nSWShow,lHtml,lTableFormat) as logical
-    static method Save(lHtml,lTableFormat) as logical
+class STVarInfo
+
+    static method TVarInfoNew(uVarInfo,cVarName as character,nClsIntSleep as numeric,nClsAddSleep as numeric) as object
+    static method ReSet(uVarInfo,cVarName,nClsIntSleep,nClsAddSleep,lEraseSrv,lEraselocal) as object
+    
+    static method Echo(uVarInfo,cVarName as character,nClsIntSleep as nuumeric,nClsAddSleep as numeric,lHtml as logical,lTableFormat as logical) as character
+    static method Show(uVarInfo,cVarName as character,nClsIntSleep as numeric,nClsAddSleep as numeric,nSWShow as numeric,lHtml as character,lTableFormat as logical) as logical
+    static method Save(uVarInfo,cVarName as character,nClsIntSleep as numeric,nClsAddSleep as numeric,lHtml as logical,lTableFormat as logical) as logical
+
 end class
 
-static method Echo(uVarInfo,cVarName,nClsIntSleep,nClsAddSleep,lHtml,lTableFormat) class __TVarInfo
+static method TVarInfoNew(uVarInfo,cVarName,nClsIntSleep,nClsAddSleep) class STVarInfo
+    paramtype cVarName      as character    optional
+    paramtype nClsIntSleep  as numeric      optional
+    paramtype nClsAddSleep  as numeric      optional
+    DEFAULT oTVarInfo:=TVarInfo():New(@uVarInfo,@cVarName,@nClsIntSleep,@nClsAddSleep)
+    return(oTVarInfo)
+
+static method ReSet(uVarInfo,cVarName,nClsIntSleep,nClsAddSleep,lEraseSrv,lEraselocal) class STVarInfo
+    local lReset    as logical
+    paramtype cVarName      as character    optional
+    paramtype nClsIntSleep  as numeric      optional
+    paramtype nClsAddSleep  as numeric      optional
+    paramtype lEraseSrv     as numeric      optional
+    paramtype lEraselocal   as numeric      optional
+    STVarInfo():TVarInfoNew(@uVarInfo,@cVarName,@nClsIntSleep,@nClsAddSleep)
+    lReset:=(valType(oTVarInfo)=="O")
+    if (lReset)
+        oTVarInfo:ReSet(@uVarInfo,@cVarName,@nClsIntSleep,@nClsAddSleep,@lEraseSrv,@lEraselocal)
+    endif
+    return(oTVarInfo)
+
+static method Echo(uVarInfo,cVarName,nClsIntSleep,nClsAddSleep,lHtml,lTableFormat) class STVarInfo
     local cEcho as character
-    cEcho:=u_TVarInfoNew(@uVarInfo,@cVarName,@nClsIntSleep,@nClsAddSleep):Echo(@lHtml,@lTableFormat)
+    local lEcho as logical
+    paramtype cVarName      as character    optional
+    paramtype nClsIntSleep  as numeric      optional
+    paramtype nClsAddSleep  as numeric      optional
+    paramtype lHtml         as logical      optional
+    paramtype lTableFormat  as logical      optional
+    STVarInfo():TVarInfoNew(@uVarInfo,@cVarName,@nClsIntSleep,@nClsAddSleep)
+    lEcho:=(valType(oTVarInfo)=="O")
+    if (lEcho)
+        cEcho:=oTVarInfo:Echo(@lHtml,@lTableFormat)
+    else
+        cEcho:=""
+    endif
     return(cEcho)
 
-static method Show(nSWShow,lHtml,lTableFormat) class __TVarInfo
+static method Show(uVarInfo,cVarName,nClsIntSleep,nClsAddSleep,nSWShow,lHtml,lTableFormat) class STVarInfo
     local lShow as logical
-    lShow:=u_TVarInfoNew(@uVarInfo,@cVarName,@nClsIntSleep,@nClsAddSleep):Show(@nSWShow,@lHtml,@lTableFormat)
+    paramtype cVarName      as character    optional
+    paramtype nClsIntSleep  as numeric      optional
+    paramtype nClsAddSleep  as numeric      optional
+    paramtype nSWShow       as numeric      optional
+    paramtype lHtml         as logical      optional
+    paramtype lTableFormat  as logical      optional
+    STVarInfo():TVarInfoNew(@uVarInfo,@cVarName,@nClsIntSleep,@nClsAddSleep)
+    lShow:=(valType(oTVarInfo)=="O")
+    if (lShow)
+        lShow:=oTVarInfo:Show(@nSWShow,@lHtml,@lTableFormat)
+    endif
     return(lShow)
 
-static method Save(lHtml,lTableFormat) class __TVarInfo
-    local lShow as logical
-    lShow:=u_TVarInfoNew(@uVarInfo,@cVarName,@nClsIntSleep,@nClsAddSleep):Save(@lHtml,@lTableFormat)
-    return(lShow)
-
-//------------------------------------------------------------------------------------------------
-   /*/
-        Funcao:U_TVarInfoNew
-        Autor:Marinaldo de Jesus [http://www.blacktdn.com.br]
-        data:28/09/2011
-        Descricao:Reproduz as Caracteristicas da Funcao VarInfo resolvendo a Limitacao do Tamanho da String
-        Sintaxe:U_TVarInfoNew(uVarInfo,cVarName)
-   /*/
-//------------------------------------------------------------------------------------------------
-function u_TVarInfoNew(uVarInfo,cVarName,nClsIntSleep,nClsAddSleep)
-    oTVarInfo:=TVarInfo():New(@uVarInfo,@cVarName,@nClsIntSleep,@nClsAddSleep)
-    return(oTVarInfo)
+static method Save(uVarInfo,cVarName,nClsIntSleep,nClsAddSleep,lHtml,lTableFormat) class STVarInfo
+    local lSave as logical
+    paramtype cVarName      as character    optional
+    paramtype nClsIntSleep  as numeric      optional
+    paramtype nClsAddSleep  as numeric      optional
+    paramtype lHtml         as logical      optional
+    paramtype lTableFormat  as logical      optional
+    STVarInfo():TVarInfoNew(@uVarInfo,@cVarName,@nClsIntSleep,@nClsAddSleep)
+    lSave:=(valType(oTVarInfo)=="O")
+    if (lSave)
+        lSave:=oTVarInfo:Save(@lHtml,@lTableFormat)
+    endif
+    return(lSave)
 
 //------------------------------------------------------------------------------------------------
    /*/
@@ -57,7 +101,7 @@ function u_TVarInfoNew(uVarInfo,cVarName,nClsIntSleep,nClsAddSleep)
         Sintaxe:TVarInfo():New(uVarInfo,cVarName,nClsIntSleep,@nClsAddSleep)
    /*/
 //------------------------------------------------------------------------------------------------
-class TVarInfo from LongClassName
+class TVarInfo
 
     data aTVarInfo  as array
 
@@ -86,18 +130,18 @@ class TVarInfo from LongClassName
     public data lEchoClean as logical
     public data lGetObjSuperClass as logical
 
-    public method New(uVarInfo,cVarName,nClsIntSleep,nClsAddSleep) as object /*/\constructor/\*/
-    public method ReSet(uVarInfo,cVarName,nClsIntSleep,nClsAddSleep,lEraseSrv,lEraselocal) as object
+    public method New(uVarInfo,cVarName as character,nClsIntSleep as numeric,nClsAddSleep as numeric) as object /*/\constructor/\*/
+    public method ReSet(uVarInfo,cVarName as character,nClsIntSleep as numeric,nClsAddSleep as numeric,lEraseSrv as logical,lEraselocal as logical) as object
 
-    private method Init(uVarInfo,cVarName,nClsIntSleep,nClsAddSleep) as object
+    private method Init(uVarInfo,cVarName as character,nClsIntSleep as numeric,nClsAddSleep as numeric) as object
 
     public method FreeObj() /*\/destructor\/*/
     public method ClassName() as character
 
-    public method Echo(lHtml,lTableFormat) as character
-    public method Show(nSWShow,lHtml,lTableFormat) as logical
+    public method Echo(lHtml as logical,lTableFormat as logical) as character
+    public method Show(nSWShow as numeric,lHtml as logical,lTableFormat as logical) as logical
 
-    public method Save(lHtml,lTableFormat) as logical
+    public method Save(lHtml as logical,lTableFormat as logical) as logical
 
     public method Bof() as logical
     public method Eof() as logical
@@ -134,6 +178,17 @@ method New(uVarInfo,cVarName,nClsIntSleep,nClsAddSleep) class TVarInfo
     DEFAULT __cClassName:="[TVarInfo][cClassName]"
    
     self:ClassName()
+
+    self:aTVarInfo:=Array(0)
+    self:cDateFormat:=Set(4,"dd/mm/yyyy")
+    self:cSRVFile:=""
+    self:cSRVPath:="\tmp\tvarinfo\"
+    self:cLocalFile:=""
+    self:cLocalPath:=GetTempPath()
+    self:lSetCentury:=__SetCentury("ON")
+    self:lGetObjSuperClass:=.T.
+    self:nfHandle:=-1
+
     self:ReSet(uVarInfo,cVarName,nClsIntSleep,nClsAddSleep,.T.,.T.)
 
     return(self)
@@ -178,7 +233,7 @@ method Init(uVarInfo,cVarName,nClsIntSleep,nClsAddSleep) class TVarInfo
 
     cVarType:=ValType(uVarInfo)
     if (cVarType=="O")
-        cClassName:=ClassName(uVarInfo)
+        cClassName:=getClassName(uVarInfo)
         if (cClassName=="THASHMAP")
             if (HMList(@uVarInfo,@aHMList))
                 uVarInfo:=aHMList
@@ -209,7 +264,6 @@ method Init(uVarInfo,cVarName,nClsIntSleep,nClsAddSleep) class TVarInfo
     endif
 
     self:ClassName()
-    self:aTVarInfo:=Array(0)
     self:cSRVFile:=""
     self:cSRVPath:="\tmp\tvarinfo\"
     self:cLocalFile:=""
@@ -240,9 +294,6 @@ method Init(uVarInfo,cVarName,nClsIntSleep,nClsAddSleep) class TVarInfo
     __nClsAddSleep:=nClsAddSleep
     __nClsNIntSleep:=Int(__nClsIntSleep/2)
     __nClsVAddSleep:=0
-
-    self:lSetCentury:=__SetCentury("ON")
-    self:cDateFormat:=Set(4,"dd/mm/yyyy")
 
     TVarInfo(@self:aTVarInfo,@aStackA,@nStackA,@aStackO,@nStackO,@cVarName,@uVarInfo,0,cClassName,self:lGetObjSuperClass,self:lEchoClean)
 
@@ -677,7 +728,7 @@ static Function TVarInfo(aTVarInfo as array,aStackA as array,nStackA as numeric,
     begin sequence
 
         if (cVarType=="O")
-            if (ClassName(uVarInfo)=="THASHMAP")
+            if (getClassName(uVarInfo)=="THASHMAP")
                 if (HMList(@uVarInfo,@aHMList))
                     uVarInfo:=aHMList
                     cVarType:=ValType(uVarInfo)
@@ -691,7 +742,7 @@ static Function TVarInfo(aTVarInfo as array,aStackA as array,nStackA as numeric,
 
                 nNivel++
 
-                cClassName:=GetClassName(uVarInfo)
+                cClassName:=getClassName(uVarInfo)
 
                 nStack:=aScanX(aStackO,{|aStk,nAT|aStackO[nAT][STACK_PARAMETER]==uVarInfo})
                 lStack:=(nStack>0)
@@ -699,7 +750,7 @@ static Function TVarInfo(aTVarInfo as array,aStackA as array,nStackA as numeric,
 
                 if (!lPointer)
 
-                    nStack:=aScanX(aStackO,{|aStk,nAT|__ArrayUtils():Compare(aStackO[nAT][STACK_PARAMETER],uVarInfo)})
+                    nStack:=aScanX(aStackO,{|aStk,nAT|aUtils():Compare(aStackO[nAT][STACK_PARAMETER],uVarInfo)})
                     lStack:=(nStack>0)
 
                     lClone:=lStack
@@ -780,7 +831,7 @@ static Function TVarInfo(aTVarInfo as array,aStackA as array,nStackA as numeric,
 
             endif
             
-            TVarInfo(@aTVarInfo,@aStackA,@nStackA,@aStackO,@nStackO,cVarName,ClassdataArray(uVarInfo,lGetObjSuperClass),nNivel,@cClassName,lGetObjSuperClass,lEchoClean)
+            TVarInfo(@aTVarInfo,@aStackA,@nStackA,@aStackO,@nStackO,cVarName,classDataArr(uVarInfo,lGetObjSuperClass),nNivel,@cClassName,lGetObjSuperClass,lEchoClean)
 
         elseif (cVarType=="A")
 
@@ -800,7 +851,7 @@ static Function TVarInfo(aTVarInfo as array,aStackA as array,nStackA as numeric,
 
                     if (!lPointer)
 
-                        nStack:=aScanX(aStackA,{|aStk,nAT|__ArrayUtils():Compare(aStackA[nAT][STACK_PARAMETER],uVarInfo)})
+                        nStack:=aScanX(aStackA,{|aStk,nAT|aUtils():Compare(aStackA[nAT][STACK_PARAMETER],uVarInfo)})
                         lStack:=(nStack>0)
 
                         lClone:=lStack

@@ -11,7 +11,8 @@ static oAUtils   as object
     #define PONTO_E_VIRGULA CHR(59)
 #endif
 
-class __ArrayUtils from ArrayUtils
+class aUtils
+    static method ArrayUtilsNew() as object
     static method Compare(uCompare1,uCompare2) as logical
     static method SaveArray(uArray,cFileName,lCompress) as logical
     static method RestArray(cFileName,lCompress) as array
@@ -21,32 +22,36 @@ class __ArrayUtils from ArrayUtils
     static method RegToArray(cAlias,nRecNo,aCFields) as array
 end class
 
-static method Compare(uCompare1,uCompare2) class __ArrayUtils
-    u_ArrayUtils()
+static method ArrayUtilsNew() class aUtils
+    DEFAULT oAUtils:=ArrayUtils():New()
+    return(oAUtils)
+
+static method Compare(uCompare1,uCompare2) class aUtils
+    aUtils():ArrayUtilsNew()
     return(oAUtils:Compare(@uCompare1,@uCompare2))
 
-static method SaveArray(uArray,cFileName,lCompress) class __ArrayUtils
-    u_ArrayUtils()
+static method SaveArray(uArray,cFileName,lCompress) class aUtils
+    aUtils():ArrayUtilsNew()
     return(oAUtils:SaveArray(@uArray,@cFileName,@lCompress))
 
-static method RestArray(cFileName,lCompress) class __ArrayUtils
-    u_ArrayUtils()
+static method RestArray(cFileName,lCompress) class aUtils
+    aUtils():ArrayUtilsNew()
     return(oAUtils:RestArray(@cFileName,@lCompress))
 
-static method Load4Str(cFileName) class __ArrayUtils
-    u_ArrayUtils()
+static method Load4Str(cFileName) class aUtils
+    aUtils():ArrayUtilsNew()
     return(oAUtils:Load4Str(@cFileName))
 
-static method SetZipMod(nZipMod,cZipPwd) class __ArrayUtils
-    u_ArrayUtils()
+static method SetZipMod(nZipMod,cZipPwd) class aUtils
+    aUtils():ArrayUtilsNew()
     return(oAUtils:SetZipMod(@nZipMod,@cZipPwd))
 
-static method SetZipPdw(cZipPwd) class __ArrayUtils
-    u_ArrayUtils()
+static method SetZipPdw(cZipPwd) class aUtils
+    aUtils():ArrayUtilsNew()
     return(oAUtils:SetZipPdw(@cZipPwd))
 
-static method RegToArray(cAlias,nRecNo,aCFields) class __ArrayUtils
-    u_ArrayUtils()
+static method RegToArray(cAlias,nRecNo,aCFields) class aUtils
+    aUtils():ArrayUtilsNew()
     return(oAUtils:RegToArray(@cAlias,@nRecNo,@aCFields))
 
 //------------------------------------------------------------------------------------------------
@@ -88,10 +93,6 @@ class ArrayUtils
     public method RegToArray(cAlias,nRecNo,aCFields) as array
 
 endclass
-
-function u_ArrayUtils()
-    DEFAULT oAUtils:=ArrayUtils():New()
-    return(oAUtils)
 
 method New() class ArrayUtils
     self:ClassName()
@@ -434,13 +435,13 @@ static function Compare(uCompare1,uCompare2,nLevel as numeric,aFullDiff as array
                 aSort(aCls1,nil,nil,{|x,y|(x[1]<y[1])})
             else
                 aCls1:=Array(0)
-                aCls1:=ClassDataArr(uCompare1,.T.)
+                aCls1:=classDataArr(uCompare1,.T.)
             endif
             if (GetClassName(uCompare2)=="THASHMAP")
                 HMList(uCompare2,@aCls2)
                 aSort(aCls2,nil,nil,{|x,y|(x[1]<y[1])})
             else
-                aCls2:=ClassDataArr(uCompare2,.T.)
+                aCls2:=classDataArr(uCompare2,.T.)
             endif
             lCompare:=aCompare(aCls1,aCls2,nLevel1,@aFullDiff,lFullDiff)
             aSize(aCls1,0)
@@ -500,7 +501,7 @@ static function SaveArray(uArray,cFileName as character,nErr as numeric,lCompres
                 HMList(uArray,@aArray)
                 aSort(aArray,nil,nil,{|x,y|(x[1]<y[1])})
             else
-                aArray:=ClassDataArr(uArray,.T.)
+                aArray:=classDataArr(uArray,.T.)
             endif
         else
             aArray:=uArray
@@ -573,7 +574,7 @@ static procedure SaveArr(nfHandle as numeric,aArray as array,lCompress as logica
                     HMList(aArray[nLoop],@aClsArr)
                     aSort(aClsArr,nil,nil,{|x,y|(x[1]<y[1])})
                 else
-                    aClsArr:=ClassDataArr(aArray[nLoop],.T.)
+                    aClsArr:=classDataArr(aArray[nLoop],.T.)
                 endif
                 SaveArr(nfHandle,aClsArr,lCompress)
             endif

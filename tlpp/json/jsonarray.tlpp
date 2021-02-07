@@ -396,7 +396,7 @@ static function FromXML(aChildArray as array,oXMLNode as object,cAttrSuffix as c
                 TODO: Temporary workaround because there are no methods in TXMLManager 
                       that check the NameSpace (equivalent to XPathHasAtt or DOMHasAtt)
             */                
-            if (aScan(&("apNameSpaces"),{|aNS|(__ArrayUtils():Compare(aNS[1],aNameSpaces).and.(aNS[2]$cXMLPath))})==0)
+            if (aScan(&("apNameSpaces"),{|aNS|(aUtils():Compare(aNS[1],aNameSpaces).and.(aNS[2]$cXMLPath))})==0)
                 aAdd(&("apNameSpaces"),{aNameSpaces,cXMLPath})
             else
                 aSize(aNameSpaces,0)
@@ -490,7 +490,7 @@ method FromJSON(cJSONstr) class JSONArray
     local nJ                as numeric
     paramtype cJSONstr      as character
     lGetObjSuperClass:=.F.
-    aSelf:=ClassDataArr(self,lGetObjSuperClass)
+    aSelf:=classDataArr(self,lGetObjSuperClass)
     FromJSON(@self,cJSONstr)
     private pSelf as object
     pSelf:=self
@@ -757,7 +757,7 @@ static function __ToJSON(uAnyVar,oJSONArray as object) as character
                 lHashAsFile:=uAnyVar:lHashAsFile()
                 lHasSectionEnabled:=uAnyVar:HasSectionEnabled()
             else
-                aData:=ClassDataArr(uAnyVar,lGetObjSuperClass)
+                aData:=classDataArr(uAnyVar,lGetObjSuperClass)
                 lHashAsFile:=.F.
                 lHasSectionEnabled:=.F.
             endif
@@ -1047,7 +1047,7 @@ static procedure __ToJSONFile(nJSONTmp as numeric,uAnyVar,oJSONArray as object)
                 lHashAsFile:=uAnyVar:lHashAsFile()
                 lHasSectionEnabled:=uAnyVar:HasSectionEnabled()
             else
-                aData:=ClassDataArr(uAnyVar,lGetObjSuperClass)
+                aData:=classDataArr(uAnyVar,lGetObjSuperClass)
                 lHashAsFile:=.F.
                 lHasSectionEnabled:=.F.
             endif
@@ -1327,7 +1327,7 @@ static function __ToXML(uAnyVar,oJSONArray,lArrayToList as logical,cAttrSuffix a
                 lHashAsFile:=uAnyVar:lHashAsFile()
                 lHasSectionEnabled:=uAnyVar:HasSectionEnabled()
             else
-                aData:=ClassDataArr(uAnyVar,lGetObjSuperClass)
+                aData:=classDataArr(uAnyVar,lGetObjSuperClass)
                 lHashAsFile:=.F.
                 lHasSectionEnabled:=.F.
             endif

@@ -413,7 +413,7 @@ method IncRegua(nMeter,cMsg,lRefresh,lCalctime) class tMultProcess
     return(nInc)
 
 method EvalAbort(bAbort) class tMultProcess
-    paramtype bAction as block
+    paramtype bAbort as block
     if (stackTools():IsInCallStack("EvalAction"))
         eval(bAbort,@self:lEnd,@self)
         self:__Break(.F.)

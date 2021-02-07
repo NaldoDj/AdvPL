@@ -473,7 +473,7 @@ method lHashAsFile(lHashAsFile) class THASH
 method SaveDataHash(uValue,cHashFile) class THASH
     local lSave as logical
     paramtype cHashFile as character
-    lSave:=__ArrayUtils():SaveArray({uValue},cHashFile)
+    lSave:=aUtils():SaveArray({uValue},cHashFile)
     if (lSave)
         if (aScan(__aTHashFiles,{|x|(x[1]==cHashFile)})==0)
             aAdd(__aTHashFiles,{cHashFile,.F.})
@@ -501,7 +501,7 @@ method RestDataHash(uKey,cHashFile,cType,cClsNValue) class THASH
     DEFAULT cClsNValue:=""
     paramtype cClsNValue as character optional
 
-    uValue:=__ArrayUtils():RestArray(cHashFile)[1]
+    uValue:=aUtils():RestArray(cHashFile)[1]
     if (cType=="O")
         aData:=Array(HASH_PROPERTY_ELEMENTS)
         aData[HASH_PROPERTY_KEY]:=uKey
@@ -1018,7 +1018,7 @@ static procedure HashToList(self as object,uAnyVar,aTHashList as array,cSection 
                 lHashAsFile:=uAnyVar:lHashAsFile()
                 lHasSectionEnabled:=uAnyVar:HasSectionEnabled()
             else
-                aData:=ClassDataArr(uAnyVar,lGetObjSuperClass)
+                aData:=classDataArr(uAnyVar,lGetObjSuperClass)
                 lHashAsFile:=.F.
                 lHasSectionEnabled:=.F.
             endif
@@ -1244,9 +1244,9 @@ static function GetHashMapListValue(oTHashKeys as object,oTHashGetValue as objec
     aHashMapList:=oTHashGetValue:GetHashMapList()
 
     if (oTHashGetValue:HasSectionEnabled())
-        bAscanMapList:={|k|(__ArrayUtils():Compare(k[1],cKeyNode).and.__ArrayUtils():Compare(k[3],cSection))}
+        bAscanMapList:={|k|(aUtils():Compare(k[1],cKeyNode).and.aUtils():Compare(k[3],cSection))}
     else
-        bAscanMapList:={|k|(__ArrayUtils():Compare(k[1],cKeyNode))}
+        bAscanMapList:={|k|(aUtils():Compare(k[1],cKeyNode))}
     endif
 
     nAT:=aScan(aHashMapList,bAscanMapList)
@@ -1421,12 +1421,12 @@ method SetFromObject(oObj) class THASH
     if (cClsNoObj=="THASHMAP")
         self:SetFromHashMap(oObj)
     else
-        aObj:=ClassDataArr(oObj,self:lGetObjSuperClass)
+        aObj:=classDataArr(oObj,self:lGetObjSuperClass)
         lTHash:=(cClsNSelf==cClsNoObj)
         if (lTHash)
             private pSelf as object
             pSelf:=self
-            aSelf:=ClassDataArr(pSelf,self:lGetObjSuperClass)
+            aSelf:=classDataArr(pSelf,self:lGetObjSuperClass)
             nJ:=len(aSelf)
             for nD:=1 to nJ
                 cData:="pSelf"
@@ -1467,7 +1467,7 @@ method SetFromObjectArray(aObj,lGetObjSuperClass) class THASH
 
     private pSelf as object
     pSelf:=self
-    aSelf:=ClassDataArr(pSelf,self:lGetObjSuperClass)
+    aSelf:=classDataArr(pSelf,self:lGetObjSuperClass)
     nJ:=len(aSelf)
     for nD:=1 to nJ
         cData:="pSelf"
@@ -1800,9 +1800,9 @@ method GetATProperty(uSection,uPropertyKey,nSection) class THASH
                     break
                 endif
             endif
-            nATProperty:=aScan(self:aTHash[nSection][HASH_PROPERTY_POSITION],{|aValues|(__ArrayUtils():Compare(aValues[HASH_PROPERTY_KEY],uPropertyKey))})
+            nATProperty:=aScan(self:aTHash[nSection][HASH_PROPERTY_POSITION],{|aValues|(aUtils():Compare(aValues[HASH_PROPERTY_KEY],uPropertyKey))})
         else
-            nATProperty:=aScan(self:aTHASH,{|aValues|(__ArrayUtils():Compare(aValues[HASH_PROPERTY_KEY],uPropertyKey))})
+            nATProperty:=aScan(self:aTHASH,{|aValues|(aUtils():Compare(aValues[HASH_PROPERTY_KEY],uPropertyKey))})
         endif
 
     end sequence
@@ -1975,7 +1975,7 @@ method GetPropertyValue(uSection,uPropertyKey,uDefaultValue) class THASH
 
     end sequence
 
-    if (__ArrayUtils():Compare(uPropertyValue,"@__PROPERTY_NOT_FOUND__@"))
+    if (aUtils():Compare(uPropertyValue,"@__PROPERTY_NOT_FOUND__@"))
         if (!(uDefaultValue==nil))
             uPropertyValue:=uDefaultValue
         else
@@ -2760,7 +2760,7 @@ method CopySection(uSection,uNewSection) class THASH
 
         self:aTHash[nTarget][HASH_PROPERTY_POSITION]:=aClone(aProperties)
 
-        lSuccess:=__ArrayUtils():ArrayCompare(self:aTHash[nSource][HASH_PROPERTY_POSITION],self:aTHash[nTarget][HASH_PROPERTY_POSITION])
+        lSuccess:=aUtils():ArrayCompare(self:aTHash[nSource][HASH_PROPERTY_POSITION],self:aTHash[nTarget][HASH_PROPERTY_POSITION])
 
     end sequence
 
@@ -2781,7 +2781,7 @@ method ExistSection(uSection,nSection) class THASH
 
     if (self:lSection)
     
-        nSection:=aScan(self:aTHash,{|aFindSection|(__ArrayUtils():Compare(aFindSection[HASH_SECTION_POSITION],uSection))})
+        nSection:=aScan(self:aTHash,{|aFindSection|(aUtils():Compare(aFindSection[HASH_SECTION_POSITION],uSection))})
         lExistSection:=(nSection>0)
 
     else
