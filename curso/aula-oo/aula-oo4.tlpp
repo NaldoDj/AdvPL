@@ -1,0 +1,79 @@
+#include "totvs.ch"
+#include "parmtype.ch"
+
+namespace aula.oo4
+
+procedure u_tPessoa()
+
+    local oPessoa   as object
+    local oHomem    as object
+
+    oPessoa:=tPessoa():New()
+    oHomem:=tHomem():New()
+
+    return
+
+class tPessoa 
+
+    private data cNome       as character
+    private data cSexo       as character
+    private data nQI         as numeric
+    private data dNascimento as date
+
+    public method New()         as object
+    public method ClassName()   as character
+
+    public method cNome(cNome as character)
+    public method cSexo(cSexo as character)
+    public method nQI(nQI as numeric)
+    public method dNascimento(dNascimento as date)
+
+end class
+
+method New() class tPessoa
+
+    ::cNome:=""
+    self:cSexo:=""
+    self:nQI:=0
+    self:dNascimento:=CtoD("")
+
+    return(self)
+
+method ClassName() class tPessoa
+    return("TPESSOA")
+
+method cNome(cNome) class tPessoa
+    DEFAULT cNome:=self:cNome
+    paramtype cNome as character optional
+    self:cNome:=cNome
+    return(self:cNome)
+
+method cSexo(cSexo) class tPessoa
+    DEFAULT cSexo:=self:cSexo
+    paramtype cSexo as character optional
+    self:cSexo:=cSexo
+    return(self:cSexo)
+
+method nQI(nQI) class tPessoa
+    DEFAULT nQI:=self:nQI
+    paramtype nQI as numeric optional
+    self:nQI:=nQI
+    return(self:nQI)
+
+method dNascimento(dNascimento) class tPessoa
+    DEFAULT dNascimento:=self:dNascimento
+    paramtype dNascimento as date optional
+    self:dNascimento:=dNascimento
+    return(self:dNascimento)
+
+class tHomem from aula.oo4.tPessoa
+    public method New() as object
+    public method ClassName() as character
+end class
+
+method New() class tHomem
+    self:=_Super:New()
+    return(self)
+
+method ClassName() class tHomem
+    return(_Super:ClassName()+"_"+"THOMEM")

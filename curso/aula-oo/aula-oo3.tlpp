@@ -1,0 +1,17 @@
+#include "totvs.ch"
+
+user function InstOO() 
+
+    local otPessoa as object
+    local otPessoaW as object
+
+    otPessoa:=tPessoa():New()
+    otPessoaW:=tPessoaW():New()
+
+    MsgInfo(otPessoa==otPessoaW)
+    MsgInfo(Compare(otPessoa,otPessoaW))
+    MsgInfo(aUtils():Compare(otPessoa,otPessoaW))
+
+    return
+
+

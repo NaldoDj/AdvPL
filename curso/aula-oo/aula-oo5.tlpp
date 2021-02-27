@@ -1,0 +1,28 @@
+#include "totvs.ch"
+
+namespace aula.oo5
+
+using namespace aula.oo4
+
+user function InstOO() 
+
+    local otPessoa as object
+    local otPessoaW as object
+
+    local otPessoa004 as object
+    local otHomem004 as object
+
+    otPessoa004:=aula.oo4.tPessoa():New()
+
+    otHomem004:=tHomem():New()
+
+    otPessoa:=u_gettPessoaAula_oo1()[1]
+    otPessoaW:=u_gettPessoaAula_oo1()[2]
+
+    MsgInfo(otPessoa==otPessoaW)
+    MsgInfo(otPessoa==otPessoa004)    
+    MsgInfo(Compare(otPessoa,otPessoaW))
+    MsgInfo(Compare(otPessoa,otPessoa004))
+    MsgInfo(aUtils():Compare(otPessoa,otPessoaW))
+
+    return
