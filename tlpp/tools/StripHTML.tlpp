@@ -1,0 +1,112 @@
+#include "totvs.ch"
+#include "parmtype.ch"
+
+class StripHTML
+
+    static method StripHTML(cHTMLText as character,lRegexStrip as logical) as character
+
+end class
+
+static method StripHTML(cHTMLText,lRegexStrip) class StripHTML
+
+    local aText         as array
+    local aTokens       as array
+    
+    local bError        as block
+    local bErrorBlock   as block    
+
+    local cBeg          as character
+    local cEnd          as character 
+
+    local cCRLF         as character
+    local cText         as character
+    local cPattern      as character
+
+    local nBeg          as numeric
+    local nEnd          as numeric
+    local nLen          as numeric
+
+    local nToken        as numeric 
+    local nTokens       as numeric
+
+    local oRegex        as character
+    local otRegex       as object
+
+    paramtype cHTMLText   as character
+    DEFAULT lRegexStrip:=.F.
+    paramtype lRegexStrip as logical
+
+    bError:={|oError|break(oError) }
+    bErrorBlock:=ErrorBlock(bError)
+
+    begin sequence
+
+        cPattern:="<[^>]+>\s+(?=<)|<[^>]+>"
+        otRegex:=tRegex():New(cPattern)
+        if (!otRegex:Search(cHTMLText))
+            cText:=cHTMLText
+            break
+        endif
+
+        begin sequence
+
+            if (!lRegexStrip)
+                break
+            endif
+
+            using namespace tlpp.regex
+            
+            oRegex:=Regex():New(cPattern)
+            cText:=oRegex:StrTran(cHTMLText,"")
+            
+            cPattern:="<!--[\s\S]*?-->"
+            if (Regex():Matches(cPattern,cText))
+                oRegex:setPattern(cPattern)
+                cText:=oRegex:StrTran(cText,"")
+            endif
+
+        recover
+
+            aTokens:=array(0)
+            aAdd(aTokens,{"<",">"})
+            aAdd(aTokens,{"{","}"})
+            aAdd(aTokens,{"&",";"})
+
+            cText:=cHTMLText
+
+            nTokens:=len(aTokens)
+            for nToken:=1 to nTokens
+                cBeg:=aTokens[nToken][1]
+                cEnd:=aTokens[nToken][2]
+                nBeg:=AT(cBeg,cText)
+                nEnd:=AT(cEnd,cText,nBeg)
+                nLen:=((nEnd-nBeg)+1)
+                while ((nBeg>0).and.(nEnd>0).and.(nLen>0))
+                    cText=Stuff(cText,nBeg,nLen,"")
+                    nBeg=AT(cBeg,cText)
+                    nEnd=AT(cEnd,cText,nBeg)
+                    nLen=((nEnd-nBeg)+1)
+                end while
+            next nToken
+
+            cText:=StrTran(cText,"P ","")
+            cText:=StrTran(cText,"v\:*","")
+            cText:=StrTran(cText,"o\:*","")
+            cText:=StrTran(cText,"w\:*","")
+            cText:=StrTran(cText,".shape","")
+
+			while ("  "$cText)
+                cText:=StrTran(cText,"  "," ")
+            end while
+			
+            cCRLF:=CRLF
+            aText:=strTokArr2(cText,cCRLF)
+            cText:=""
+            aEval(aText,{|t|if(!empty(t),cText+=(t+cCRLF),nil)})
+
+        end Sequence
+
+    end sequence
+    ErrorBlock(bErrorBlock)
+
+    return(cText)

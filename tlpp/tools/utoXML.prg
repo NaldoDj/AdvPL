@@ -12,8 +12,16 @@
 @type function
 /*/
 
+static outoXMLVar as object
+
 class utoXML
+
     static method QryToXML(cQuery as character,cFile as character,cExcelTitle as character,lPicture as logical,lX3Titulo as logical,ltxtEditMemo as logical) as logical
+
+    static method setXMLVar(uSection,uPropertyKey,uValue)
+    static method getXMLVar(uSection,uPropertyKey,uDefaultValue)
+    static method clearXMLVar()
+
 end class
 
 static method QryToXML(cQuery,cFile,cExcelTitle,lPicture,lX3Titulo,ltxtEditMemo) class utoXML
@@ -69,6 +77,18 @@ static method QryToXML(cQuery,cFile,cExcelTitle,lPicture,lX3Titulo,ltxtEditMemo)
     endif
 
     return(lRet)
+
+ static method setXMLVar(uSection,uPropertyKey,uValue) class utoXML
+    DEFAULT outoXMLVar:=tHash():New()
+    return(outoXMLVar:SetPropertyValue(uSection,uPropertyKey,uValue))
+ 
+ static method getXMLVar(uSection,uPropertyKey,uDefaultValue) class utoXML
+    DEFAULT outoXMLVar:=tHash():New()
+    return(outoXMLVar:GetPropertyValue(uSection,uPropertyKey,uDefaultValue))
+
+static method clearXMLVar() class utoXML
+    DEFAULT outoXMLVar:=tHash():New()
+    return(outoXMLVar:Clear())
 
 static function qToXML(cQuery,cFile,cExcelTitle,lPicture,lX3Titulo) as logical
 
@@ -207,16 +227,22 @@ static function dbToXML(cAlias as character,cFile as character,cExcelTitle as ch
 
     for nField := 1 to nFields
         cField:=aHeader[nField][DBS_NAME]
-        cType:=getSX3Cache(cField,"X3_TIPO")
-        if (cType==nil)
-            cType:=aHeader[nField][DBS_TYPE]
+        cType:=uToXML():getXMLVar(cField,"X3_TIPO","")
+        if (empty(cType))
+            cType:=getSX3Cache(cField,"X3_TIPO")
+            if (empty(cType))
+                cType:=aHeader[nField][DBS_TYPE]
+            endif
         endif
         nAlign:=if(cType=="C",1,if(cType=="N",3,2))
         nFormat:=if(cType=="D",4,if(cType=="N",2,1))
         if (lX3Titulo)
-            cColumn:=getSX3Cache(cField,"X3_TITULO")
-            if (cColumn==nil)
-                cColumn:=cField
+            cColumn:=uToXML():getXMLVar(cField,"X3_TITULO","")
+            if (empty(cColumn))
+                cColumn:=getSX3Cache(cField,"X3_TITULO")
+                if (empty(cColumn))
+                    cColumn:=cField
+                endif
             endif
         else
             cColumn:=cField
@@ -232,7 +258,10 @@ static function dbToXML(cAlias as character,cFile as character,cExcelTitle as ch
         for nField := 1 to nFields
             uCell:=(cAlias)->(FieldGet(nField))
             cField:=aHeader[nField][DBS_NAME]
-            cType:=getSX3Cache(cField,"X3_TIPO")
+            cType:=uToXML():getXMLVar(cField,"X3_TIPO","")
+            if (empty(cType))
+                cType:=getSX3Cache(cField,"X3_TIPO")
+            endif
             if (cType=="D")
                 if (cType!=aHeader[nField][DBS_TYPE])
                     uCell:=SToD(uCell)
@@ -241,15 +270,21 @@ static function dbToXML(cAlias as character,cFile as character,cExcelTitle as ch
             if (lPicture)
                 nX3CBox:=0
                 if (cType=="C")
-                    cX3CBox:=getSX3Cache(cField,"X3_CBOX")
+                    cX3CBox:=uToXML():getXMLVar(cField,"X3_CBOX","")
+                    if (empty(cX3CBox))
+                        cX3CBox:=getSX3Cache(cField,"X3_CBOX")
+                    endif
                     if (!empty(cX3CBox))
                         aX3CBox:=StrTokArr2(cX3CBox,";")
                         nX3CBox:=aScan(aX3CBox,{|e|(uCell==StrTokArr2(e,"=")[1])})
                     endif
                 endif
                 if (nX3CBox==0)
-                    cPicture:=getSX3Cache(cField,"X3_PICTURE")
-                    if (!(Empty(cPicture)))
+                    cPicture:=uToXML():getXMLVar(cField,"X3_PICTURE","")
+                    if (empty(cPicture))
+                        cPicture:=getSX3Cache(cField,"X3_PICTURE")
+                    endif
+                    if (!(empty(cPicture)))
                         uCell:=Transform(uCell,cPicture)
                     else
                         if (cType=="D")
@@ -328,3 +363,4 @@ static function getFileTmp(cFile as character) as character
     endif
 
     return(cFileTmp)
+

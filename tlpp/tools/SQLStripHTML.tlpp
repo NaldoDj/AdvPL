@@ -1,0 +1,154 @@
+#include "totvs.ch"
+#include "parmtype.ch"
+
+class SQLStripHTML
+
+    static method StripHTML(cHTMLText as character) as character
+
+end class
+
+static method StripHTML(cHTMLText) class SQLStripHTML
+
+    local aArea         as array
+
+    local bError        as block
+    local bErrorBlock   as block
+    
+    local cCRLF         as character
+    local cText         as character
+    local cPattern      as character
+    local cTmpAlias     as character
+    local cHTMLText64   as character
+    local cSQLFunctions as character
+
+    local oError        as object
+    local otRegex       as object
+
+    paramtype cHTMLText as character
+
+    begin sequence
+
+        cPattern:="<[^>]+>\s+(?=<)|<[^>]+>"
+        otRegex:=tRegex():New(cPattern)
+        if (!otRegex:Search(cHTMLText))
+            cText:=cHTMLText
+            break
+        endif
+
+        cCRLF:=CRLF
+
+        if (!file("\sqlfunctions\udf_StripHTML.sql"))
+            cSQLFunctions:=""
+            cSQLFunctions+="CREATE OR ALTER FUNCTION [dbo].[udf_StripHTML] (@cHTMLText VARCHAR(MAX))"+cCRLF
+            cSQLFunctions+="RETURNS VARCHAR(MAX) AS"+cCRLF
+            cSQLFunctions+="BEGIN"+cCRLF
+            cSQLFunctions+=""+cCRLF
+            cSQLFunctions+="    DECLARE @Tokens table ("+cCRLF
+            cSQLFunctions+="                        cBeg varchar(1),"+cCRLF
+            cSQLFunctions+="                        cEnd varchar(1),"+cCRLF
+            cSQLFunctions+="                        nID  int"+cCRLF
+            cSQLFunctions+="    )"+cCRLF
+            cSQLFunctions+=""+cCRLF
+            cSQLFunctions+="    DECLARE @cText VARCHAR(MAX)"+cCRLF
+            cSQLFunctions+=""+cCRLF
+            cSQLFunctions+="    DECLARE @nID    INT"+cCRLF
+            cSQLFunctions+="    DECLARE @nBeg   INT"+cCRLF
+            cSQLFunctions+="    DECLARE @nEnd   INT"+cCRLF
+            cSQLFunctions+="    DECLARE @nLen   INT"+cCRLF
+            cSQLFunctions+="    DECLARE @nTks   INT"+cCRLF
+            cSQLFunctions+=""+cCRLF
+            cSQLFunctions+="    DECLARE @cBeg   VARCHAR(1)"+cCRLF
+            cSQLFunctions+="    DECLARE @cEnd   VARCHAR(1)"+cCRLF
+            cSQLFunctions+=""+cCRLF
+            cSQLFunctions+="    INSERT INTO @Tokens SELECT '<' , '>' , 1"+cCRLF
+			cSQLFunctions+="	INSERT INTO @Tokens SELECT '{' , '}' , 2"+cCRLF
+			cSQLFunctions+="	INSERT INTO @Tokens SELECT '&' , ';' , 3"+cCRLF
+            cSQLFunctions+=""+cCRLF
+            cSQLFunctions+="    SET @nID=1"+cCRLF
+            cSQLFunctions+=""+cCRLF
+			cSQLFunctions+="	SET @cText=@cHTMLText"+cCRLF
+            cSQLFunctions+="	SET @nTks=(SELECT COUNT(nID) FROM @Tokens)"+cCRLF
+            cSQLFunctions+=""+cCRLF
+            cSQLFunctions+="    WHILE (@nID<=@nTks)"+cCRLF
+            cSQLFunctions+="    BEGIN"+cCRLF
+            cSQLFunctions+=""+cCRLF
+            cSQLFunctions+=""+cCRLF
+            cSQLFunctions+="        SELECT @cBeg=cBeg,@cEnd=cEnd FROM @Tokens WHERE nID=@nID"+cCRLF
+            cSQLFunctions+=""+cCRLF
+            cSQLFunctions+="        SET @nBeg=CHARINDEX(@cBeg,@cText)"+cCRLF
+            cSQLFunctions+="        SET @nEnd=CHARINDEX(@cEnd,@cText,@nBeg)"+cCRLF
+            cSQLFunctions+="        SET @nLen=((@nEnd-@nBeg)+1)"+cCRLF
+            cSQLFunctions+=""+cCRLF
+			cSQLFunctions+="		WHILE ((@nBeg>0) AND (@nEnd>0) AND (@nLen>0))"+cCRLF
+            cSQLFunctions+="        BEGIN"+cCRLF
+            cSQLFunctions+="            SET @cText=STUFF(@cText,@nBeg,@nLen,'')"+cCRLF
+            cSQLFunctions+="            SET @nBeg=CHARINDEX(@cBeg,@cText)"+cCRLF
+            cSQLFunctions+="            SET @nEnd=CHARINDEX(@cEnd,@cText,@nBeg)"+cCRLF
+            cSQLFunctions+="            SET @nLen=((@nEnd-@nBeg)+1)"+cCRLF
+            cSQLFunctions+="        END"+cCRLF
+			cSQLFunctions+=""+cCRLF	
+			cSQLFunctions+="		SET @nID=@nID+1"+cCRLF
+            cSQLFunctions+=""+cCRLF    
+			cSQLFunctions+="	END"+cCRLF
+            cSQLFunctions+=""+cCRLF	
+			cSQLFunctions+="	SET @cText=REPLACE(@cText,'P ','')"+cCRLF
+            cSQLFunctions+="	SET @cText=REPLACE(@cText,'v\:*','')"+cCRLF
+            cSQLFunctions+="	SET @cText=REPLACE(@cText,'o\:*','')"+cCRLF
+            cSQLFunctions+="	SET @cText=REPLACE(@cText,'w\:*','')"+cCRLF
+            cSQLFunctions+="	SET @cText=REPLACE(@cText,'.shape','')"+cCRLF
+			cSQLFunctions+=""+cCRLF	
+			cSQLFunctions+="	SET @cText=REPLACE(REPLACE(REPLACE(@cText,' ','<>'),'><',''),'<>',' ')"+cCRLF
+			cSQLFunctions+="	SET @cText=REPLACE(REPLACE(REPLACE(@cText,CHAR(13)+CHAR(10),'<>'),'><',''),'<>',CHAR(13)+CHAR(10))"+cCRLF
+            cSQLFunctions+=""+cCRLF	
+			cSQLFunctions+="	RETURN LTRIM(RTRIM(@cText))"+cCRLF
+            cSQLFunctions+=""+cCRLF
+            cSQLFunctions+="END"+cCRLF
+
+            while (!lockByName("udf_StripHTML.sql",.F.,.F.,.T.))
+                sleep(100)
+            end while
+
+            if (TCSQLExec(cSQLFunctions)==0)
+                if (dirTools():MakeDir("\sqlfunctions\"))
+                    MemoWrite("\sqlfunctions\udf_StripHTML.sql",cSQLFunctions)
+                endif
+            endif
+        
+            UnlockByName("udf_StripHTML.sql",.F.,.F.,.T.)
+        
+        endif
+
+        aArea:=getArea()
+
+        bError:={|e|oError:=e,break(e)}
+        bErrorBlock:=ErrorBlock(bError)
+        begin sequence            
+            
+            cHTMLText64:=strTran(cHTMLText,"'","")
+            cHTMLText64:=strTran(cHTMLText64,'"',"")
+            cHTMLText64:=Encode64(cHTMLText64)
+            cHTMLText64:="(CONVERT(VARCHAR(MAX),CAST('' AS XML).value('xs:base64Binary(''"+cHTMLText64+"'')','VARBINARY(MAX)')))" 
+            cHTMLText64:=("%"+cHTMLText64+"%")
+
+            cTmpAlias:=getNextAlias()
+
+            beginSQL alias cTmpAlias
+                %noParser%
+                SELECT dbo.udf_StripHTML(%exp:cHTMLText64%) as HTMLText
+            endSQL
+
+            cText:=(cTmpAlias)->HTMLText
+
+            (cTmpAlias)->(dbCloseArea())
+        
+        recover
+        
+            cText:=StripHTML():StripHTML(cHTMLText)
+        
+        end sequence
+
+        restArea(aArea)
+
+    end Sequence
+
+    return(cText)
