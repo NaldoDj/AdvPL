@@ -8,6 +8,10 @@ class cdbTools
     static method dbToJSON(cQuery as character,cFile as character,cJSONMain as character,lX3Titulo as logical,lShow as logical,lIEmptyFields as logical,lHeader as logical,lRowNumber as logical) as logical
     static method dbToDelim(cQuery as character,cFile as character,cDelim as character,cDelimRepl as character,lPicture as logical,lX3Titulo as logical,lShow as logical) as logical
 
+    static method setdbToolsVar(uSection,uPropertyKey,uValue)
+    static method getdbToolsVar(uSection,uPropertyKey,uDefaultValue)
+    static method clrardbToolsVar()
+
 end class
 
 static method dbToSDF(cQuery,cFile,lShow) class cdbTools
@@ -307,6 +311,15 @@ static method dbToDelim(cQuery,cFile,cDelim,cDelimRepl,lPicture,lX3Titulo,lShow)
     endif
 
     return(lRet)
+    
+static method setdbToolsVar(uSection,uPropertyKey,uValue) class cdbTools
+   return(dbTools():setdbToolsVar(uSection,uPropertyKey,uValue))
+ 
+static method getdbToolsVar(uSection,uPropertyKey,uDefaultValue) class cdbTools
+    return(dbTools():getdbToolsVar(uSection,uPropertyKey,uDefaultValue))
+
+static method clrardbToolsVar() class cdbTools
+    return(dbTools():clrardbToolsVar())
 
 class udbTools from dbtools
 

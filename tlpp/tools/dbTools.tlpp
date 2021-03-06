@@ -5,6 +5,8 @@
 #include "jsonarray.ch"
 #include "set_default.ch"
 
+static cdbToolsVar as object
+
 class dbTools
 
     data cFile              as character
@@ -43,6 +45,10 @@ class dbTools
 
     public method OpenWithExcel() as logical  
     public method ShellExecute() as numeric
+    
+    static method setdbToolsVar(uSection,uPropertyKey,uValue)
+    static method getdbToolsVar(uSection,uPropertyKey,uDefaultValue)
+    static method clrardbToolsVar()
 
 end class
 
@@ -390,6 +396,19 @@ method ShellExecute() class dbTools
         cFileTmp:=cFile
     endif
     return(ShellExecute("open",cFileTmp,"","",SW_SHOWMAXIMIZED))
+    
+static method setdbToolsVar(uSection,uPropertyKey,uValue) class dbTools
+   DEFAULT cdbToolsVar:=tHash():New()
+    return(cdbToolsVar:SetPropertyValue(uSection,uPropertyKey,uValue))
+ 
+static method getdbToolsVar(uSection,uPropertyKey,uDefaultValue) class dbTools
+   DEFAULT cdbToolsVar:=tHash():New()
+    return(cdbToolsVar:GetPropertyValue(uSection,uPropertyKey,uDefaultValue))
+
+static method clrardbToolsVar() class dbTools
+    DEFAULT cdbToolsVar:=tHash():New()
+    return(cdbToolsVar:Clear())
+    
 
 static function ToDelim(cQuery as character,cFile as character,cDelim as character,cDelimRepl as character,lPicture as logical,lX3Titulo as logical) as logical
 
@@ -496,8 +515,11 @@ static function dbToDelim(cAlias as character,cFile as character,cDelim as chara
         for nField := 1 to nFields
             cField:=aHeader[nField][DBS_NAME]
             if (lX3Titulo)
-                cColumn:=getSX3Cache(cField,"X3_TITULO")
-                if (cColumn==nil)
+                cColumn:=dbTools():getdbToolsVar(cField,"X3_TITULO","")
+                if (empty(cColumn))
+                    cColumn:=getSX3Cache(cField,"X3_TITULO")
+                endif
+                if (empty(cColumn))
                     cColumn:=cField
                 else
                     cColumn:=OemToAnsi(cColumn)
@@ -525,15 +547,22 @@ static function dbToDelim(cAlias as character,cFile as character,cDelim as chara
 
             for nField := 1 to nFields
                 uCell:=(cAlias)->(FieldGet(nField))
-                cType:=getSX3Cache(aHeader[nField][DBS_NAME],"X3_TIPO")
+                cField:=aHeader[nField][DBS_NAME]
+                cType:=dbTools():getdbToolsVar(cField,"X3_TIPO","")
+                if (empty(cType))
+                    cType:=getSX3Cache(cField,"X3_TIPO")
+                endif
                 if (cType=="D")
                     if (cType!=aHeader[nField][DBS_TYPE])
                         uCell:=SToD(uCell)
                     endif
                 endif
                 if (lPicture)
-                    cPicture:=getSX3Cache(aHeader[nField][DBS_NAME],"X3_PICTURE")
-                    if (!(Empty(cPicture)))
+                    cPicture:=dbTools():getdbToolsVar(cField,"X3_PICTURE","")
+                    if (empty(cPicture))
+                        cPicture:=getSX3Cache(cField,"X3_PICTURE")
+                    endif
+                    if (!(empty(cPicture)))
                         uCell:=Transform(uCell,cPicture)
                     else
                         uCell:=cValToChar(uCell)
@@ -748,15 +777,21 @@ static function dbToXML(cAlias as character,cFile as character,lPicture as logic
 
     for nField := 1 to nFields
         cField:=aHeader[nField][DBS_NAME]
-        cType:=getSX3Cache(cField,"X3_TIPO")
-        if (cType==nil)
+        cType:=dbTools():getdbToolsVar(cField,"X3_TIPO","")
+        if (empty(cType))
+            cType:=getSX3Cache(cField,"X3_TIPO")
+        endif
+        if (empty(cType))
             cType:=aHeader[nField][DBS_TYPE]
         endif
         nAlign:=if(cType=="C",1,if(cType=="N",3,2))
         nFormat:=if(cType=="D",4,if(cType=="N",2,1))
         if (lX3Titulo)
-            cColumn:=getSX3Cache(cField,"X3_TITULO")
-            if (cColumn==nil)
+            cColumn:=dbTools():getdbToolsVar(cField,"X3_TITULO","")
+            if (empty(cColumn))
+                cColumn:=getSX3Cache(cField,"X3_TITULO")
+            endif
+            if (empty(cColumn))
                 cColumn:=cField
             endif
         else
@@ -773,15 +808,21 @@ static function dbToXML(cAlias as character,cFile as character,lPicture as logic
         for nField := 1 to nFields
             uCell:=(cAlias)->(FieldGet(nField))
             cField:=aHeader[nField][DBS_NAME]
-            cType:=getSX3Cache(cField,"X3_TIPO")
+            cType:=dbTools():getdbToolsVar(cField,"X3_TIPO","")
+            if (empty(cType))
+                cType:=getSX3Cache(cField,"X3_TIPO")
+            endif
             if (cType=="D")
                 if (cType!=aHeader[nField][DBS_TYPE])
                     uCell:=SToD(uCell)
                 endif
             endif
             if (lPicture)
-                cPicture:=getSX3Cache(cField,"X3_PICTURE")
-                if (!(Empty(cPicture)))
+                cPicture:=dbTools():getdbToolsVar(cField,"X3_PICTURE","")
+                if (empty(cPicture))
+                    cPicture:=getSX3Cache(cField,"X3_PICTURE")
+                endif
+                if (!(empty(cPicture)))
                     uCell:=Transform(uCell,cPicture)
                 else
                     if (cType=="D")
@@ -873,6 +914,7 @@ static function dbToJSON(cAlias as character,cFile as character,cJSONMain as cha
 
     local cType         as character
     local cField        as character
+    local cColumn       as character
 
     local nRow          as numeric
     local nTitle        as numeric
@@ -894,9 +936,15 @@ static function dbToJSON(cAlias as character,cFile as character,cJSONMain as cha
 
     if (lX3Titulo)
         for nField := 1 to nFields
-            cField:=getSX3Cache(cField,"X3_TITULO")
-            DEFAULT cField:=aHeader[nField][DBS_NAME]
-            cField:=allTrim(cField)
+            cField:=aHeader[nField][DBS_NAME]
+            cColumn:=dbTools():getdbToolsVar(cField,"X3_TITULO","")
+            if (empty(cColumn))
+                cColumn:=getSX3Cache(cField,"X3_TITULO")
+            endif
+            if (empty(cColumn))
+                cColumn:=cField
+            endif
+            cField:=allTrim(cColumn)
             aAdd(aHeader[nField],cField)
         next nField
         nTitle:=(DBS_ALEN+1)
@@ -926,7 +974,7 @@ static function dbToJSON(cAlias as character,cFile as character,cJSONMain as cha
         for nField := 1 to nFields
             uValue:=(cAlias)->(fieldGet(nField))
             if (lIEmptyFields)
-                if (isEmpty(uValue))
+                if (isempty(uValue))
                     loop
                 endif
             endif
@@ -961,7 +1009,7 @@ static function dbToJSON(cAlias as character,cFile as character,cJSONMain as cha
 
     return(cFile)
 
-static function isEmpty(uValue) as logical
+static function isempty(uValue) as logical
     local cType     as character
     local lIsEmpty  as logical
     cType:=valType(uValue)
