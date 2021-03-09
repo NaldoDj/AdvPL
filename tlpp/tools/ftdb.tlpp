@@ -512,12 +512,11 @@ method ft_fAppend(cValue) class fTdb
     nRecNo:=self:ft_fRecNo()
     lAppend:=(select(self:cDbAlias)>0)
     if (lAppend)
-        (self:cDbAlias)->(dbAppend(.T.))
-        lAppend:=((self:cDbAlias)->(!netErr()))
+        lAppend:=(self:cDbAlias)->(recLock(self:cDbAlias,.T.))
         if (lAppend)
             (self:cDbAlias)->(FieldPut(1,cValue))
             nRecNo:=self:ft_fRecNo()
-            (self:cDbAlias)->(dbrUnLock(nRecNo))
+            (self:cDbAlias)->(MsUnLock())
         endif
     endif
     return(lAppend)
@@ -537,10 +536,10 @@ method ft_fUpdate(cValue) class fTdb
     DEFAULT cValue:=""
     paramtype cValue as character optional
     nRecNo:=self:ft_fRecNo()
-    lUpdate:=((select(self:cDbAlias)>0).and.(self:cDbAlias)->(dbrLock(nRecNo)))
+    lUpdate:=((select(self:cDbAlias)>0).and.(self:cDbAlias)->(recLock(self:cDbAlias,.F.)))
     if (lUpdate)
         (self:cDbAlias)->(FieldPut(1,cValue))
-        (self:cDbAlias)->(dbrUnLock(nRecNo))
+        (self:cDbAlias)->(MsUnLock())
     endif
     return(lUpdate)
 
@@ -558,10 +557,10 @@ method ft_fDelete() class fTdb
     local lDelete as logical
     local nRecNo  as numeric
     nRecNo:=self:ft_fRecNo()
-    lLock:=((select(self:cDbAlias)>0).and.((self:cDbAlias)->(dbrLock(nRecNo))))
+    lLock:=((select(self:cDbAlias)>0).and.((self:cDbAlias)->(recLock(self:cDbAlias,.F.))))
     if (lLock)
         (self:cDbAlias)->(dbDelete())
-        (self:cDbAlias)->(dbrUnLock(nRecNo))
+        (self:cDbAlias)->(MsUnLock())
     endif
     lDelete:=self:ft_fDeleted()
     return(lDelete)
@@ -580,10 +579,10 @@ method ft_fReCall() class fTdb
     local lReCall as logical
     local nRecNo  as numeric
     nRecNo:=self:ft_fRecNo()
-    lLock:=((select(self:cDbAlias)>0).and.((self:cDbAlias)->(dbrLock(nRecNo))))
+    lLock:=((select(self:cDbAlias)>0).and.((self:cDbAlias)->(recLock(self:cDbAlias,.F.))))
     if (lLock)
         (self:cDbAlias)->(dbReCall())
-        (self:cDbAlias)->(dbrUnLock(nRecNo))
+        (self:cDbAlias)->(MsUnLock())
     endif
     lReCall:=self:ft_fDeleted()
     return(lReCall)

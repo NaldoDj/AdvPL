@@ -10,7 +10,7 @@ class cdbTools
 
     static method setdbToolsVar(uSection,uPropertyKey,uValue)
     static method getdbToolsVar(uSection,uPropertyKey,uDefaultValue)
-    static method clrardbToolsVar()
+    static method cleardbToolsVar()
 
 end class
 
@@ -24,6 +24,7 @@ static method dbToSDF(cQuery,cFile,lShow) class cdbTools
     local nOptions      as numeric
 
     local lRet          as logical
+    local ltxtEditMemo  as logical
 
     local oudbToSDF		as object
 
@@ -59,7 +60,10 @@ static method dbToSDF(cQuery,cFile,lShow) class cdbTools
             cMsg:="Query File :: "+cQuery+CRLF+"TXT File :: "+cFile+CRLF
             cTitle:="Arquivo Gerado com Sucesso"
             if (lShow)
-                txtEditMemo():txtFileEdit(cMsg,cTitle)
+                ltxtEditMemo:=cdbTools():getdbToolsVar("parameters","ltxtEditMemo",.F.)
+                if (ltxtEditMemo)
+                    txtEditMemo():txtFileEdit(cMsg,cTitle,nil)
+                endif
             else
                 FWLogMsg("INFO"/*<cSeverity>*/,/*[cTransactionId]*/,"UDBTOOLS"/*<cGroup>*/,cTitle/*<cCategory>*/,ProcName()/*<cStep >*/,ProcName()/*<cMsgId>*/,cMsg/*<cMessage>*/,0/*<nMensure>*/,0/*<nElapseTime>*/,array(0)/*<aMessage>*/)
             endif
@@ -67,7 +71,10 @@ static method dbToSDF(cQuery,cFile,lShow) class cdbTools
             cMsg:="Query File :: "+cQuery+CRLF+"TXT File :: "+cFile+CRLF
             cTitle:="Problema na Geração do Arquivo"
             if (lShow)
-                txtEditMemo():txtFileEdit(cMsg,cTitle)
+                ltxtEditMemo:=cdbTools():getdbToolsVar("parameters","ltxtEditMemo",.F.)
+                if (ltxtEditMemo)
+                    txtEditMemo():txtFileEdit(cMsg,cTitle,nil)
+                endif
             else
                 FWLogMsg("ERROR"/*<cSeverity>*/,/*[cTransactionId]*/,"UDBTOOLS"/*<cGroup>*/,cTitle/*<cCategory>*/,ProcName()/*<cStep >*/,ProcName()/*<cMsgId>*/,cMsg/*<cMessage>*/,0/*<nMensure>*/,0/*<nElapseTime>*/,array(0)/*<aMessage>*/)
             endif
@@ -78,7 +85,10 @@ static method dbToSDF(cQuery,cFile,lShow) class cdbTools
         cMsg:="Query File :: "+cQuery+CRLF+"TXT File :: "+cFile+CRLF
         cTitle:="Arquvo(s) não Encontrado(s)"
         if (lShow)
-            txtEditMemo():txtFileEdit(cMsg,cTitle)
+            ltxtEditMemo:=cdbTools():getdbToolsVar("parameters","ltxtEditMemo",.F.)
+            if (ltxtEditMemo)
+                txtEditMemo():txtFileEdit(cMsg,cTitle,nil)
+            endif
         else
             FWLogMsg("ERROR"/*<cSeverity>*/,/*[cTransactionId]*/,"UDBTOOLS"/*<cGroup>*/,cTitle/*<cCategory>*/,ProcName()/*<cStep >*/,ProcName()/*<cMsgId>*/,cMsg/*<cMessage>*/,0/*<nMensure>*/,0/*<nElapseTime>*/,array(0)/*<aMessage>*/)
         endif
@@ -96,6 +106,7 @@ static method dbToXML(cQuery,cFile,lPicture,lX3Titulo,lShow) class cdbTools
     local nOptions      as numeric
 
     local lRet          as logical
+    local ltxtEditMemo  as logical
 
     local oudbToXML		as object
 
@@ -133,7 +144,10 @@ static method dbToXML(cQuery,cFile,lPicture,lX3Titulo,lShow) class cdbTools
             cMsg:="Query File :: "+cQuery+CRLF+"XML File :: "+cFile+CRLF
             cTitle:="Arquivo Gerado com Sucesso"
             if (lShow)
-                txtEditMemo():txtFileEdit(cMsg,cTitle)
+                ltxtEditMemo:=cdbTools():getdbToolsVar("parameters","ltxtEditMemo",.F.)
+                if (ltxtEditMemo)
+                    txtEditMemo():txtFileEdit(cMsg,cTitle,nil)
+                endif
             else
                 FWLogMsg("INFO"/*<cSeverity>*/,/*[cTransactionId]*/,"UDBTOOLS"/*<cGroup>*/,cTitle/*<cCategory>*/,ProcName()/*<cStep >*/,ProcName()/*<cMsgId>*/,cMsg/*<cMessage>*/,0/*<nMensure>*/,0/*<nElapseTime>*/,array(0)/*<aMessage>*/)
             endif
@@ -141,7 +155,10 @@ static method dbToXML(cQuery,cFile,lPicture,lX3Titulo,lShow) class cdbTools
             cMsg:="Query File :: "+cQuery+CRLF+"XML File :: "+cFile+CRLF
             cTitle:="Problema na Geração do Arquivo"
             if (lShow)
-                txtEditMemo():txtFileEdit(cMsg,cTitle)
+                ltxtEditMemo:=cdbTools():getdbToolsVar("parameters","ltxtEditMemo",.F.)
+                if (ltxtEditMemo)
+                    txtEditMemo():txtFileEdit(cMsg,cTitle,nil)
+                endif
             else
                 FWLogMsg("ERROR"/*<cSeverity>*/,/*[cTransactionId]*/,"UDBTOOLS"/*<cGroup>*/,cTitle/*<cCategory>*/,ProcName()/*<cStep >*/,ProcName()/*<cMsgId>*/,cMsg/*<cMessage>*/,0/*<nMensure>*/,0/*<nElapseTime>*/,array(0)/*<aMessage>*/)
             endif
@@ -152,7 +169,10 @@ static method dbToXML(cQuery,cFile,lPicture,lX3Titulo,lShow) class cdbTools
         cMsg:="Query File :: "+cQuery+CRLF+"XML File :: "+cFile+CRLF
         cTitle:="Arquvo(s) não Encontrado(s)"
         if (lShow)
-            txtEditMemo():txtFileEdit(cMsg,cTitle)
+            ltxtEditMemo:=cdbTools():getdbToolsVar("parameters","ltxtEditMemo",.F.)
+            if (ltxtEditMemo)
+                txtEditMemo():txtFileEdit(cMsg,cTitle,nil)
+            endif
         else
             FWLogMsg("ERROR"/*<cSeverity>*/,/*[cTransactionId]*/,"UDBTOOLS"/*<cGroup>*/,cTitle/*<cCategory>*/,ProcName()/*<cStep >*/,ProcName()/*<cMsgId>*/,cMsg/*<cMessage>*/,0/*<nMensure>*/,0/*<nElapseTime>*/,array(0)/*<aMessage>*/)
         endif
@@ -170,6 +190,7 @@ static method dbToJSON(cQuery,cFile,cJSONMain,lX3Titulo,lShow,lIEmptyFields,lHea
     local nOptions      as numeric
 
     local lRet          as logical
+    local ltxtEditMemo  as logical
 
     local oudbToJSON	as object
 
@@ -210,7 +231,10 @@ static method dbToJSON(cQuery,cFile,cJSONMain,lX3Titulo,lShow,lIEmptyFields,lHea
         cTitle:="Arquivo Gerado com Sucesso"
         if (lRet)
             if (lShow)
-                txtEditMemo():txtFileEdit(cMsg,cTitle)
+                ltxtEditMemo:=cdbTools():getdbToolsVar("parameters","ltxtEditMemo",.F.)
+                if (ltxtEditMemo)
+                    txtEditMemo():txtFileEdit(cMsg,cTitle,nil)
+                endif
             else
                 FWLogMsg("INFO"/*<cSeverity>*/,/*[cTransactionId]*/,"UDBTOOLS"/*<cGroup>*/,cTitle/*<cCategory>*/,ProcName()/*<cStep >*/,ProcName()/*<cMsgId>*/,cMsg/*<cMessage>*/,0/*<nMensure>*/,0/*<nElapseTime>*/,array(0)/*<aMessage>*/)
             endif
@@ -218,7 +242,10 @@ static method dbToJSON(cQuery,cFile,cJSONMain,lX3Titulo,lShow,lIEmptyFields,lHea
             cMsg:="Query File :: "+cQuery+CRLF+"JSON File :: "+cFile+CRLF
             cTitle:="Problema na Geração do Arquivo"
             if (lShow)
-                txtEditMemo():txtFileEdit(cMsg,cTitle)
+                ltxtEditMemo:=cdbTools():getdbToolsVar("parameters","ltxtEditMemo",.F.)
+                if (ltxtEditMemo)
+                    txtEditMemo():txtFileEdit(cMsg,cTitle,nil)
+                endif
             else
                 FWLogMsg("ERROR"/*<cSeverity>*/,/*[cTransactionId]*/,"UDBTOOLS"/*<cGroup>*/,cTitle/*<cCategory>*/,ProcName()/*<cStep >*/,ProcName()/*<cMsgId>*/,cMsg/*<cMessage>*/,0/*<nMensure>*/,0/*<nElapseTime>*/,array(0)/*<aMessage>*/)
             endif
@@ -229,7 +256,10 @@ static method dbToJSON(cQuery,cFile,cJSONMain,lX3Titulo,lShow,lIEmptyFields,lHea
         cMsg:="Query File :: "+cQuery+CRLF+"JSON File :: "+cFile+CRLF
         cTitle:="Arquvo(s) não Encontrado(s)"
         if (lShow)
-            txtEditMemo():txtFileEdit(cMsg,cTitle)
+            ltxtEditMemo:=cdbTools():getdbToolsVar("parameters","ltxtEditMemo",.F.)
+            if (ltxtEditMemo)
+                txtEditMemo():txtFileEdit(cMsg,cTitle,nil)
+            endif
         else
             FWLogMsg("ERROR"/*<cSeverity>*/,/*[cTransactionId]*/,"UDBTOOLS"/*<cGroup>*/,cTitle/*<cCategory>*/,ProcName()/*<cStep >*/,ProcName()/*<cMsgId>*/,cMsg/*<cMessage>*/,0/*<nMensure>*/,0/*<nElapseTime>*/,array(0)/*<aMessage>*/)
         endif
@@ -247,6 +277,7 @@ static method dbToDelim(cQuery,cFile,cDelim,cDelimRepl,lPicture,lX3Titulo,lShow)
     local nOptions      as numeric
 
     local lRet          as logical
+    local ltxtEditMemo  as logical
 
     local oudbToDelim	as object
 
@@ -286,7 +317,10 @@ static method dbToDelim(cQuery,cFile,cDelim,cDelimRepl,lPicture,lX3Titulo,lShow)
             cMsg:="Query File :: "+cQuery+CRLF+"CSV File :: "+cFile+CRLF
             cTitle:="Arquivo Gerado com Sucesso"
             if (lShow)
-                txtEditMemo():txtFileEdit(cMsg,cTitle)
+                ltxtEditMemo:=cdbTools():getdbToolsVar("parameters","ltxtEditMemo",.F.)
+                if (ltxtEditMemo)
+                    txtEditMemo():txtFileEdit(cMsg,cTitle,nil)
+                endif
             else
                 FWLogMsg("INFO"/*<cSeverity>*/,/*[cTransactionId]*/,"UDBTOOLS"/*<cGroup>*/,cTitle/*<cCategory>*/,ProcName()/*<cStep >*/,ProcName()/*<cMsgId>*/,cMsg/*<cMessage>*/,0/*<nMensure>*/,0/*<nElapseTime>*/,array(0)/*<aMessage>*/)
             endif
@@ -294,7 +328,10 @@ static method dbToDelim(cQuery,cFile,cDelim,cDelimRepl,lPicture,lX3Titulo,lShow)
             cMsg:="Query File :: "+cQuery+CRLF+"CSV File :: "+cFile+CRLF
             cTitle:="Problema na Geração do Arquivo"
             if (lShow)
-                txtEditMemo():txtFileEdit(cMsg,cTitle)
+                ltxtEditMemo:=cdbTools():getdbToolsVar("parameters","ltxtEditMemo",.F.)
+                if (ltxtEditMemo)
+                    txtEditMemo():txtFileEdit(cMsg,cTitle,nil)
+                endif
             else
                 FWLogMsg("ERROR"/*<cSeverity>*/,/*[cTransactionId]*/,"UDBTOOLS"/*<cGroup>*/,cTitle/*<cCategory>*/,ProcName()/*<cStep >*/,ProcName()/*<cMsgId>*/,cMsg/*<cMessage>*/,0/*<nMensure>*/,0/*<nElapseTime>*/,array(0)/*<aMessage>*/)
             endif
@@ -304,7 +341,10 @@ static method dbToDelim(cQuery,cFile,cDelim,cDelimRepl,lPicture,lX3Titulo,lShow)
         cMsg:="Query File :: "+cQuery+CRLF+"CSV File :: "+cFile+CRLF
         cTitle:="Arquvo(s) não Encontrado(s)"
         if (lShow)
-            txtEditMemo():txtFileEdit(cMsg,cTitle)
+            ltxtEditMemo:=cdbTools():getdbToolsVar("parameters","ltxtEditMemo",.F.)
+            if (ltxtEditMemo)
+                txtEditMemo():txtFileEdit(cMsg,cTitle,nil)
+            endif
         else
             FWLogMsg("ERROR"/*<cSeverity>*/,/*[cTransactionId]*/,"UDBTOOLS"/*<cGroup>*/,cTitle/*<cCategory>*/,ProcName()/*<cStep >*/,ProcName()/*<cMsgId>*/,cMsg/*<cMessage>*/,0/*<nMensure>*/,0/*<nElapseTime>*/,array(0)/*<aMessage>*/)
         endif
@@ -318,8 +358,8 @@ static method setdbToolsVar(uSection,uPropertyKey,uValue) class cdbTools
 static method getdbToolsVar(uSection,uPropertyKey,uDefaultValue) class cdbTools
     return(dbTools():getdbToolsVar(uSection,uPropertyKey,uDefaultValue))
 
-static method clrardbToolsVar() class cdbTools
-    return(dbTools():clrardbToolsVar())
+static method cleardbToolsVar() class cdbTools
+    return(dbTools():cleardbToolsVar())
 
 class udbTools from dbtools
 
@@ -346,8 +386,7 @@ method dbToDelim(cQuery,cFile,cDelim,cDelimRepl,lPicture,lX3Titulo) class udbToo
     local cExtension    as character
 
     local lRet          as logical
-
-    local otxtTools     as object
+    local ltxtEditMemo  as logical
 
     DEFAULT cQuery:=""
     paramtype cQuery    as character optional
@@ -390,8 +429,10 @@ method dbToDelim(cQuery,cFile,cDelim,cDelimRepl,lPicture,lX3Titulo) class udbToo
         cTitle:=cMsg
         if (self:lShow)
             self:OpenWithExcel()
-            otxtTools:=txtTools():New(cFile,nil,cTitle)
-            otxtTools:txtFileEdit()
+            ltxtEditMemo:=cdbTools():getdbToolsVar("parameters","ltxtEditMemo",.F.)
+            if (ltxtEditMemo)
+                txtEditMemo():txtFileEdit(nil,cTitle,cFile)
+            endif
         else
             FWLogMsg("INFO"/*<cSeverity>*/,/*[cTransactionId]*/,"UDBTOOLS"/*<cGroup>*/,cTitle/*<cCategory>*/,ProcName()/*<cStep >*/,ProcName()/*<cMsgId>*/,cMsg/*<cMessage>*/,0/*<nMensure>*/,0/*<nElapseTime>*/,array(0)/*<aMessage>*/)
         endif
@@ -399,8 +440,10 @@ method dbToDelim(cQuery,cFile,cDelim,cDelimRepl,lPicture,lX3Titulo) class udbToo
         cMsg:=self:cError()
         cTitle:="A T E N C A O :: Ocorreram erros na geracao do arquivo :: "+cFile
         if (self:lShow)
-            otxtTools:=txtTools():New(nil,cMsg,cTitle)
-            otxtTools:txtFileEdit()
+            ltxtEditMemo:=cdbTools():getdbToolsVar("parameters","ltxtEditMemo",.F.)
+            if (ltxtEditMemo)
+                txtEditMemo():txtFileEdit(cMsg,cTitle,nil)
+            endif
         else
             FWLogMsg("ERROR"/*<cSeverity>*/,/*[cTransactionId]*/,"UDBTOOLS"/*<cGroup>*/,cTitle/*<cCategory>*/,ProcName()/*<cStep >*/,ProcName()/*<cMsgId>*/,cMsg/*<cMessage>*/,0/*<nMensure>*/,0/*<nElapseTime>*/,array(0)/*<aMessage>*/)
         endif
@@ -415,8 +458,6 @@ method dbToSDF(cQuery,cFile) class udbTools
     local cExtension    as character
 
     local lRet          as logical
-
-    local otxtTools     as object
 
     paramtype cQuery as character optional
     DEFAULT cFile:=(getTempPath()+CriaTrab(nil,.F.)+".txt")
@@ -437,8 +478,10 @@ method dbToSDF(cQuery,cFile) class udbTools
         cTitle:=cMsg
         if (self:lShow)
             self:ShellExecute()
-            otxtTools:=txtTools():New(cFile,nil,cTitle)
-            otxtTools:txtFileEdit()
+            ltxtEditMemo:=cdbTools():getdbToolsVar("parameters","ltxtEditMemo",.F.)
+            if (ltxtEditMemo)
+                txtEditMemo():txtFileEdit(nil,cTitle,cFile)
+            endif
         else
             FWLogMsg("INFO"/*<cSeverity>*/,/*[cTransactionId]*/,"UDBTOOLS"/*<cGroup>*/,cTitle/*<cCategory>*/,ProcName()/*<cStep >*/,ProcName()/*<cMsgId>*/,cMsg/*<cMessage>*/,0/*<nMensure>*/,0/*<nElapseTime>*/,array(0)/*<aMessage>*/)
         endif
@@ -446,8 +489,10 @@ method dbToSDF(cQuery,cFile) class udbTools
         cMsg:=self:cError()
         cTitle:="A T E N C A O :: Ocorreram erros na geracao do arquivo :: "+cFile
         if (self:lShow)
-            otxtTools:=txtTools():New(nil,cMsg,cTitle)
-            otxtTools:txtFileEdit()
+            ltxtEditMemo:=cdbTools():getdbToolsVar("parameters","ltxtEditMemo",.F.)
+            if (ltxtEditMemo)
+                txtEditMemo():txtFileEdit(cMsg,cTitle,nil)
+            endif
         else
             FWLogMsg("ERROR"/*<cSeverity>*/,/*[cTransactionId]*/,"UDBTOOLS"/*<cGroup>*/,cTitle/*<cCategory>*/,ProcName()/*<cStep >*/,ProcName()/*<cMsgId>*/,cMsg/*<cMessage>*/,0/*<nMensure>*/,0/*<nElapseTime>*/,array(0)/*<aMessage>*/)
         endif
@@ -462,8 +507,6 @@ method dbToXML(cQuery,cFile,lPicture,lX3Titulo) class udbTools
     local cExtension    as character
 
     local lRet          as logical
-
-    local otxtTools     as object
 
     paramtype cQuery as character	optional
     DEFAULT cFile:=(getTempPath()+CriaTrab(nil,.F.)+".xml")
@@ -489,8 +532,10 @@ method dbToXML(cQuery,cFile,lPicture,lX3Titulo) class udbTools
         cTitle:=cMsg
         if (self:lShow)
             self:OpenWithExcel()
-            otxtTools:=txtTools():New(cFile,nil,cTitle)
-            otxtTools:txtFileEdit()
+            ltxtEditMemo:=cdbTools():getdbToolsVar("parameters","ltxtEditMemo",.F.)
+            if (ltxtEditMemo)
+                txtEditMemo():txtFileEdit(nil,cTitle,cFile)
+            endif
         else
             FWLogMsg("INFO"/*<cSeverity>*/,/*[cTransactionId]*/,"UDBTOOLS"/*<cGroup>*/,cTitle/*<cCategory>*/,ProcName()/*<cStep >*/,ProcName()/*<cMsgId>*/,cMsg/*<cMessage>*/,0/*<nMensure>*/,0/*<nElapseTime>*/,array(0)/*<aMessage>*/)
         endif
@@ -498,8 +543,10 @@ method dbToXML(cQuery,cFile,lPicture,lX3Titulo) class udbTools
         cMsg:=self:cError()
         cTitle:="A T E N C A O :: Ocorreram erros na geracao do arquivo :: "+cFile
         if (self:lShow)
-            otxtTools:=txtTools():New(nil,cMsg,cTitle)
-            otxtTools:txtFileEdit()
+            ltxtEditMemo:=cdbTools():getdbToolsVar("parameters","ltxtEditMemo",.F.)
+            if (ltxtEditMemo)
+                txtEditMemo():txtFileEdit(cMsg,cTitle,nil)
+            endif
         else
             FWLogMsg("ERROR"/*<cSeverity>*/,/*[cTransactionId]*/,"UDBTOOLS"/*<cGroup>*/,cTitle/*<cCategory>*/,ProcName()/*<cStep >*/,ProcName()/*<cMsgId>*/,cMsg/*<cMessage>*/,0/*<nMensure>*/,0/*<nElapseTime>*/,array(0)/*<aMessage>*/)
         endif
@@ -514,8 +561,6 @@ method dbToJSON(cQuery,cFile,cJSONMain,lX3Titulo,lIEmptyFields,lHeader,lRowNumbe
     local cExtension    as character
 
     local lRet          as logical
-
-    local otxtTools     as object
 
     paramtype cQuery	as character
     DEFAULT cFile:=(getTempPath()+CriaTrab(nil,.F.)+".json")
@@ -555,8 +600,10 @@ method dbToJSON(cQuery,cFile,cJSONMain,lX3Titulo,lIEmptyFields,lHeader,lRowNumbe
         cTitle:=cMsg
         if (self:lShow)
             self:ShellExecute()
-            otxtTools:=txtTools():New(cFile,nil,cTitle)
-            otxtTools:txtFileEdit()
+            ltxtEditMemo:=cdbTools():getdbToolsVar("parameters","ltxtEditMemo",.F.)
+            if (ltxtEditMemo)
+                txtEditMemo():txtFileEdit(nil,cTitle,cFile)
+            endif
         else
             FWLogMsg("INFO"/*<cSeverity>*/,/*[cTransactionId]*/,"UDBTOOLS"/*<cGroup>*/,cTitle/*<cCategory>*/,ProcName()/*<cStep >*/,ProcName()/*<cMsgId>*/,cMsg/*<cMessage>*/,0/*<nMensure>*/,0/*<nElapseTime>*/,array(0)/*<aMessage>*/)
         endif
@@ -564,8 +611,10 @@ method dbToJSON(cQuery,cFile,cJSONMain,lX3Titulo,lIEmptyFields,lHeader,lRowNumbe
         cMsg:=self:cError()
         cTitle:="A T E N C A O :: Ocorreram erros na geracao do arquivo :: "+cFile
         if (self:lShow)
-            otxtTools:=txtTools():New(nil,cMsg,cTitle)
-            otxtTools:txtFileEdit()
+            ltxtEditMemo:=cdbTools():getdbToolsVar("parameters","ltxtEditMemo",.F.)
+            if (ltxtEditMemo)
+                txtEditMemo():txtFileEdit(cMsg,cTitle,nil)
+            endif
         else
             FWLogMsg("ERROR"/*<cSeverity>*/,/*[cTransactionId]*/,"UDBTOOLS"/*<cGroup>*/,cTitle/*<cCategory>*/,ProcName()/*<cStep >*/,ProcName()/*<cMsgId>*/,cMsg/*<cMessage>*/,0/*<nMensure>*/,0/*<nElapseTime>*/,array(0)/*<aMessage>*/)
         endif

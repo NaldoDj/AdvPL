@@ -48,7 +48,7 @@ class dbTools
     
     static method setdbToolsVar(uSection,uPropertyKey,uValue)
     static method getdbToolsVar(uSection,uPropertyKey,uDefaultValue)
-    static method clrardbToolsVar()
+    static method cleardbToolsVar()
 
 end class
 
@@ -405,7 +405,7 @@ static method getdbToolsVar(uSection,uPropertyKey,uDefaultValue) class dbTools
    DEFAULT cdbToolsVar:=tHash():New()
     return(cdbToolsVar:GetPropertyValue(uSection,uPropertyKey,uDefaultValue))
 
-static method clrardbToolsVar() class dbTools
+static method cleardbToolsVar() class dbTools
     DEFAULT cdbToolsVar:=tHash():New()
     return(cdbToolsVar:Clear())
     
