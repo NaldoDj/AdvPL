@@ -6,6 +6,7 @@ class stacktools
     static method StackCount(cStack,nMaxCount) as numeric
     static method GetCallStack(nStart) as array
     static method IsInCallStack(cStack) as logical
+    static method IsInStackCall(aStack) as logical
 
 end class
 
@@ -51,7 +52,23 @@ static method IsInCallStack(cStack) class stacktools
     local lIsInCallStack as logical
     paramtype cStack as character
     lIsInCallStack:=IsInCallStack(cStack)
-    return(lIsInCallStack)    
+    return(lIsInCallStack)  
+
+static method IsInStackCall(aStack) class stacktools
+    local cStack            as character
+    local lIsInStackCall    as logical
+    local nStack            as numeric
+    local nStacks           as numeric
+    paramtype aStack as array
+    nStacks:=len(aStack)
+    for nStack:=1 to nStacks
+        cStack:=aStack[nStack]
+        lIsInStackCall:=stacktools():IsInCallStack(cStack)
+        if (!lIsInStackCall)
+            exit
+        endif
+    next nStack
+    return(lIsInStackCall)
 
 static method GetCallStack(nStart) class stacktools
     local aCallStack as array

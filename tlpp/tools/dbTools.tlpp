@@ -563,7 +563,7 @@ static function dbToDelim(cAlias as character,cFile as character,cDelim as chara
                         cPicture:=getSX3Cache(cField,"X3_PICTURE")
                     endif
                     if (!(empty(cPicture)))
-                        uCell:=Transform(uCell,cPicture)
+                        uCell:=allTrim(Transform(uCell,cPicture))
                     else
                         uCell:=cValToChar(uCell)
                     endif
@@ -766,9 +766,9 @@ static function dbToXML(cAlias as character,cFile as character,lPicture as logic
 
     aCells:=Array(0)
 
-    cWorkSheet:="QueryToXML"
-    cWBreak:=cWorkSheet
-    cTBreak:=cWBreak
+    cWorkSheet:=dbTools():getdbToolsVar("Excel","cWorkSheet","QueryToXML")
+    cWBreak:=dbTools():getdbToolsVar("Excel","cWBreak",cWorkSheet)
+    cTBreak:=dbTools():getdbToolsVar("Excel","cTBreak",cWBreak)
 
     nFields:=Len(aHeader)
 
@@ -778,6 +778,7 @@ static function dbToXML(cAlias as character,cFile as character,lPicture as logic
     for nField := 1 to nFields
         cField:=aHeader[nField][DBS_NAME]
         cType:=dbTools():getdbToolsVar(cField,"X3_TIPO","")
+        lTotal:=dbTools():getdbToolsVar(cField,"TOTAL",.F.)
         if (empty(cType))
             cType:=getSX3Cache(cField,"X3_TIPO")
         endif
@@ -785,6 +786,7 @@ static function dbToXML(cAlias as character,cFile as character,lPicture as logic
             cType:=aHeader[nField][DBS_TYPE]
         endif
         nAlign:=if(cType=="C",1,if(cType=="N",3,2))
+        //1-General,2-Number,3-Monetário,4-DateTime
         nFormat:=if(cType=="D",4,if(cType=="N",2,1))
         if (lX3Titulo)
             cColumn:=dbTools():getdbToolsVar(cField,"X3_TITULO","")
@@ -823,7 +825,9 @@ static function dbToXML(cAlias as character,cFile as character,lPicture as logic
                     cPicture:=getSX3Cache(cField,"X3_PICTURE")
                 endif
                 if (!(empty(cPicture)))
-                    uCell:=Transform(uCell,cPicture)
+                    if (!(cPicture=="__NOTRANSFORM__"))
+                        uCell:=allTrim(Transform(uCell,cPicture))
+                    endif
                 else
                     if (cType=="D")
                         uCell:=DToC(uCell)

@@ -74,6 +74,7 @@ static procedure ErrorMessage(oError as object,lHasError as logical,lShowHelp as
     local cLogError	as character
     local cStkError	as character
     local cEnvError	as character
+    local cDLogPath as character
 
     local lfhLog    as logical
 
@@ -133,10 +134,24 @@ static procedure ErrorMessage(oError as object,lHasError as logical,lShowHelp as
 		cEnvError+=oError:ErrorEnv
 		cEnvError+=cCRLF
 
-        cLogPath:=getNewPar("AFX_FHLOGS","\afxfiles\logs\")
+        cDLogPath:="\evalBlock\logs\"
+
+        cLogPath:=cacheData():get("evalBlock","EVALBLOCKD",cDLogPath)
+        
+        if (empty(cLogPath))
+            if (select("SX6")>0)
+                cLogPath:=getNewPar("EVALBLOCKD",cDLogPath)
+            else
+                cLogPath:=cDLogPath
+            endif
+        endif
+
         if (!(right(cLogPath,1)=="\"))
             cLogPath+="\"
         endif
+
+        cLogPath+=DtoS(Date())
+        cLogPath+="\"
 
         if (dirtools():makeDir(cLogPath))
             cfhLog:=cLogPath
@@ -146,7 +161,7 @@ static procedure ErrorMessage(oError as object,lHasError as logical,lShowHelp as
             cfhLog+="-"
             cfhLog+=StrZero(RandoMize(1,999),3)
             cfhLog+="-"
-            cfhLog+="afxerror"
+            cfhLog+="evalblock"
             cfhLog+=".log"
             nfhLog:=fCreate(cfhLog,FC_NORMAL)
             fClose(nfhLog)

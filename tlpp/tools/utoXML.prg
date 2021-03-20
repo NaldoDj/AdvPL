@@ -22,6 +22,8 @@ class utoXML
     static method getXMLVar(uSection,uPropertyKey,uDefaultValue)
     static method clearXMLVar()
 
+    static method setSX3Fields(aFields as array) as object
+
 end class
 
 static method QryToXML(cQuery,cFile,cExcelTitle,lPicture,lX3Titulo,ltxtEditMemo) class utoXML
@@ -90,12 +92,39 @@ static method clearXMLVar() class utoXML
     DEFAULT outoXMLVar:=tHash():New()
     return(outoXMLVar:Clear())
 
+static method setSX3Fields(aFields) class utoXML
+
+    local cType     as character
+    local cField    as character
+    
+    local nLen      as numeric
+    local nDec      as numeric
+
+    local nField    as numeric
+    local nFields   as numeric
+
+    paramtype aFields as array
+
+    nFields:=len(aFields)
+    for nField:=1 to nFields
+        cField:=aFields[nField][DBS_NAME]
+        cType:=aFields[nField][DBS_TYPE]
+        nLen:=aFields[nField][DBS_LEN]
+        nDec:=aFields[nField][DBS_DEC]
+        uToXML():setXMLVar(cField,"X3_TIPO",cType)
+        uToXML():setXMLVar(cField,"X3_TAMANHO",nLen)
+        uToXML():setXMLVar(cField,"X3_DECIMAL",nDec)
+    next nField    
+
+    return(outoXMLVar)
+
 static function qToXML(cQuery,cFile,cExcelTitle,lPicture,lX3Titulo) as logical
 
     local cFileTmp      as character
     local cExtension    as character
 
     local lRet          as logical
+    local lMsExcel      as logical
 
     DEFAULT cQuery:=""
 
@@ -120,7 +149,15 @@ static function qToXML(cQuery,cFile,cExcelTitle,lPicture,lX3Titulo) as logical
         endif
         lRet:=file(cFileTmp)
         if (lRet)
-            ShellExecute("open",cFileTmp,"","",SW_SHOWMAXIMIZED)
+            lMsExcel:=ApOleClient("MsExcel")
+            if (lMsExcel)
+                oMsExcel:=MsExcel():New()
+                oMsExcel:WorkBooks:Open(cFileTmp)
+                oMsExcel:SetVisible(.T.)
+                oMsExcel:=oMsExcel:Destroy()
+            else
+                ShellExecute("open",cFileTmp,"","",SW_SHOWMAXIMIZED)
+            endif
         endif
     endif
     
@@ -216,9 +253,9 @@ static function dbToXML(cAlias as character,cFile as character,cExcelTitle as ch
 
     aCells:=Array(0)
 
-    cWorkSheet:=cExcelTitle
-    cWBreak:=cWorkSheet
-    cTBreak:=cWBreak+if((Type("c_pExcelTitle")=="C"),&("c_pExcelTitle"),"")
+    cWorkSheet:=uToXML():getXMLVar("Excel","cWorkSheet",cExcelTitle)
+    cWBreak:=uToXML():getXMLVar("Excel","cWBreak",cWorkSheet)
+    cTBreak:=uToXML():getXMLVar("Excel","cTBreak",cWBreak+if((Type("c_pExcelTitle")=="C"),&("c_pExcelTitle"),""))
 
     nFields:=Len(aHeader)
 
@@ -228,6 +265,7 @@ static function dbToXML(cAlias as character,cFile as character,cExcelTitle as ch
     for nField := 1 to nFields
         cField:=aHeader[nField][DBS_NAME]
         cType:=uToXML():getXMLVar(cField,"X3_TIPO","")
+        lTotal:=uToXML():getXMLVar(cField,"TOTAL",.F.)
         if (empty(cType))
             cType:=getSX3Cache(cField,"X3_TIPO")
             if (empty(cType))
@@ -235,6 +273,7 @@ static function dbToXML(cAlias as character,cFile as character,cExcelTitle as ch
             endif
         endif
         nAlign:=if(cType=="C",1,if(cType=="N",3,2))
+        //1-General,2-Number,3-Monetário,4-DateTime
         nFormat:=if(cType=="D",4,if(cType=="N",2,1))
         if (lX3Titulo)
             cColumn:=uToXML():getXMLVar(cField,"X3_TITULO","")
@@ -285,7 +324,9 @@ static function dbToXML(cAlias as character,cFile as character,cExcelTitle as ch
                         cPicture:=getSX3Cache(cField,"X3_PICTURE")
                     endif
                     if (!(empty(cPicture)))
-                        uCell:=Transform(uCell,cPicture)
+                        if (!(cPicture=="__NOTRANSFORM__"))
+                            uCell:=allTrim(Transform(uCell,cPicture))
+                        endif
                     else
                         if (cType=="D")
                             uCell:=DToC(uCell)
@@ -363,4 +404,3 @@ static function getFileTmp(cFile as character) as character
     endif
 
     return(cFileTmp)
-
