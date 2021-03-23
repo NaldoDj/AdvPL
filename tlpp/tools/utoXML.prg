@@ -28,6 +28,7 @@ end class
 
 static method QryToXML(cQuery,cFile,cExcelTitle,lPicture,lX3Titulo,ltxtEditMemo) class utoXML
 
+    local cExt          as character
     local cMask         as character
     local cTitle        as character
     local cDirectory    as character
@@ -35,19 +36,25 @@ static method QryToXML(cQuery,cFile,cExcelTitle,lPicture,lX3Titulo,ltxtEditMemo)
     local nOptions      as numeric
 
     local lRet          as logical
+    local lExcelXlsx    as logical
 
-    DEFAULT cExcelTitle:="QueryToXML"
+    lExcelXlsx:=uToXML():getXMLVar("GENERAL","lExcelXlsx",.F.)
+
+    cExt:=lower(if(lExcelXlsx,"XLSX","XML"))
+    uToXML():SetXMLVar("GENERAL","EXTENSION",cExt)
+
+    DEFAULT cExcelTitle:="QueryTo"+cExt
 
     if (empty(cQuery))
         cMask:="Query(s) File | *.sql"
-        cTitle:="Escolha o script SQL para exportar para XML"
+        cTitle:="Escolha o script SQL para exportar para "+cExt
         cDirectory:="C:"
         nOptions:=(GETF_LOCALHARD+GETF_NETWORKDRIVE)
         cQuery:=cGetFile(cMask,cTitle,1,cDirectory,.F.,nOptions,/*[lArvore]*/,/*[lKeepCase]*/)
     endif
 
     if (empty(cFile))
-        cMask:="Excel File | *.xml"
+        cMask:="Excel File | *."+cExt
         cTitle:="Escolha/Informe o arquivo para salvar a Query"
         cDirectory:=getTempPath()
         cFile:=cGetFile(cMask,cTitle,1,cDirectory,.T.,nOptions,/*[lArvore]*/,/*[lKeepCase]*/)
@@ -128,7 +135,7 @@ static function qToXML(cQuery,cFile,cExcelTitle,lPicture,lX3Titulo) as logical
 
     DEFAULT cQuery:=""
 
-    cExtension:=".xml"
+    cExtension:=lower("."+uToXML():getXMLVar("GENERAL","EXTENSION","XML"))
 
     DEFAULT cFile:=(getFileTmp("")+cExtension)
 
@@ -165,16 +172,18 @@ static function qToXML(cQuery,cFile,cExcelTitle,lPicture,lX3Titulo) as logical
 
 static function ToXML(cQuery as character,cFile as character,cExcelTitle as character,lPicture as logical,lX3Titulo as logical) as logical
 
-    local aArea     as array
+    local aArea         as array
 
-    local cAlias    as character
+    local cAlias        as character
+    local cExtension    as character
 
-    local lRet      as logical
-    local lMsOpenDB as logical
+    local lRet          as logical
+    local lMsOpenDB     as logical
 
     aArea:=getArea()
 
-    DEFAULT cFile:=(getFileTmp("")+".xml")
+    cExtension:=lower("."+uToXML():getXMLVar("GENERAL","EXTENSION","XML"))
+    DEFAULT cFile:=(getFileTmp("")+cExtension)
 
     begin sequence
 
@@ -202,7 +211,7 @@ static function ToXML(cQuery as character,cFile as character,cExcelTitle as char
             break
         endif
 
-        MsAguarde({||cFile:=dbToXML(@cAlias,@cFile,@cExcelTitle,@lPicture,@lX3Titulo)},"Gerando arquivo","Aguarde...")
+        MsAguarde({||cFile:=dbToXML(@cAlias,@cFile,@cExcelTitle,@lPicture,@lX3Titulo)},"Gerando Planilha","Aguarde...")
 
         lRet:=file(cFile)
 
@@ -242,6 +251,7 @@ static function dbToXML(cAlias as character,cFile as character,cExcelTitle as ch
     local nX3CBox       as numeric
 
     local lTotal        as logical
+    local lExcelXlsx    as logical
 
     local oFWMSExcel    as object
 
@@ -249,7 +259,16 @@ static function dbToXML(cAlias as character,cFile as character,cExcelTitle as ch
 
     aHeader:=(cAlias)->(dbStruct())
 
-    oFWMSExcel:=FWMsExcel():New()
+    lExcelXlsx:=uToXML():getXMLVar("GENERAL","lExcelXlsx",.F.)
+    if (lExcelXlsx)
+        lExcelXlsx:=evalBlock():evalBlock({||oFWMSExcel:=FwMsExcelXlsx():New()},nil,.F.)
+        if (!lExcelXlsx)
+            uToXML():setXMLVar("GENERAL","lExcelXlsx",lExcelXlsx)
+            oFWMSExcel:=FWMsExcel():New()
+        endif
+    else
+        oFWMSExcel:=FWMsExcel():New()
+    endif
 
     aCells:=Array(0)
 
