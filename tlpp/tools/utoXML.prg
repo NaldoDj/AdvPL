@@ -21,6 +21,8 @@ class utoXML
     static method setXMLVar(uSection,uPropertyKey,uValue)
     static method getXMLVar(uSection,uPropertyKey,uDefaultValue)
     static method clearXMLVar()
+    
+    static method isBlind() as logical
 
     static method setSX3Fields(aFields as array) as object
 
@@ -65,7 +67,7 @@ static method QryToXML(cQuery,cFile,cExcelTitle,lPicture,lX3Titulo,ltxtEditMemo)
 
     DEFAULT ltxtEditMemo:=.F.
     if (ltxtEditMemo)
-        ltxtEditMemo:=(!isBlind())
+        ltxtEditMemo:=(!uToXML():isBlind())
     endif
 
     if (!empty(cQuery) )
@@ -125,6 +127,14 @@ static method setSX3Fields(aFields) class utoXML
 
     return(outoXMLVar)
 
+static method isBlind() class uToXML
+    local lIsBlind as logical
+    lIsBlind:=IsBlind()
+    if (!lIsBlind)
+        lIsBlind:=uToXML():getXMLVar("GENERAL","lIsBlind",.F.)
+    endif
+    return(lIsBlind)
+
 static function qToXML(cQuery,cFile,cExcelTitle,lPicture,lX3Titulo) as logical
 
     local cFileTmp      as character
@@ -145,7 +155,7 @@ static function qToXML(cQuery,cFile,cExcelTitle,lPicture,lX3Titulo) as logical
 
     lRet:=ToXML(@cQuery,@cFile,@cExcelTitle,@lPicture,@lX3Titulo)
 
-    if (!isBlind())
+    if (!uToXML():isBlind())
         if (!getTempPath()$cFile)
             cFileTmp:=getFileTmp(cFile)
             if (!(cFile==cFileTmp))

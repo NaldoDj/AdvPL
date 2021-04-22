@@ -4,10 +4,14 @@ static oData as object
 
 class cacheData
 
-    static method get()
-    static method set()    
-    static method clear()
+    static method set(uSection,uPropertyKey,uValue)    
+    static method get(uSection,uPropertyKey,uDefaultValue)
+    
+    static method delSection(uSection)
+    static method delProperty(uSection,uPropertyKey)
 
+    static method clear()
+    
 end class
 
 static method set(uSection,uPropertyKey,uValue) class cacheData
@@ -17,6 +21,14 @@ static method set(uSection,uPropertyKey,uValue) class cacheData
 static method get(uSection,uPropertyKey,uDefaultValue) class cacheData
     DEFAULT oData:=tHash():New()
     return(oData:GetPropertyValue(uSection,uPropertyKey,uDefaultValue)) 
+
+static method delSection(uSection) class cacheData
+    DEFAULT oData:=tHash():New()
+    return(oData:RemoveSection(uSection)) 
+
+static method delProperty(uSection,uPropertyKey) class cacheData
+    DEFAULT oData:=tHash():New()
+    return(oData:RemoveProperty(uSection,uPropertyKey))
 
 static method clear() class cacheData
     DEFAULT oData:=tHash():New()
